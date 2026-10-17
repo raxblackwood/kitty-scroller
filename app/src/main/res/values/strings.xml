@@ -1,0 +1,16 @@
+<resources>
+    <string name="app_name">AntiScroller Kitty</string>
+    <string name="accessibility_service_description">Detects scrolling activity in Instagram and YouTube Shorts to lower the Kitty Curtain and helps prevent impulsive uninstallation.</string>
+    <string name="device_admin_label">AntiScroller Protection</string>
+    <string name="device_admin_description">Enables anti-uninstall friction so you cannot impulsively delete the app while doomscrolling.</string>
+    <string name="admin_warning_disable">Are you sure? Removing protection will reset your focus streak and make doomscrolling tempting again!</string>
+
+    <string name="perm_accessibility_title">Accessibility Service</string>
+    <string name="perm_accessibility_desc">Detects scroll distance in Instagram Reels &amp; YouTube Shorts.</string>
+    
+    <string name="perm_overlay_title">Display Over Other Apps</string>
+    <string name="perm_overlay_desc">Allows the cute Kitty Curtain to slide down from the top.</string>
+
+    <string name="perm_admin_title">Smart Uninstall Friction</string>
+    <string name="perm_admin_desc">Prevents impulsive deletion while giving 100% full access to productive apps.</string>
+</resources>
