@@ -8,3 +8,7 @@ app/build/
 .cxx
 *.apk
 *.aab
+*.jks
+*.keystore
+/dist/
+keystore/KEYSTORE_INFO.txt
