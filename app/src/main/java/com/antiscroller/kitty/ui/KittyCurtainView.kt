@@ -446,8 +446,9 @@ class KittyCurtainView @JvmOverloads constructor(
     }
 
     private fun drawSpeechBubble(canvas: Canvas, h: Float, centerX: Float) {
+        if (dropPercentage <= 0.001f) return
+
         val message = when {
-            dropPercentage <= 0.001f -> return
             dropPercentage < 0.25f -> if (currentBreed == CatBreed.BLACK) "Void cat is watching you... 🐈‍⬛" else "Peek-a-boo! Scrolling already? 🐾"
             dropPercentage < 0.50f -> "Sliding down... maybe read a book? 📖"
             dropPercentage < 0.75f -> "Half the screen is Kitty now! 😼"
@@ -455,10 +456,41 @@ class KittyCurtainView @JvmOverloads constructor(
             else -> "STOPPED! Daily scroll limit reached! 💤"
         }
 
-        val bubbleY = (h + 45f).coerceAtMost(height - 110f)
-        val textWidth = textPaint.measureText(message)
-        val bubbleW = textWidth + 70f
-        val bubbleH = 65f
+        // Adjust text size dynamically to avoid overflowing screen margins
+        textPaint.textSize = 30f
+        var textWidth = textPaint.measureText(message)
+        val maxAvailableW = width.toFloat() - 60f
+        if (textWidth + 60f > maxAvailableW) {
+            textPaint.textSize = 26f
+            textWidth = textPaint.measureText(message)
+        }
+
+        val bubbleW = (textWidth + 60f).coerceAtMost(maxAvailableW)
+        val bubbleH = 56f
+
+        // Position text strictly ON the curtain, ABOVE Kitty's head & ears
+        val earTipY = if (dropPercentage >= 0.96f) {
+            h * 0.45f - 100f // Above sleepy cat loaf
+        } else {
+            val headRadius = 75f
+            val earSize = 45f
+            val headCenterY = (h - 40f).coerceAtLeast(headRadius + 20f)
+            headCenterY - headRadius - earSize // Top tip of ears
+        }
+
+        // Only display once the curtain has dropped enough to fit the bubble above the head
+        if (earTipY < 40f) {
+            return
+        }
+
+        // Bottom of the bubble rests right above Kitty's ears
+        val bubbleBottom = (earTipY - 14f)
+        val bubbleY = (bubbleBottom - bubbleH).coerceAtLeast(34f)
+
+        // Ensure bubble is completely contained on the curtain
+        if (bubbleY + bubbleH > h) {
+            return
+        }
 
         val bubbleRect = RectF(
             centerX - (bubbleW / 2f),
@@ -467,14 +499,15 @@ class KittyCurtainView @JvmOverloads constructor(
             bubbleY + bubbleH
         )
 
+        // Triangular pointer pointing DOWN towards Kitty's head
         val pointerPath = Path().apply {
-            moveTo(centerX - 14f, bubbleY)
-            lineTo(centerX, bubbleY - 12f)
-            lineTo(centerX + 14f, bubbleY)
+            moveTo(centerX - 12f, bubbleY + bubbleH)
+            lineTo(centerX, (bubbleY + bubbleH + 11f).coerceAtMost(earTipY))
+            lineTo(centerX + 12f, bubbleY + bubbleH)
             close()
         }
 
-        canvas.drawRoundRect(bubbleRect, 24f, 24f, speechBubblePaint)
+        canvas.drawRoundRect(bubbleRect, 18f, 18f, speechBubblePaint)
         canvas.drawPath(pointerPath, speechBubblePaint)
 
         val fontMetrics = textPaint.fontMetrics
