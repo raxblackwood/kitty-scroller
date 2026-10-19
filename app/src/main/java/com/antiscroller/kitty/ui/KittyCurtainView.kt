@@ -6,6 +6,7 @@ import android.graphics.*
 import android.util.AttributeSet
 import android.view.View
 import android.view.animation.AccelerateDecelerateInterpolator
+import android.view.animation.DecelerateInterpolator
 import android.view.animation.OvershootInterpolator
 import com.antiscroller.kitty.R
 
@@ -122,11 +123,14 @@ class KittyCurtainView @JvmOverloads constructor(
     }
 
     fun applyTheme(themeName: String) {
-        currentBreed = if (themeName.equals("black", ignoreCase = true)) {
+        val newBreed = if (themeName.equals("black", ignoreCase = true)) {
             CatBreed.BLACK
         } else {
             CatBreed.ORANGE
         }
+
+        val needsBitmapReload = (currentBreed != newBreed) || (bodyBitmap == null)
+        currentBreed = newBreed
 
         furPaint.color = currentBreed.furColor
         furDarkPaint.color = currentBreed.furDarkColor
@@ -141,8 +145,10 @@ class KittyCurtainView @JvmOverloads constructor(
         curtainBodyPaint.color = currentBreed.curtainBodyColor
         stripePaint.color = currentBreed.curtainStripeColor
 
-        loadCatBitmaps(themeName)
-        invalidate()
+        if (needsBitmapReload) {
+            loadCatBitmaps(themeName)
+            invalidate()
+        }
     }
 
     private fun loadCatBitmaps(theme: String) {
@@ -198,10 +204,15 @@ class KittyCurtainView @JvmOverloads constructor(
             return
         }
 
+        // If target is virtually identical, let existing animation run
+        if (Math.abs(clamped - animatedProgress) < 0.002f) {
+            return
+        }
+
         animator?.cancel()
         animator = ValueAnimator.ofFloat(animatedProgress, clamped).apply {
-            duration = 420
-            interpolator = OvershootInterpolator(0.7f)
+            duration = 200 // Snappy 200ms responsive tracking without delay
+            interpolator = DecelerateInterpolator(1.2f)
             addUpdateListener {
                 animatedProgress = it.animatedValue as Float
                 invalidate()

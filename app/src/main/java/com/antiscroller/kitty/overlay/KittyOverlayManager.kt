@@ -38,6 +38,7 @@ class KittyOverlayManager(private val context: Context) {
     private var kittyCurtainView: KittyCurtainView? = null
     private var isOverlayAttached = false
     private var currentDropPercentage: Float = 0f
+    private var lastAppliedTheme: String = ""
 
     fun canDrawOverlay(): Boolean {
         return Settings.canDrawOverlays(context)
@@ -60,7 +61,10 @@ class KittyOverlayManager(private val context: Context) {
             if (!isOverlayAttached || overlayView == null) {
                 attachOverlay()
             }
-            kittyCurtainView?.applyTheme(theme)
+            if (theme != lastAppliedTheme) {
+                lastAppliedTheme = theme
+                kittyCurtainView?.applyTheme(theme)
+            }
             kittyCurtainView?.setDropPercentage(currentDropPercentage, animate = true)
             updateTouchFlags(isFullScreenCovered = currentDropPercentage >= 0.98f)
         }
@@ -81,6 +85,7 @@ class KittyOverlayManager(private val context: Context) {
                 isOverlayAttached = false
                 overlayView = null
                 kittyCurtainView = null
+                lastAppliedTheme = ""
             }
         }
     }
