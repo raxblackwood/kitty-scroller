@@ -86,6 +86,7 @@ class KittyOverlayManager(private val context: Context) {
                 overlayView = null
                 kittyCurtainView = null
                 lastAppliedTheme = ""
+                lastFullScreenCovered = null
             }
         }
     }
@@ -124,7 +125,12 @@ class KittyOverlayManager(private val context: Context) {
         }
     }
 
+    private var lastFullScreenCovered: Boolean? = null
+
     private fun updateTouchFlags(isFullScreenCovered: Boolean) {
+        if (lastFullScreenCovered == isFullScreenCovered) return
+        lastFullScreenCovered = isFullScreenCovered
+
         val view = overlayView ?: return
         try {
             val params = view.layoutParams as? WindowManager.LayoutParams ?: return

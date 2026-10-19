@@ -2,6 +2,8 @@ package com.antiscroller.kitty.data
 
 import android.content.Context
 import android.content.SharedPreferences
+import android.os.Handler
+import android.os.Looper
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -14,6 +16,26 @@ class ScrollDataManager(context: Context) {
 
     private val prefs: SharedPreferences =
         context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+
+    @Volatile
+    private var inMemoryScrollCount: Int = -1
+    @Volatile
+    private var inMemoryAccumulatedPx: Float = -1f
+    @Volatile
+    private var inMemoryMaxScrolls: Int = -1
+
+    private val saveHandler = Handler(Looper.getMainLooper())
+    private val saveRunnable = Runnable {
+        prefs.edit()
+            .putFloat(KEY_ACCUMULATED_PX, inMemoryAccumulatedPx)
+            .putInt(KEY_SCROLL_COUNT, inMemoryScrollCount)
+            .apply()
+    }
+
+    private fun scheduleDebouncedSave() {
+        saveHandler.removeCallbacks(saveRunnable)
+        saveHandler.postDelayed(saveRunnable, 500)
+    }
 
     companion object {
         private const val PREFS_NAME = "anti_scroller_prefs"
@@ -49,6 +71,9 @@ class ScrollDataManager(context: Context) {
 
     init {
         checkAndPerformMidnightReset()
+        inMemoryScrollCount = prefs.getInt(KEY_SCROLL_COUNT, 0)
+        inMemoryAccumulatedPx = prefs.getFloat(KEY_ACCUMULATED_PX, 0f)
+        inMemoryMaxScrolls = prefs.getInt(KEY_MAX_SCROLLS, DEFAULT_MAX_SCROLLS)
     }
 
     private fun getTodayDateString(): String = dateFormat.format(Date())
@@ -60,6 +85,8 @@ class ScrollDataManager(context: Context) {
         val today = getTodayDateString()
         val lastDate = prefs.getString(KEY_LAST_DATE, "") ?: ""
         if (today != lastDate) {
+            inMemoryScrollCount = 0
+            inMemoryAccumulatedPx = 0f
             prefs.edit()
                 .putString(KEY_LAST_DATE, today)
                 .putInt(KEY_SCROLL_COUNT, 0)
@@ -73,25 +100,40 @@ class ScrollDataManager(context: Context) {
     var dailyScrollCount: Int
         get() {
             checkAndPerformMidnightReset()
-            return prefs.getInt(KEY_SCROLL_COUNT, 0)
+            if (inMemoryScrollCount < 0) {
+                inMemoryScrollCount = prefs.getInt(KEY_SCROLL_COUNT, 0)
+            }
+            return inMemoryScrollCount
         }
         set(value) {
+            inMemoryScrollCount = value
             prefs.edit().putInt(KEY_SCROLL_COUNT, value).apply()
         }
 
     var accumulatedPx: Float
         get() {
             checkAndPerformMidnightReset()
-            return prefs.getFloat(KEY_ACCUMULATED_PX, 0f)
+            if (inMemoryAccumulatedPx < 0f) {
+                inMemoryAccumulatedPx = prefs.getFloat(KEY_ACCUMULATED_PX, 0f)
+            }
+            return inMemoryAccumulatedPx
         }
         set(value) {
+            inMemoryAccumulatedPx = value
             prefs.edit().putFloat(KEY_ACCUMULATED_PX, value).apply()
         }
 
     var maxDailyScrolls: Int
-        get() = prefs.getInt(KEY_MAX_SCROLLS, DEFAULT_MAX_SCROLLS)
+        get() {
+            if (inMemoryMaxScrolls <= 0) {
+                inMemoryMaxScrolls = prefs.getInt(KEY_MAX_SCROLLS, DEFAULT_MAX_SCROLLS)
+            }
+            return inMemoryMaxScrolls
+        }
         set(value) {
-            prefs.edit().putInt(KEY_MAX_SCROLLS, value.coerceAtLeast(10)).apply()
+            val clamped = value.coerceAtLeast(10)
+            inMemoryMaxScrolls = clamped
+            prefs.edit().putInt(KEY_MAX_SCROLLS, clamped).apply()
         }
 
     var isSmartFrictionEnabled: Boolean
@@ -187,7 +229,7 @@ class ScrollDataManager(context: Context) {
         checkAndPerformMidnightReset()
         if (screenHeightPx <= 0) return getDropPercentage()
 
-        var currentAcc = accumulatedPx + pixels
+        var currentAcc = inMemoryAccumulatedPx + pixels
         var reelsToAdd = 0
 
         while (currentAcc >= screenHeightPx) {
@@ -195,10 +237,18 @@ class ScrollDataManager(context: Context) {
             reelsToAdd++
         }
 
-        prefs.edit()
-            .putFloat(KEY_ACCUMULATED_PX, currentAcc)
-            .putInt(KEY_SCROLL_COUNT, dailyScrollCount + reelsToAdd)
-            .apply()
+        inMemoryAccumulatedPx = currentAcc
+        inMemoryScrollCount += reelsToAdd
+
+        if (reelsToAdd > 0) {
+            saveHandler.removeCallbacks(saveRunnable)
+            prefs.edit()
+                .putFloat(KEY_ACCUMULATED_PX, currentAcc)
+                .putInt(KEY_SCROLL_COUNT, inMemoryScrollCount)
+                .apply()
+        } else {
+            scheduleDebouncedSave()
+        }
 
         return getDropPercentage(screenHeightPx)
     }
@@ -209,19 +259,20 @@ class ScrollDataManager(context: Context) {
     @Synchronized
     fun addSingleScrollReel(screenHeightPx: Int = 0): Float {
         checkAndPerformMidnightReset()
+        inMemoryScrollCount += 1
+        saveHandler.removeCallbacks(saveRunnable)
         prefs.edit()
-            .putInt(KEY_SCROLL_COUNT, dailyScrollCount + 1)
+            .putInt(KEY_SCROLL_COUNT, inMemoryScrollCount)
             .apply()
         return getDropPercentage(screenHeightPx)
     }
 
     fun getDropPercentage(screenHeightPx: Int = 0): Float {
-        val count = dailyScrollCount
-        val max = maxDailyScrolls
-        if (max <= 0) return 0f
+        val count = inMemoryScrollCount.coerceAtLeast(0)
+        val max = inMemoryMaxScrolls.coerceAtLeast(1)
 
-        val fractionOfCurrentReel = if (screenHeightPx > 0) {
-            accumulatedPx / screenHeightPx.toFloat()
+        val fractionOfCurrentReel = if (screenHeightPx > 0 && inMemoryAccumulatedPx > 0f) {
+            inMemoryAccumulatedPx / screenHeightPx.toFloat()
         } else 0f
 
         val totalEffectiveReels = count.toFloat() + fractionOfCurrentReel
@@ -233,6 +284,9 @@ class ScrollDataManager(context: Context) {
     }
 
     fun resetDailyCount() {
+        inMemoryScrollCount = 0
+        inMemoryAccumulatedPx = 0f
+        saveHandler.removeCallbacks(saveRunnable)
         prefs.edit()
             .putInt(KEY_SCROLL_COUNT, 0)
             .putFloat(KEY_ACCUMULATED_PX, 0f)

@@ -37,6 +37,19 @@ class KittyAccessibilityService : AccessibilityService() {
     private var lastInstagramIndex: Int = -1
     private var lastYouTubeIndex: Int = -1
 
+    private var pendingDropPercentage: Float? = null
+    private val overlayUpdateRunnable = Runnable {
+        val pct = pendingDropPercentage ?: return@Runnable
+        pendingDropPercentage = null
+        overlayManager.showOrUpdateOverlay(pct)
+    }
+
+    private fun scheduleOverlayUpdate(dropPercentage: Float) {
+        pendingDropPercentage = dropPercentage
+        mainHandler.removeCallbacks(overlayUpdateRunnable)
+        mainHandler.post(overlayUpdateRunnable)
+    }
+
     override fun onServiceConnected() {
         super.onServiceConnected()
         dataManager = ScrollDataManager.getInstance(this)
@@ -430,10 +443,7 @@ class KittyAccessibilityService : AccessibilityService() {
 
         Log.d(TAG, "Forward scroll applied on $packageName: +$pixelsToAdd px (dy=$deltaY, dx=$deltaX)")
         val newDropPercentage = dataManager.addScrollPixels(pixelsToAdd, screenHeight)
-
-        mainHandler.post {
-            overlayManager.showOrUpdateOverlay(newDropPercentage)
-        }
+        scheduleOverlayUpdate(newDropPercentage)
     }
 
     private fun handleViewClicked(packageName: String, event: AccessibilityEvent) {

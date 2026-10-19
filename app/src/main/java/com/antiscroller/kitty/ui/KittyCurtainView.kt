@@ -116,8 +116,13 @@ class KittyCurtainView @JvmOverloads constructor(
         style = Paint.Style.STROKE
     }
 
+    // Reusable geometry objects to prevent GC churn during fast scrolling
+    private val curtainPath = Path()
+    private val catRect = RectF()
+    private val bubbleRect = RectF()
+    private val pointerPath = Path()
+
     init {
-        setLayerType(LAYER_TYPE_SOFTWARE, null)
         applyTheme("orange")
         startAnimations()
     }
@@ -273,22 +278,21 @@ class KittyCurtainView @JvmOverloads constructor(
     private fun drawCurtainBody(canvas: Canvas, w: Float, h: Float) {
         if (h <= 0f) return
 
-        val path = Path().apply {
-            moveTo(0f, 0f)
-            lineTo(w, 0f)
-            val scallops = 6
-            val step = w / scallops
-            lineTo(w, h)
-            for (i in scallops downTo 1) {
-                val startX = i * step
-                val endX = (i - 1) * step
-                val midX = (startX + endX) / 2f
-                val waveDepth = 12f
-                quadTo(midX, h + waveDepth, endX, h)
-            }
-            close()
+        curtainPath.reset()
+        curtainPath.moveTo(0f, 0f)
+        curtainPath.lineTo(w, 0f)
+        val scallops = 6
+        val step = w / scallops
+        curtainPath.lineTo(w, h)
+        for (i in scallops downTo 1) {
+            val startX = i * step
+            val endX = (i - 1) * step
+            val midX = (startX + endX) / 2f
+            val waveDepth = 12f
+            curtainPath.quadTo(midX, h + waveDepth, endX, h)
         }
-        canvas.drawPath(path, curtainBodyPaint)
+        curtainPath.close()
+        canvas.drawPath(curtainPath, curtainBodyPaint)
 
         // Vertical decorative pleats / stripes
         val pleats = 5
@@ -306,7 +310,7 @@ class KittyCurtainView @JvmOverloads constructor(
         val catLeft = centerX - (catW / 2f)
         // Align paws/bar with hemY
         val catTop = hemY - (catH * 0.045f)
-        val catRect = RectF(catLeft, catTop, catLeft + catW, catTop + catH)
+        catRect.set(catLeft, catTop, catLeft + catW, catTop + catH)
 
         canvas.save()
         // 1. Gentle body sway around paws holding the bar
@@ -409,7 +413,7 @@ class KittyCurtainView @JvmOverloads constructor(
         val bubbleBottom = (hemY - 16f).coerceAtLeast(36f + bubbleH)
         val bubbleTop = bubbleBottom - bubbleH
 
-        val bubbleRect = RectF(
+        bubbleRect.set(
             centerX - (bubbleW / 2f),
             bubbleTop,
             centerX + (bubbleW / 2f),
@@ -417,12 +421,11 @@ class KittyCurtainView @JvmOverloads constructor(
         )
 
         // Triangular pointer pointing DOWN towards Kitty's hands at hemY
-        val pointerPath = Path().apply {
-            moveTo(centerX - 10f, bubbleBottom)
-            lineTo(centerX, (bubbleBottom + 9f).coerceAtMost(hemY))
-            lineTo(centerX + 10f, bubbleBottom)
-            close()
-        }
+        pointerPath.reset()
+        pointerPath.moveTo(centerX - 10f, bubbleBottom)
+        pointerPath.lineTo(centerX, (bubbleBottom + 9f).coerceAtMost(hemY))
+        pointerPath.lineTo(centerX + 10f, bubbleBottom)
+        pointerPath.close()
 
         canvas.drawRoundRect(bubbleRect, 18f, 18f, speechBubblePaint)
         canvas.drawPath(pointerPath, speechBubblePaint)
