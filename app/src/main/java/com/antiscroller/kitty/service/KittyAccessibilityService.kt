@@ -254,8 +254,12 @@ class KittyAccessibilityService : AccessibilityService() {
 
             val screenHeight = resources.displayMetrics.heightPixels
             val dropPercentage = dataManager.getDropPercentage(screenHeight)
-            mainHandler.post {
-                overlayManager.showOrUpdateOverlay(dropPercentage)
+            if (dropPercentage <= 0.0001f) {
+                mainHandler.post { overlayManager.hideOverlay() }
+            } else {
+                mainHandler.post {
+                    overlayManager.showOrUpdateOverlay(dropPercentage)
+                }
             }
             return
         }
@@ -272,8 +276,12 @@ class KittyAccessibilityService : AccessibilityService() {
             if (inShorts || (miniplayerActive && dataManager.isLimitReached())) {
                 val screenHeight = resources.displayMetrics.heightPixels
                 val dropPercentage = dataManager.getDropPercentage(screenHeight)
-                mainHandler.post {
-                    overlayManager.showOrUpdateOverlay(dropPercentage)
+                if (dropPercentage <= 0.0001f) {
+                    mainHandler.post { overlayManager.hideOverlay() }
+                } else {
+                    mainHandler.post {
+                        overlayManager.showOrUpdateOverlay(dropPercentage)
+                    }
                 }
             } else {
                 mainHandler.post {

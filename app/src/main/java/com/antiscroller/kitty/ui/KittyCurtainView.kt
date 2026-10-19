@@ -67,7 +67,7 @@ class KittyCurtainView @JvmOverloads constructor(
 
     private var currentBreed: CatBreed = CatBreed.ORANGE
     private var dropPercentage: Float = 0f
-    private var animatedHeight: Float = 0f
+    private var animatedProgress: Float = 0f
     private var animator: ValueAnimator? = null
 
     // Tail wagging animation offset
@@ -144,37 +144,23 @@ class KittyCurtainView @JvmOverloads constructor(
         }
     }
 
-    private fun computeTargetHeight(fraction: Float, totalH: Float): Float {
-        if (totalH <= 0f) return 0f
-
-        // At 0 scrolls: curtain is strictly at the ceiling (0px down)
-        if (fraction <= 0.0001f) {
-            return 0f
-        }
-
-        // When scrolling starts, ensure curtain clears the status bar cutout (~135px)
-        // and scales smoothly to 100% of screen height at fraction = 1.0
-        val minVisibleHeight = 135f
-        return minVisibleHeight + (fraction * (totalH - minVisibleHeight))
-    }
-
     fun setDropPercentage(target: Float, animate: Boolean = true) {
         val clamped = target.coerceIn(0f, 1f)
         dropPercentage = clamped
-        val targetH = computeTargetHeight(clamped, height.toFloat())
 
         if (!animate || height == 0) {
-            animatedHeight = targetH
+            animator?.cancel()
+            animatedProgress = clamped
             invalidate()
             return
         }
 
         animator?.cancel()
-        animator = ValueAnimator.ofFloat(animatedHeight, targetH).apply {
-            duration = 400
-            interpolator = OvershootInterpolator(0.8f)
+        animator = ValueAnimator.ofFloat(animatedProgress, clamped).apply {
+            duration = 420
+            interpolator = OvershootInterpolator(0.7f)
             addUpdateListener {
-                animatedHeight = it.animatedValue as Float
+                animatedProgress = it.animatedValue as Float
                 invalidate()
             }
             start()
@@ -183,31 +169,49 @@ class KittyCurtainView @JvmOverloads constructor(
 
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
         super.onSizeChanged(w, h, oldw, oldh)
-        animatedHeight = computeTargetHeight(dropPercentage, h.toFloat())
         invalidate()
     }
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
 
+        val progress = animatedProgress
+        // At 0 scrolls: curtain and Kitty remain strictly hidden at ceiling (0px)
+        if (progress <= 0.0001f) return
+
         val totalW = width.toFloat()
-        val currentH = animatedHeight
-        if (currentH <= 0f) return
+        val totalH = height.toFloat()
+        if (totalW <= 0f || totalH <= 0f) return
 
         val centerX = totalW / 2f
 
-        // Draw stretched curtain body from ceiling down to currentH
-        drawCurtainBody(canvas, totalW, currentH)
+        // Kitty vertical center: descends steadily as a warning indicator (from 160px down to ~82% of screen)
+        val minKittyY = 160f
+        val maxKittyY = totalH * 0.82f
+        val kittyY = minKittyY + (progress * (maxKittyY - minKittyY))
 
-        // Draw Kitty Face & Paws
-        if (dropPercentage >= 0.96f) {
-            drawFullSleepyCat(canvas, currentH, centerX)
+        // Solid blocking curtain: unrolls strictly in the final 20% before limit lock (progress > 0.80)
+        val curtainH = if (progress > 0.80f) {
+            val curtainProgress = ((progress - 0.80f) / 0.20f).coerceIn(0f, 1f)
+            curtainProgress * totalH
         } else {
-            drawSlidingKitty(canvas, currentH, centerX)
+            0f
         }
 
-        // Draw Speech Bubble
-        drawSpeechBubble(canvas, currentH, centerX)
+        // Draw solid curtain fabric from ceiling down if in final 20%
+        if (curtainH > 0f) {
+            drawCurtainBody(canvas, totalW, curtainH)
+        }
+
+        // Draw Kitty Face & Paws (transition to Sleepy Cat loaf at 96%+)
+        if (progress >= 0.96f) {
+            drawFullSleepyCat(canvas, totalH, centerX)
+        } else {
+            drawSlidingKitty(canvas, kittyY, centerX, curtainH, progress)
+        }
+
+        // Draw Speech Bubble above Kitty's ears
+        drawSpeechBubble(canvas, kittyY, centerX, progress)
     }
 
     private fun drawCurtainBody(canvas: Canvas, w: Float, h: Float) {
@@ -236,15 +240,15 @@ class KittyCurtainView @JvmOverloads constructor(
         }
     }
 
-    private fun drawSlidingKitty(canvas: Canvas, h: Float, centerX: Float) {
+    private fun drawSlidingKitty(canvas: Canvas, kittyY: Float, centerX: Float, curtainH: Float, progress: Float) {
         val headRadius = 75f
-        val headCenterY = (h - 40f).coerceAtLeast(headRadius + 20f)
+        val headCenterY = kittyY
 
-        // 1. Paws holding ceiling
-        drawTopPaws(canvas, centerX)
-
-        if (dropPercentage <= 0.001f && h < 100f) {
-            return
+        // 1. Paws holding shade cords (0-80%) or bottom curtain hem (80-100%)
+        if (curtainH > 0f) {
+            drawCurtainPaws(canvas, centerX, curtainH)
+        } else {
+            drawPullCordsAndPaws(canvas, centerX, kittyY)
         }
 
         // 2. Ears
@@ -355,24 +359,39 @@ class KittyCurtainView @JvmOverloads constructor(
         drawBottomPawsAndTail(canvas, centerX, headCenterY + headRadius)
     }
 
-    private fun drawTopPaws(canvas: Canvas, centerX: Float) {
-        val leftPawRect = RectF(centerX - 100f, 0f, centerX - 55f, 28f)
-        canvas.drawRoundRect(leftPawRect, 14f, 14f, pawPaint)
-        val rightPawRect = RectF(centerX + 55f, 0f, centerX + 100f, 28f)
-        canvas.drawRoundRect(rightPawRect, 14f, 14f, pawPaint)
+    private fun drawPullCordsAndPaws(canvas: Canvas, centerX: Float, kittyY: Float) {
+        val cordPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = if (currentBreed == CatBreed.BLACK) Color.parseColor("#80B0BEC5") else Color.parseColor("#908D6E63")
+            strokeWidth = 3f
+            style = Paint.Style.STROKE
+        }
 
-        val clawPaint = if (currentBreed == CatBreed.BLACK) {
-            Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                color = Color.parseColor("#FF80AB") // Cute pink claws/pads
-                strokeWidth = 3f
-                strokeCap = Paint.Cap.ROUND
-            }
-        } else strokePaint
+        val pawTop = kittyY - 78f
+        // Pull cords extending from ceiling down to paws
+        canvas.drawLine(centerX - 68f, 0f, centerX - 68f, pawTop, cordPaint)
+        canvas.drawLine(centerX + 68f, 0f, centerX + 68f, pawTop, cordPaint)
 
-        canvas.drawLine(centerX - 85f, 20f, centerX - 85f, 26f, clawPaint)
-        canvas.drawLine(centerX - 70f, 20f, centerX - 70f, 26f, clawPaint)
-        canvas.drawLine(centerX + 70f, 20f, centerX + 70f, 26f, clawPaint)
-        canvas.drawLine(centerX + 85f, 20f, centerX + 85f, 26f, clawPaint)
+        // Little bead on cords
+        val beadPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = if (currentBreed == CatBreed.BLACK) Color.parseColor("#FFD600") else Color.parseColor("#FF8A65")
+            style = Paint.Style.FILL
+        }
+        canvas.drawCircle(centerX - 68f, pawTop - 8f, 6f, beadPaint)
+        canvas.drawCircle(centerX + 68f, pawTop - 8f, 6f, beadPaint)
+
+        // Paws gripping the cords
+        val leftPawRect = RectF(centerX - 82f, pawTop, centerX - 54f, pawTop + 24f)
+        val rightPawRect = RectF(centerX + 54f, pawTop, centerX + 82f, pawTop + 24f)
+        canvas.drawRoundRect(leftPawRect, 12f, 12f, pawPaint)
+        canvas.drawRoundRect(rightPawRect, 12f, 12f, pawPaint)
+    }
+
+    private fun drawCurtainPaws(canvas: Canvas, centerX: Float, curtainH: Float) {
+        val pawTop = (curtainH - 12f).coerceAtLeast(0f)
+        val leftPawRect = RectF(centerX - 85f, pawTop, centerX - 55f, pawTop + 26f)
+        val rightPawRect = RectF(centerX + 55f, pawTop, centerX + 85f, pawTop + 26f)
+        canvas.drawRoundRect(leftPawRect, 12f, 12f, pawPaint)
+        canvas.drawRoundRect(rightPawRect, 12f, 12f, pawPaint)
     }
 
     private fun drawBottomPawsAndTail(canvas: Canvas, centerX: Float, bottomY: Float) {
@@ -396,8 +415,8 @@ class KittyCurtainView @JvmOverloads constructor(
         canvas.restore()
     }
 
-    private fun drawFullSleepyCat(canvas: Canvas, h: Float, centerX: Float) {
-        val catY = h * 0.45f
+    private fun drawFullSleepyCat(canvas: Canvas, totalH: Float, centerX: Float) {
+        val catY = totalH * 0.45f
         val loafRect = RectF(centerX - 180f, catY - 100f, centerX + 180f, catY + 110f)
         canvas.drawRoundRect(loafRect, 90f, 90f, furPaint)
 
@@ -447,18 +466,17 @@ class KittyCurtainView @JvmOverloads constructor(
         canvas.drawText("z", centerX + 155f, catY - 105f, zPaint)
     }
 
-    private fun drawSpeechBubble(canvas: Canvas, h: Float, centerX: Float) {
-        if (dropPercentage <= 0.001f) return
+    private fun drawSpeechBubble(canvas: Canvas, kittyY: Float, centerX: Float, progress: Float) {
+        if (progress <= 0.001f) return
 
         val message = when {
-            dropPercentage < 0.25f -> if (currentBreed == CatBreed.BLACK) "Void cat is watching you... 🐈‍⬛" else "Peek-a-boo! Scrolling already? 🐾"
-            dropPercentage < 0.50f -> "Sliding down... maybe read a book? 📖"
-            dropPercentage < 0.75f -> "Half the screen is Kitty now! 😼"
-            dropPercentage < 0.95f -> "Heavy doomscroll alert! Purr-ceed carefully! ⚠️"
+            progress < 0.25f -> if (currentBreed == CatBreed.BLACK) "Void cat is watching you... 🐈‍⬛" else "Peek-a-boo! Scrolling already? 🐾"
+            progress < 0.50f -> "Sliding down... maybe read a book? 📖"
+            progress < 0.75f -> "Halfway there! Take a breath! 😼"
+            progress < 0.95f -> "Curtain closing! Final scrolls remaining! ⚠️"
             else -> "STOPPED! Daily scroll limit reached! 💤"
         }
 
-        // Adjust text size dynamically to avoid overflowing screen margins
         textPaint.textSize = 30f
         var textWidth = textPaint.measureText(message)
         val maxAvailableW = width.toFloat() - 60f
@@ -470,29 +488,21 @@ class KittyCurtainView @JvmOverloads constructor(
         val bubbleW = (textWidth + 60f).coerceAtMost(maxAvailableW)
         val bubbleH = 56f
 
-        // Position text strictly ON the curtain, ABOVE Kitty's head & ears
-        val earTipY = if (dropPercentage >= 0.96f) {
-            h * 0.45f - 100f // Above sleepy cat loaf
+        // Position text strictly above Kitty's head & ears
+        val earTipY = if (progress >= 0.96f) {
+            height.toFloat() * 0.45f - 100f // Above sleepy cat loaf
         } else {
             val headRadius = 75f
             val earSize = 45f
-            val headCenterY = (h - 40f).coerceAtLeast(headRadius + 20f)
-            headCenterY - headRadius - earSize // Top tip of ears
+            kittyY - headRadius - earSize // Top tip of ears
         }
 
-        // Only display once the curtain has dropped enough to fit the bubble above the head
         if (earTipY < 40f) {
             return
         }
 
-        // Bottom of the bubble rests right above Kitty's ears
         val bubbleBottom = (earTipY - 14f)
         val bubbleY = (bubbleBottom - bubbleH).coerceAtLeast(34f)
-
-        // Ensure bubble is completely contained on the curtain
-        if (bubbleY + bubbleH > h) {
-            return
-        }
 
         val bubbleRect = RectF(
             centerX - (bubbleW / 2f),
