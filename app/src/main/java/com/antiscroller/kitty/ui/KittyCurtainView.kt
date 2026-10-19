@@ -116,22 +116,14 @@ class KittyCurtainView @JvmOverloads constructor(
         style = Paint.Style.STROKE
     }
 
-    // Horizontal pole paints (stretching across the screen)
-    private val poleBasePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+    // Horizontal pole paints (matching pixel-art sprite bar)
+    private val poleOutlinePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.FILL
-        color = Color.parseColor("#3E2723") // Deep shadow
+        color = Color.parseColor("#120A05") // Dark pixel-art border
     }
     private val poleBodyPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.FILL
-        color = Color.parseColor("#6D4C41") // Warm wood body
-    }
-    private val poleHighlightPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        style = Paint.Style.FILL
-        color = Color.parseColor("#A1887F") // Wood sheen highlight
-    }
-    private val poleCapPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        style = Paint.Style.FILL
-        color = Color.parseColor("#8D6E63") // End caps
+        color = Color.parseColor("#8F5E40") // Wood body (updated in applyTheme)
     }
 
     // Reusable geometry objects to prevent GC churn during fast scrolling
@@ -167,6 +159,7 @@ class KittyCurtainView @JvmOverloads constructor(
         textPaint.color = currentBreed.speechTextColor
         curtainBodyPaint.color = currentBreed.curtainBodyColor
         stripePaint.color = currentBreed.curtainStripeColor
+        poleBodyPaint.color = if (newBreed == CatBreed.BLACK) Color.parseColor("#8A5F4A") else Color.parseColor("#8F5E40")
 
         if (needsBitmapReload) {
             loadCatBitmaps(themeName)
@@ -285,7 +278,7 @@ class KittyCurtainView @JvmOverloads constructor(
         if (hemY > 0f) {
             drawCurtainBody(canvas, totalW, hemY)
             // Draw horizontal pole stretching across the entire screen
-            drawHorizontalPole(canvas, totalW, hemY)
+            drawHorizontalPole(canvas, totalW, hemY, catH)
         }
 
         // 2. Draw Hanging Cat sprite (body with gentle sway, tail with active wagging)
@@ -295,23 +288,19 @@ class KittyCurtainView @JvmOverloads constructor(
         drawSpeechBubble(canvas, hemY, centerX, progress)
     }
 
-    private fun drawHorizontalPole(canvas: Canvas, w: Float, hemY: Float) {
-        val poleThickness = 16f
-        val poleTop = hemY - (poleThickness / 2f)
-        val poleBottom = hemY + (poleThickness / 2f)
+    private fun drawHorizontalPole(canvas: Canvas, w: Float, hemY: Float, catH: Float) {
+        val catTop = hemY - (catH * (51f / 1162f))
+        val poleTop = catTop + (catH * (30f / 1162f))
+        val poleWoodTop = catTop + (catH * (41f / 1162f))
+        val poleWoodBottom = catTop + (catH * (62f / 1162f))
+        val poleBottom = catTop + (catH * (72f / 1162f))
 
-        // 1. Pole shadow / base
-        canvas.drawRect(0f, poleTop, w, poleBottom, poleBasePaint)
-
-        // 2. Pole main wooden body
-        canvas.drawRect(0f, poleTop + 2f, w, poleBottom - 2f, poleBodyPaint)
-
-        // 3. Pole top highlight (wood sheen)
-        canvas.drawRect(0f, poleTop + 2f, w, poleTop + 6f, poleHighlightPaint)
-
-        // 4. Pole metallic / rounded brass finials / caps on the edges
-        canvas.drawCircle(8f, hemY, poleThickness * 0.65f, poleCapPaint)
-        canvas.drawCircle(w - 8f, hemY, poleThickness * 0.65f, poleCapPaint)
+        // 1. Pole top black border matching pixel art outline
+        canvas.drawRect(0f, poleTop, w, poleWoodTop, poleOutlinePaint)
+        // 2. Pole main wooden body matching sprite wood tone
+        canvas.drawRect(0f, poleWoodTop, w, poleWoodBottom, poleBodyPaint)
+        // 3. Pole bottom black border matching pixel art outline
+        canvas.drawRect(0f, poleWoodBottom, w, poleBottom, poleOutlinePaint)
     }
 
     private fun drawCurtainBody(canvas: Canvas, w: Float, h: Float) {
@@ -347,21 +336,21 @@ class KittyCurtainView @JvmOverloads constructor(
         if (bodyBmp == null || tailBmp == null) return
 
         val catLeft = centerX - (catW / 2f)
-        // Align paws/bar with hemY
-        val catTop = hemY - (catH * 0.045f)
+        // Centerline of the horizontal wooden bar is at y=51 in 1162 sprite space
+        val catTop = hemY - (catH * (51f / 1162f))
         catRect.set(catLeft, catTop, catLeft + catW, catTop + catH)
 
         canvas.save()
         // 1. Gentle body sway around paws holding the bar
         val pawsPivotX = catRect.left + catW * 0.50f
-        val pawsPivotY = catRect.top + catH * 0.045f
+        val pawsPivotY = hemY
         canvas.rotate(swayAngle, pawsPivotX, pawsPivotY)
 
-        // 2. Animated lively wagging tail behind the body
+        // 2. Animated lively wagging tail behind the body (originating from hip root behind crotch)
         canvas.save()
         val isBlack = currentBreed == CatBreed.BLACK
-        val tailPivotXRatio = if (isBlack) 0.7950f else 0.8288f
-        val tailPivotYRatio = if (isBlack) 0.7487f else 0.7375f
+        val tailPivotXRatio = if (isBlack) 0.5207f else 0.5334f
+        val tailPivotYRatio = 0.6885f
         val tailPivotX = catRect.left + catW * tailPivotXRatio
         val tailPivotY = catRect.top + catH * tailPivotYRatio
 
