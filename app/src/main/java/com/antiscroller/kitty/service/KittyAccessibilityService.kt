@@ -428,7 +428,8 @@ class KittyAccessibilityService : AccessibilityService() {
     private fun checkAndApplyUninstallProtection(event: AccessibilityEvent) {
         val rootNode = rootInActiveWindow ?: return
         try {
-            val textNodes = rootNode.findAccessibilityNodeInfosByText("AntiScroller")
+            val textNodes = rootNode.findAccessibilityNodeInfosByText("ClawBack")
+                .plus(rootNode.findAccessibilityNodeInfosByText("AntiScroller"))
             val pkgNodes = rootNode.findAccessibilityNodeInfosByText(packageName)
 
             if (textNodes.isNotEmpty() || pkgNodes.isNotEmpty()) {
@@ -458,7 +459,7 @@ class KittyAccessibilityService : AccessibilityService() {
                         mainHandler.post {
                             Toast.makeText(
                                 applicationContext,
-                                "🐾 Smart Friction: AntiScroller protects your focus! All your other apps remain fully accessible.",
+                                "🐾 Smart Friction: ClawBack protects your focus! All your other apps remain fully accessible.",
                                 Toast.LENGTH_LONG
                             ).show()
                         }

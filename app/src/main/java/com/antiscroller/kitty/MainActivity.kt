@@ -128,7 +128,7 @@ class MainActivity : AppCompatActivity() {
             startActivity(intent)
             Toast.makeText(
                 this,
-                "Find 'AntiScroller Kitty' under Downloaded Apps and turn it ON",
+                "Find 'ClawBack' under Downloaded Apps and turn it ON",
                 Toast.LENGTH_LONG
             ).show()
         }

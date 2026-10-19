@@ -17,7 +17,7 @@ class KittyAdminReceiver : DeviceAdminReceiver() {
         super.onEnabled(context, intent)
         Toast.makeText(
             context,
-            "AntiScroller Protection Enabled! Impulsive uninstall is now guarded.",
+            "ClawBack Protection Enabled! Impulsive uninstall is now guarded.",
             Toast.LENGTH_SHORT
         ).show()
     }
@@ -30,7 +30,7 @@ class KittyAdminReceiver : DeviceAdminReceiver() {
         super.onDisabled(context, intent)
         Toast.makeText(
             context,
-            "AntiScroller Protection Disabled.",
+            "ClawBack Protection Disabled.",
             Toast.LENGTH_SHORT
         ).show()
     }

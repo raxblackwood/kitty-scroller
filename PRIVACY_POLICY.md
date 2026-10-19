@@ -1,28 +1,29 @@
-# Privacy Policy for AntiScroller: Kitty Curtain
+# Privacy Policy for ClawBack: Kitty Screen Curtain
 
-**Last updated:** October 17, 2026
+**Last updated:** October 19, 2026
 
-**AntiScroller: Kitty Curtain** ("AntiScroller", "we", "our", or "the app") is committed to protecting your privacy. This Privacy Policy outlines our strict privacy practices, explains the permissions our Android application requests, and details how user information is handled.
+**ClawBack: Kitty Screen Curtain** ("ClawBack", "we", "our", or "the app") is committed to protecting your privacy. This Privacy Policy outlines our strict privacy practices, explains the permissions our Android application requests, and details how user information is handled.
 
 ---
 
 ### Summary: Zero Data Collection
-**AntiScroller does NOT collect, store, transmit, or share any personal data, usage data, device identifiers, or analytics with any third party or remote server.** The application runs 100% locally and offline on your device.
+**ClawBack does NOT collect, store, transmit, or share any personal data, usage data, device identifiers, or analytics with any third party or remote server.** The application runs 100% locally and offline on your device.
 
 ---
 
 ### Accessibility Service API Disclosure (Google Play Compliance)
 
-AntiScroller uses Android's `AccessibilityService` API solely to deliver its core digital wellbeing functionality.
+ClawBack uses Android's `AccessibilityService` API solely to deliver its core digital wellbeing functionality.
 
-#### 1. Why AntiScroller Requires the Accessibility Service:
-AntiScroller is designed to curb excessive short-form video consumption ("doomscrolling") on targeted apps (specifically Instagram Reels and YouTube Shorts). The Accessibility Service allows the app to detect:
+#### 1. Why ClawBack Requires the Accessibility Service:
+ClawBack is designed to curb excessive short-form video consumption ("doomscrolling") on targeted apps (specifically Instagram Reels and YouTube Shorts). The Accessibility Service allows the app to detect:
 - When a monitored target app (Instagram or YouTube) is running in the foreground.
-- When vertical scroll events occur within short-form feed containers.
+- When vertical scroll events occur within short-form feed containers (Instagram Reels and YouTube Shorts).
 
 #### 2. How the Data is Used:
 - Scroll events are processed **locally in real-time** to compute vertical scroll displacement (e.g., counting reels viewed, where 1 reel corresponds to 1 screen-height of scrolling).
 - When scrolling exceeds your selected threshold, the app triggers a visual curtain overlay to remind you to take a break.
+- Scrolling comments, long-form YouTube videos, the YouTube Home feed, direct messages, and profile pages are strictly ignored and not counted.
 
 #### 3. What We Do NOT Do:
 - **No text, messages, or keystrokes are read, monitored, or saved.**
@@ -53,12 +54,12 @@ AntiScroller is designed to curb excessive short-form video consumption ("doomsc
 ---
 
 ### Third-Party Services
-AntiScroller does **not** include any third-party advertising SDKs, tracking libraries, cloud analytics (such as Google Analytics or Firebase), or external telemetry frameworks.
+ClawBack does **not** include any third-party advertising SDKs, tracking libraries, cloud analytics (such as Google Analytics or Firebase), or external telemetry frameworks.
 
 ---
 
 ### Children's Privacy
-AntiScroller does not collect information from anyone, including children under the age of 13. When used with the Guardian PIN feature, parents have full control over the application settings and limits on their child's device.
+ClawBack does not collect information from anyone, including children under the age of 13. When used with the Guardian PIN feature, parents have full control over the application settings and limits on their child's device.
 
 ---
 
@@ -68,5 +69,5 @@ If we update this Privacy Policy, the revised version will be published here wit
 ---
 
 ### Contact Us
-If you have questions, feedback, or concerns regarding this Privacy Policy or AntiScroller, you can contact us via our GitHub repository:  
+If you have questions, feedback, or concerns regarding this Privacy Policy or ClawBack, you can contact us via our GitHub repository:  
 [https://github.com/raxblackwood/kitty-scroller](https://github.com/raxblackwood/kitty-scroller)
