@@ -34,6 +34,8 @@ class KittyAccessibilityService : AccessibilityService() {
     private val mainHandler = Handler(Looper.getMainLooper())
 
     private var currentForegroundPackage: String = ""
+    private var lastInstagramIndex: Int = -1
+    private var lastYouTubeIndex: Int = -1
 
     override fun onServiceConnected() {
         super.onServiceConnected()
@@ -98,13 +100,20 @@ class KittyAccessibilityService : AccessibilityService() {
     }
 
     /**
-     * Accurately detects if the user is scrolling inside a comments list.
-     * Strictly verifies the scrolling container itself, not individual comment buttons on video posts.
+     * Accurately detects if the user is scrolling inside comments,
+     * or if a comments bottom sheet / engagement panel is open on screen.
      */
-    private fun isCommentSection(sourceNode: AccessibilityNodeInfo?): Boolean {
+    private fun isCommentSectionOrSheet(sourceNode: AccessibilityNodeInfo?): Boolean {
+        // 1. If a comment sheet or bottom sheet is open in the active window, all vertical scrolling is comments!
+        if (isCommentSheetVisibleInWindow()) {
+            return true
+        }
+
         if (sourceNode == null) return false
 
         val sourceId = sourceNode.viewIdResourceName?.lowercase() ?: ""
+        val sourceCls = sourceNode.className?.toString()?.lowercase() ?: ""
+        val sourceDesc = sourceNode.contentDescription?.toString()?.lowercase() ?: ""
 
         // Never mistake the main video scrollers for comments!
         if (sourceId.contains("reel_recycler") ||
@@ -115,48 +124,124 @@ class KittyAccessibilityService : AccessibilityService() {
         }
 
         // Direct check on the scrolling container ID:
-        if (sourceId.contains("comment_thread") ||
-            sourceId.contains("comments_recycler") ||
-            sourceId.contains("layout_comment") ||
-            sourceId.contains("engagement_panel_id_comment") ||
-            sourceId.contains("comment_rows")) {
+        if (isCommentOrSheetIdentifier(sourceId, sourceCls, sourceDesc)) {
             return true
         }
 
-        // Check if the scroller's immediate parent (up to 4 levels) is explicitly a comment sheet container
+        // Deep hierarchy walk (up to 12 levels) looking for comment containers
         var current: AccessibilityNodeInfo? = sourceNode.parent
         var depth = 0
         var isComment = false
 
-        while (current != null && depth < 4) {
+        while (current != null && depth < 12) {
             val parentId = current.viewIdResourceName?.lowercase() ?: ""
-            if (parentId.contains("reel_recycler") || parentId.contains("clips_view_pager")) {
+            val parentCls = current.className?.toString()?.lowercase() ?: ""
+            val parentDesc = current.contentDescription?.toString()?.lowercase() ?: ""
+
+            if (parentId.contains("reel_recycler") || parentId.contains("clips_view_pager") || parentId.contains("feed_recycler")) {
                 current.recycle()
                 return false
             }
-            if (parentId.contains("comment_thread") ||
-                parentId.contains("comments_recycler") ||
-                parentId.contains("engagement_panel_id_comment") ||
-                parentId.contains("layout_comment_thread")) {
+
+            if (isCommentOrSheetIdentifier(parentId, parentCls, parentDesc)) {
                 isComment = true
                 current.recycle()
                 break
             }
-            val parent = current.parent
+
+            val nextParent = current.parent
             current.recycle()
-            current = parent
+            current = nextParent
             depth++
         }
 
         return isComment
     }
 
+    private fun isCommentOrSheetIdentifier(id: String, cls: String, desc: String): Boolean {
+        return id.contains("comment") ||
+               id.contains("engagement_panel") ||
+               id.contains("panel_content") ||
+               id.contains("bottom_sheet") ||
+               id.contains("touch_container") ||
+               id.contains("design_bottom_sheet") ||
+               id.contains("modal_container") ||
+               id.contains("sheet_container") ||
+               id.contains("reply") ||
+               cls.contains("bottomsheet") ||
+               cls.contains("comment") ||
+               desc.contains("comment")
+    }
+
+    private fun isCommentSheetVisibleInWindow(): Boolean {
+        val root = rootInActiveWindow ?: return false
+        try {
+            // 1. YouTube Engagement Panels (Comments panel)
+            val ytPanelIds = arrayOf(
+                "com.google.android.youtube:id/engagement_panel",
+                "com.google.android.youtube:id/modern_engagement_panel",
+                "com.google.android.youtube:id/engagement_panel_wrapper",
+                "com.google.android.youtube:id/panel_content",
+                "com.google.android.youtube:id/comment_composer"
+            )
+            for (id in ytPanelIds) {
+                val nodes = root.findAccessibilityNodeInfosByViewId(id)
+                for (node in nodes) {
+                    val isVisible = node.isVisibleToUser
+                    node.recycle()
+                    if (isVisible) return true
+                }
+            }
+
+            // 2. Instagram Bottom Sheet / Comment Thread
+            val igSheetIds = arrayOf(
+                "com.instagram.android:id/layout_comment_thread",
+                "com.instagram.android:id/bottom_sheet_container",
+                "com.instagram.android:id/bottom_sheet_container_view",
+                "com.instagram.android:id/comment_composer_edit_text",
+                "com.instagram.android:id/layout_comment_thread_edittext",
+                "com.instagram.android:id/comments_recycler_view",
+                "com.instagram.android:id/touch_container",
+                "com.instagram.android:id/design_bottom_sheet"
+            )
+            for (id in igSheetIds) {
+                val nodes = root.findAccessibilityNodeInfosByViewId(id)
+                for (node in nodes) {
+                    val isVisible = node.isVisibleToUser
+                    node.recycle()
+                    if (isVisible) return true
+                }
+            }
+
+            // 3. Generic comment input prompt visible on screen
+            val commentHints = arrayOf("Add a comment", "Leave a comment", "Reply to")
+            for (hint in commentHints) {
+                val nodes = root.findAccessibilityNodeInfosByText(hint)
+                for (node in nodes) {
+                    val isVisible = node.isVisibleToUser
+                    node.recycle()
+                    if (isVisible) return true
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error checking visible comment sheet: ${e.message}")
+        } finally {
+            root.recycle()
+        }
+        return false
+    }
+
     /**
      * Specifically verifies if a scroll in YouTube is occurring inside YouTube Shorts.
-     * Filters out YouTube Home feed, search results, subscriptions, and long-form video pages.
+     * Filters out YouTube Home feed, search results, subscriptions, and comments.
      */
     private fun isYouTubeShortsScroller(sourceNode: AccessibilityNodeInfo?): Boolean {
         if (sourceNode == null) return false
+
+        // Comments or engagement panels are never Shorts video scrollers
+        if (isCommentSectionOrSheet(sourceNode)) {
+            return false
+        }
 
         val sourceId = sourceNode.viewIdResourceName?.lowercase() ?: ""
         val sourceClass = sourceNode.className?.toString()?.lowercase() ?: ""
@@ -203,10 +288,7 @@ class KittyAccessibilityService : AccessibilityService() {
             depth++
         }
 
-        if (isShorts) return true
-
-        // 4. Fallback check: is Shorts active in the root window?
-        return isYouTubeShortsActive(rootInActiveWindow)
+        return isShorts
     }
 
     /**
@@ -242,9 +324,14 @@ class KittyAccessibilityService : AccessibilityService() {
     private fun handleWindowStateChanged(packageName: String, event: AccessibilityEvent) {
         val className = event.className?.toString() ?: ""
 
+        if (packageName != currentForegroundPackage) {
+            currentForegroundPackage = packageName
+            lastInstagramIndex = -1
+            lastYouTubeIndex = -1
+        }
+
         // 1. Instagram: hide overlay in DMs/Camera, show overlay on Feed / Reels
         if (packageName == ScrollDataManager.PKG_INSTAGRAM) {
-            currentForegroundPackage = packageName
             dataManager.checkAndPerformMidnightReset()
 
             if (isInstagramDmOrCamera(className, event.source)) {
@@ -266,7 +353,6 @@ class KittyAccessibilityService : AccessibilityService() {
 
         // 2. YouTube: show overlay when inside Shorts or when miniplayer is active if limit reached
         if (packageName == ScrollDataManager.PKG_YOUTUBE) {
-            currentForegroundPackage = packageName
             dataManager.checkAndPerformMidnightReset()
 
             val root = rootInActiveWindow
@@ -293,7 +379,6 @@ class KittyAccessibilityService : AccessibilityService() {
 
         // 3. Settings / App Manager (Anti-Uninstall & Guardian Protection)
         if (isSettingsOrInstaller(packageName)) {
-            currentForegroundPackage = packageName
             checkAndApplyUninstallProtection(event)
             mainHandler.post {
                 overlayManager.hideOverlay()
@@ -307,7 +392,6 @@ class KittyAccessibilityService : AccessibilityService() {
             return
         }
 
-        currentForegroundPackage = packageName
         mainHandler.post {
             overlayManager.hideOverlay()
         }
@@ -327,7 +411,8 @@ class KittyAccessibilityService : AccessibilityService() {
         }
 
         // 2. Filter out Comments completely on both Instagram and YouTube!
-        if (isCommentSection(source)) {
+        if (isCommentSectionOrSheet(source)) {
+            Log.d(TAG, "Scroll ignored: Inside comments section or sheet ($packageName)")
             source?.recycle()
             return
         }
@@ -349,17 +434,58 @@ class KittyAccessibilityService : AccessibilityService() {
             return
         }
 
-        val screenHeight = resources.displayMetrics.heightPixels
-        val absDeltaY = Math.abs(deltaY).toFloat()
-
-        // If deltaY is non-zero, use it. If ViewPager fired scroll without reporting deltaY, record fractional reel swipe
-        val pixelsToAdd = if (absDeltaY >= 20f) {
-            absDeltaY
-        } else {
-            screenHeight * 0.35f
+        // CRITICAL: Scrolling UP (backwards/upward swipe to previous content) must NEVER pull the curtain down!
+        // In Android, deltaY < 0 indicates scrolling up.
+        if (deltaY < -10) {
+            Log.d(TAG, "Scroll ignored: User scrolled UP (dy=$deltaY)")
+            val fromIdx = event.fromIndex
+            if (fromIdx >= 0) {
+                if (packageName == ScrollDataManager.PKG_INSTAGRAM) lastInstagramIndex = fromIdx
+                if (packageName == ScrollDataManager.PKG_YOUTUBE) lastYouTubeIndex = fromIdx
+            }
+            return
         }
 
-        Log.d(TAG, "Scroll detected on $packageName: +$pixelsToAdd px (dy=$deltaY, dx=$deltaX)")
+        val screenHeight = resources.displayMetrics.heightPixels
+        val fromIndex = event.fromIndex
+
+        val pixelsToAdd: Float
+        if (deltaY > 15) {
+            // Definite downward/forward scroll
+            pixelsToAdd = deltaY.toFloat()
+            if (fromIndex >= 0) {
+                if (packageName == ScrollDataManager.PKG_INSTAGRAM) lastInstagramIndex = fromIndex
+                if (packageName == ScrollDataManager.PKG_YOUTUBE) lastYouTubeIndex = fromIndex
+            }
+        } else if (fromIndex >= 0) {
+            // deltaY is near zero (e.g. ViewPager page snap). Check if page index actually advanced forward!
+            val lastIndex = if (packageName == ScrollDataManager.PKG_INSTAGRAM) lastInstagramIndex else lastYouTubeIndex
+            if (lastIndex < 0) {
+                // First event seen in session: seed initial index without adding pixels
+                if (packageName == ScrollDataManager.PKG_INSTAGRAM) lastInstagramIndex = fromIndex
+                if (packageName == ScrollDataManager.PKG_YOUTUBE) lastYouTubeIndex = fromIndex
+                return
+            }
+            if (fromIndex > lastIndex) {
+                // Page advanced forward to the next reel/short!
+                val diff = (fromIndex - lastIndex).coerceAtMost(3)
+                if (packageName == ScrollDataManager.PKG_INSTAGRAM) lastInstagramIndex = fromIndex
+                if (packageName == ScrollDataManager.PKG_YOUTUBE) lastYouTubeIndex = fromIndex
+                pixelsToAdd = screenHeight * diff * 0.85f
+                Log.i(TAG, "Reel page advanced: $lastIndex -> $fromIndex (+$pixelsToAdd px)")
+            } else {
+                // fromIndex <= lastIndex: page did not advance, or user swiped up to a previous reel
+                if (packageName == ScrollDataManager.PKG_INSTAGRAM) lastInstagramIndex = fromIndex
+                if (packageName == ScrollDataManager.PKG_YOUTUBE) lastYouTubeIndex = fromIndex
+                Log.d(TAG, "Scroll ignored: Page did not advance forward ($lastIndex -> $fromIndex, dy=$deltaY)")
+                return
+            }
+        } else {
+            // deltaY near zero and no fromIndex: do NOT blindly add pixels
+            return
+        }
+
+        Log.d(TAG, "Forward scroll applied on $packageName: +$pixelsToAdd px (dy=$deltaY, dx=$deltaX)")
         val newDropPercentage = dataManager.addScrollPixels(pixelsToAdd, screenHeight)
 
         mainHandler.post {
