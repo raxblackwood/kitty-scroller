@@ -236,8 +236,8 @@ class KittyCurtainView @JvmOverloads constructor(
             return
         }
 
-        // Cat display sizing based on screen width
-        val catW = (totalW * 0.50f).coerceIn(400f, 620f)
+        // Cat display sizing scaled down to ~1/3.5 of previous size (between 1/3 and 1/4)
+        val catW = (totalW * 0.14f).coerceIn(135f, 165f)
         val catH = catW / 0.54f // 628 / 1162 ≈ 0.54f
 
         // hemY is where the curtain ends and Kitty's paws/bar grip:
