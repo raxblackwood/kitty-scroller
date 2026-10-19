@@ -152,8 +152,10 @@ class KittyCurtainView @JvmOverloads constructor(
             return 0f
         }
 
-        // Drops down smoothly from 0 to totalH proportionally to scrolls
-        return fraction * totalH
+        // When scrolling starts, ensure curtain clears the status bar cutout (~135px)
+        // and scales smoothly to 100% of screen height at fraction = 1.0
+        val minVisibleHeight = 135f
+        return minVisibleHeight + (fraction * (totalH - minVisibleHeight))
     }
 
     fun setDropPercentage(target: Float, animate: Boolean = true) {

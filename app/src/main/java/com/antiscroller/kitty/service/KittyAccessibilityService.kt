@@ -34,7 +34,6 @@ class KittyAccessibilityService : AccessibilityService() {
     private val mainHandler = Handler(Looper.getMainLooper())
 
     private var currentForegroundPackage: String = ""
-    private var isInNonDoomscrollMode: Boolean = false
 
     override fun onServiceConnected() {
         super.onServiceConnected()
@@ -77,55 +76,21 @@ class KittyAccessibilityService : AccessibilityService() {
     }
 
     /**
-     * Determines whether the user is on a non-doomscroll surface:
-     * - Direct Messages / Chat / Inbox
-     * - Tab bar switching
-     * - Profile / Account / Settings
-     * - Story creator / Camera
-     * - Share trays, Likers list, Audio pages
+     * Determines whether the user is on Instagram DMs or Story camera (non-doomscroll).
      */
-    private fun isNonDoomscrollSurface(className: String, sourceNode: AccessibilityNodeInfo?): Boolean {
-        // 1. DMs, Chat, Inbox, Threads, Messages
+    private fun isInstagramDmOrCamera(className: String, sourceNode: AccessibilityNodeInfo?): Boolean {
         if (className.contains("Direct", ignoreCase = true) ||
             className.contains("Message", ignoreCase = true) ||
-            className.contains("Thread", ignoreCase = true) ||
             className.contains("Inbox", ignoreCase = true) ||
-            className.contains("Chat", ignoreCase = true) ||
+            className.contains("StoryCamera", ignoreCase = true) ||
             className.contains("TransparentModalActivity", ignoreCase = true)) {
             return true
         }
 
-        // 2. Profile / Account / Story Camera / Settings / Share / Audio
-        if (className.contains("Profile", ignoreCase = true) ||
-            className.contains("EditProfile", ignoreCase = true) ||
-            className.contains("Account", ignoreCase = true) ||
-            className.contains("Setting", ignoreCase = true) ||
-            className.contains("StoryCamera", ignoreCase = true) ||
-            className.contains("Share", ignoreCase = true) ||
-            className.contains("Audio", ignoreCase = true) ||
-            className.contains("Music", ignoreCase = true) ||
-            className.contains("Liker", ignoreCase = true)) {
-            return true
-        }
-
-        // 3. View IDs of tab bars, navigation bars, DMs, profiles, share trays
         val viewId = sourceNode?.viewIdResourceName?.lowercase() ?: ""
-        if (viewId.contains("direct") ||
-            viewId.contains("thread") ||
-            viewId.contains("message") ||
-            viewId.contains("inbox") ||
-            viewId.contains("chat") ||
-            viewId.contains("composer") ||
-            viewId.contains("tab_bar") ||
-            viewId.contains("bottom_nav") ||
-            viewId.contains("navigation_bar") ||
-            viewId.contains("profile") ||
-            viewId.contains("action_bar") ||
-            viewId.contains("share") ||
-            viewId.contains("audio") ||
-            viewId.contains("sound") ||
-            viewId.contains("liker") ||
-            viewId.contains("like_count")) {
+        if (viewId.contains("direct_") ||
+            viewId.contains("thread_") ||
+            viewId.contains("message_composer")) {
             return true
         }
 
@@ -133,83 +98,57 @@ class KittyAccessibilityService : AccessibilityService() {
     }
 
     /**
-     * Detects if the current scroll event is happening inside a comments section.
-     * Applies to both Instagram and YouTube:
-     * - Instagram comment threads, bottom sheets, composer trays
-     * - YouTube Shorts comment engagement panels, reply threads
+     * Accurately detects if the user is scrolling inside a comments list.
+     * Strictly verifies the scrolling container itself, not individual comment buttons on video posts.
      */
     private fun isCommentSection(sourceNode: AccessibilityNodeInfo?): Boolean {
         if (sourceNode == null) return false
 
-        // 1. Direct check on the scrolling node
         val sourceId = sourceNode.viewIdResourceName?.lowercase() ?: ""
-        val sourceClass = sourceNode.className?.toString()?.lowercase() ?: ""
-        val sourceDesc = sourceNode.contentDescription?.toString()?.lowercase() ?: ""
 
-        if (sourceId.contains("comment") ||
-            sourceId.contains("engagement_panel") ||
-            sourceId.contains("reply") ||
-            sourceId.contains("replies") ||
-            sourceClass.contains("comment") ||
-            sourceDesc.contains("comment")) {
+        // Never mistake the main video scrollers for comments!
+        if (sourceId.contains("reel_recycler") ||
+            sourceId.contains("clips_view_pager") ||
+            sourceId.contains("vertical_view_pager") ||
+            sourceId.contains("feed_recycler")) {
+            return false
+        }
+
+        // Direct check on the scrolling container ID:
+        if (sourceId.contains("comment_thread") ||
+            sourceId.contains("comments_recycler") ||
+            sourceId.contains("layout_comment") ||
+            sourceId.contains("engagement_panel_id_comment") ||
+            sourceId.contains("comment_rows")) {
             return true
         }
 
-        // 2. Check direct children (e.g. comment item views inside recycler)
-        val checkCount = sourceNode.childCount.coerceAtMost(6)
-        for (i in 0 until checkCount) {
-            val child = sourceNode.getChild(i) ?: continue
-            val childId = child.viewIdResourceName?.lowercase() ?: ""
-            val childDesc = child.contentDescription?.toString()?.lowercase() ?: ""
-            val childText = child.text?.toString()?.lowercase() ?: ""
-            val isComment = childId.contains("comment") ||
-                            childId.contains("reply") ||
-                            childId.contains("engagement_panel") ||
-                            childDesc.contains("comment") ||
-                            childText.contains("add a comment")
-            child.recycle()
-            if (isComment) return true
-        }
-
-        // 3. Walk up the ancestor hierarchy (up to 12 levels)
+        // Check if the scroller's immediate parent (up to 4 levels) is explicitly a comment sheet container
         var current: AccessibilityNodeInfo? = sourceNode.parent
         var depth = 0
-        var isCommentAncestor = false
+        var isComment = false
 
-        while (current != null && depth < 12) {
+        while (current != null && depth < 4) {
             val parentId = current.viewIdResourceName?.lowercase() ?: ""
-            val parentClass = current.className?.toString()?.lowercase() ?: ""
-            val parentDesc = current.contentDescription?.toString()?.lowercase() ?: ""
-
-            if (parentId.contains("comment") ||
-                parentId.contains("engagement_panel") ||
-                parentId.contains("reply") ||
-                parentId.contains("replies") ||
-                parentClass.contains("comment") ||
-                parentDesc.contains("comment")) {
-                isCommentAncestor = true
+            if (parentId.contains("reel_recycler") || parentId.contains("clips_view_pager")) {
+                current.recycle()
+                return false
+            }
+            if (parentId.contains("comment_thread") ||
+                parentId.contains("comments_recycler") ||
+                parentId.contains("engagement_panel_id_comment") ||
+                parentId.contains("layout_comment_thread")) {
+                isComment = true
                 current.recycle()
                 break
             }
-
-            // Check if ancestor contains a "Comments" title or comment composer
-            try {
-                val commentHeaders = current.findAccessibilityNodeInfosByText("Comments")
-                if (commentHeaders.isNotEmpty()) {
-                    for (h in commentHeaders) h.recycle()
-                    isCommentAncestor = true
-                    current.recycle()
-                    break
-                }
-            } catch (_: Exception) {}
-
-            val nextParent = current.parent
+            val parent = current.parent
             current.recycle()
-            current = nextParent
+            current = parent
             depth++
         }
 
-        return isCommentAncestor
+        return isComment
     }
 
     /**
@@ -219,31 +158,29 @@ class KittyAccessibilityService : AccessibilityService() {
     private fun isYouTubeShortsScroller(sourceNode: AccessibilityNodeInfo?): Boolean {
         if (sourceNode == null) return false
 
-        // 1. Explicit check on source node
         val sourceId = sourceNode.viewIdResourceName?.lowercase() ?: ""
         val sourceClass = sourceNode.className?.toString()?.lowercase() ?: ""
 
-        // Immediate rejection of Home feed / search / watch containers
-        if (sourceId.contains("results_recycler_view") ||
-            sourceId.contains("feed_filter_bar") ||
-            sourceId.contains("pane_fragment") ||
-            sourceId.contains("watch_while") ||
-            sourceId.contains("elements_recycler_view") ||
-            sourceId.contains("related_chips")) {
-            return false
-        }
-
+        // 1. If it's reel_recycler or contains shorts/reel, it's definitely Shorts!
         if (sourceId.contains("reel") || sourceId.contains("shorts") ||
             sourceClass.contains("reel") || sourceClass.contains("shorts")) {
             return true
         }
 
-        // 2. Walk up the parent hierarchy (up to 12 levels) looking for Shorts / Reel container
+        // 2. Reject if the scroller itself is the home feed results list
+        if (sourceId.contains("results_recycler_view") ||
+            sourceId.contains("feed_filter_bar") ||
+            sourceId.contains("pane_fragment") ||
+            sourceId.contains("elements_recycler_view")) {
+            return false
+        }
+
+        // 3. Walk up the parent hierarchy (up to 8 levels) looking for Shorts container
         var current: AccessibilityNodeInfo? = sourceNode.parent
         var depth = 0
         var isShorts = false
 
-        while (current != null && depth < 12) {
+        while (current != null && depth < 8) {
             val parentId = current.viewIdResourceName?.lowercase() ?: ""
             val parentClass = current.className?.toString()?.lowercase() ?: ""
 
@@ -254,10 +191,8 @@ class KittyAccessibilityService : AccessibilityService() {
                 break
             }
 
-            // Reject if we hit the Home feed coordinator
-            if (parentId.contains("results_recycler_view") ||
-                parentId.contains("pane_fragment") ||
-                parentId.contains("watch_while")) {
+            // Reject if it belongs to Home results
+            if (parentId.contains("results_recycler_view") || parentId.contains("pane_fragment")) {
                 current.recycle()
                 return false
             }
@@ -268,7 +203,10 @@ class KittyAccessibilityService : AccessibilityService() {
             depth++
         }
 
-        return isShorts
+        if (isShorts) return true
+
+        // 4. Fallback check: is Shorts active in the root window?
+        return isYouTubeShortsActive(rootInActiveWindow)
     }
 
     /**
@@ -304,50 +242,48 @@ class KittyAccessibilityService : AccessibilityService() {
     private fun handleWindowStateChanged(packageName: String, event: AccessibilityEvent) {
         val className = event.className?.toString() ?: ""
 
-        // Check if user is on DMs or Profile in Instagram
-        if (packageName == ScrollDataManager.PKG_INSTAGRAM && isNonDoomscrollSurface(className, event.source)) {
-            isInNonDoomscrollMode = true
-            mainHandler.post {
-                overlayManager.hideOverlay()
-            }
-            return
-        } else {
-            isInNonDoomscrollMode = false
-        }
-
-        // On YouTube: Show Kitty Curtain when inside Shorts OR if limit reached while miniplayer is active
-        if (packageName == ScrollDataManager.PKG_YOUTUBE) {
-            val root = rootInActiveWindow
-            val inShorts = isYouTubeShortsActive(root)
-            val miniplayerActive = isYouTubeMiniplayerActive(root)
-
-            // If on Home/long video without active Shorts miniplayer (or limit not reached), keep curtain hidden
-            if (!inShorts && (!miniplayerActive || !dataManager.isLimitReached())) {
-                isInNonDoomscrollMode = true
-                mainHandler.post {
-                    overlayManager.hideOverlay()
-                }
-                return
-            } else {
-                isInNonDoomscrollMode = false
-            }
-        }
-
-        // 1. Target doomscroll apps: Instagram or YouTube
-        if (dataManager.isPackageMonitored(packageName)) {
+        // 1. Instagram: hide overlay in DMs/Camera, show overlay on Feed / Reels
+        if (packageName == ScrollDataManager.PKG_INSTAGRAM) {
             currentForegroundPackage = packageName
             dataManager.checkAndPerformMidnightReset()
 
+            if (isInstagramDmOrCamera(className, event.source)) {
+                mainHandler.post { overlayManager.hideOverlay() }
+                return
+            }
+
             val screenHeight = resources.displayMetrics.heightPixels
             val dropPercentage = dataManager.getDropPercentage(screenHeight)
-
             mainHandler.post {
                 overlayManager.showOrUpdateOverlay(dropPercentage)
             }
             return
         }
 
-        // 2. Settings / App Manager (Anti-Uninstall & Guardian Protection)
+        // 2. YouTube: show overlay when inside Shorts or when miniplayer is active if limit reached
+        if (packageName == ScrollDataManager.PKG_YOUTUBE) {
+            currentForegroundPackage = packageName
+            dataManager.checkAndPerformMidnightReset()
+
+            val root = rootInActiveWindow
+            val inShorts = isYouTubeShortsActive(root)
+            val miniplayerActive = isYouTubeMiniplayerActive(root)
+
+            if (inShorts || (miniplayerActive && dataManager.isLimitReached())) {
+                val screenHeight = resources.displayMetrics.heightPixels
+                val dropPercentage = dataManager.getDropPercentage(screenHeight)
+                mainHandler.post {
+                    overlayManager.showOrUpdateOverlay(dropPercentage)
+                }
+            } else {
+                mainHandler.post {
+                    overlayManager.hideOverlay()
+                }
+            }
+            return
+        }
+
+        // 3. Settings / App Manager (Anti-Uninstall & Guardian Protection)
         if (isSettingsOrInstaller(packageName)) {
             currentForegroundPackage = packageName
             checkAndApplyUninstallProtection(event)
@@ -357,7 +293,7 @@ class KittyAccessibilityService : AccessibilityService() {
             return
         }
 
-        // 3. User switched to another app (WhatsApp, Notion, Chrome, etc.)
+        // 4. User switched to another app (WhatsApp, Launcher, Chrome, etc.)
         val activeRootPkg = rootInActiveWindow?.packageName?.toString()
         if (activeRootPkg != null && dataManager.isPackageMonitored(activeRootPkg)) {
             return
@@ -388,9 +324,9 @@ class KittyAccessibilityService : AccessibilityService() {
             return
         }
 
-        // 3. Instagram non-doomscroll surfaces (DMs, profile, share tray, likes list)
+        // 3. Instagram non-doomscroll check (DMs, story camera)
         val className = event.className?.toString() ?: ""
-        if (isInNonDoomscrollMode || isNonDoomscrollSurface(className, source)) {
+        if (packageName == ScrollDataManager.PKG_INSTAGRAM && isInstagramDmOrCamera(className, source)) {
             source?.recycle()
             return
         }
@@ -400,20 +336,23 @@ class KittyAccessibilityService : AccessibilityService() {
         val deltaX = event.scrollDeltaX
         val deltaY = event.scrollDeltaY
 
-        // STRICT VERTICAL FILTER:
-        // If deltaY is 0, or if horizontal movement dominates (tab switch, story carousel), IGNORE!
-        if (deltaY == 0 || Math.abs(deltaX) >= Math.abs(deltaY)) {
-            return
-        }
-
-        // Filter out micro touch tremors (< 20px)
-        val absDeltaY = Math.abs(deltaY).toFloat()
-        if (absDeltaY < 20f) {
+        // Filter out horizontal swipes (e.g. story carousels, tab swiping)
+        if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 20) {
             return
         }
 
         val screenHeight = resources.displayMetrics.heightPixels
-        val newDropPercentage = dataManager.addScrollPixels(absDeltaY, screenHeight)
+        val absDeltaY = Math.abs(deltaY).toFloat()
+
+        // If deltaY is non-zero, use it. If ViewPager fired scroll without reporting deltaY, record fractional reel swipe
+        val pixelsToAdd = if (absDeltaY >= 20f) {
+            absDeltaY
+        } else {
+            screenHeight * 0.35f
+        }
+
+        Log.d(TAG, "Scroll detected on $packageName: +$pixelsToAdd px (dy=$deltaY, dx=$deltaX)")
+        val newDropPercentage = dataManager.addScrollPixels(pixelsToAdd, screenHeight)
 
         mainHandler.post {
             overlayManager.showOrUpdateOverlay(newDropPercentage)
