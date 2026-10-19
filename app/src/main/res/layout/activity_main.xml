@@ -520,41 +520,69 @@
                         android:textColor="@color/text_secondary"
                         android:textSize="13sp" />
 
-                    <com.google.android.material.chip.ChipGroup
-                        android:id="@+id/chipGroupLimits"
+                    <!-- Preset Suggestion & Custom Input -->
+                    <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="12dp"
-                        app:singleSelection="true">
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
 
                         <com.google.android.material.chip.Chip
                             android:id="@+id/chip50"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="50 Scrolls"
+                            android:text="⭐ 50 Reels (Recommended)"
                             style="@style/Widget.Material3.Chip.Filter" />
+                    </LinearLayout>
 
-                        <com.google.android.material.chip.Chip
-                            android:id="@+id/chip100"
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="10dp"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <com.google.android.material.textfield.TextInputLayout
+                            android:id="@+id/tilCustomLimit"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:layout_marginEnd="8dp"
+                            android:hint="Type custom reel limit"
+                            app:boxCornerRadiusBottomEnd="8dp"
+                            app:boxCornerRadiusBottomStart="8dp"
+                            app:boxCornerRadiusTopEnd="8dp"
+                            app:boxCornerRadiusTopStart="8dp"
+                            style="@style/Widget.Material3.TextInputLayout.OutlinedBox">
+
+                            <com.google.android.material.textfield.TextInputEditText
+                                android:id="@+id/etCustomLimit"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:inputType="number"
+                                android:maxLength="4"
+                                android:textColor="@color/text_primary" />
+                        </com.google.android.material.textfield.TextInputLayout>
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnSetCustomLimit"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="100 Scrolls"
-                            style="@style/Widget.Material3.Chip.Filter" />
+                            android:text="Set Cap"
+                            android:backgroundTint="@color/primary"
+                            app:cornerRadius="8dp" />
+                    </LinearLayout>
 
-                        <com.google.android.material.chip.Chip
-                            android:id="@+id/chip200"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="200 Scrolls"
-                            style="@style/Widget.Material3.Chip.Filter" />
-
-                        <com.google.android.material.chip.Chip
-                            android:id="@+id/chip500"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="500 Scrolls"
-                            style="@style/Widget.Material3.Chip.Filter" />
-                    </com.google.android.material.chip.ChipGroup>
+                    <TextView
+                        android:id="@+id/tvCurrentLimitLabel"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:text="Active Cap: 50 Reels / day"
+                        android:textColor="@color/text_primary"
+                        android:textSize="13sp"
+                        android:textStyle="bold" />
 
                     <View
                         android:layout_width="match_parent"

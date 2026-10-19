@@ -31,7 +31,7 @@ class ScrollDataManager(context: Context) {
         const val THEME_ORANGE = "orange"
         const val THEME_BLACK = "black"
 
-        const val DEFAULT_MAX_SCROLLS = 100
+        const val DEFAULT_MAX_SCROLLS = 50
         const val PKG_INSTAGRAM = "com.instagram.android"
         const val PKG_YOUTUBE = "com.google.android.youtube"
 
@@ -200,6 +200,18 @@ class ScrollDataManager(context: Context) {
             .putInt(KEY_SCROLL_COUNT, dailyScrollCount + reelsToAdd)
             .apply()
 
+        return getDropPercentage(screenHeightPx)
+    }
+
+    /**
+     * Adds 1 full reel unit directly (e.g. when tapping "Next" on YouTube Shorts miniplayer).
+     */
+    @Synchronized
+    fun addSingleScrollReel(screenHeightPx: Int = 0): Float {
+        checkAndPerformMidnightReset()
+        prefs.edit()
+            .putInt(KEY_SCROLL_COUNT, dailyScrollCount + 1)
+            .apply()
         return getDropPercentage(screenHeightPx)
     }
 

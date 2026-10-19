@@ -7,6 +7,7 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import android.os.CountDownTimer
 import android.os.Handler
 import android.os.Looper
 import android.provider.Settings
@@ -71,13 +72,9 @@ class MainActivity : AppCompatActivity() {
         val dropPct = dataManager.getDropPercentage(screenHeight)
         binding.previewCurtain.setDropPercentage(if (dropPct > 0) dropPct else 0.35f, animate = false)
 
-        when (dataManager.maxDailyScrolls) {
-            50 -> binding.chip50.isChecked = true
-            100 -> binding.chip100.isChecked = true
-            200 -> binding.chip200.isChecked = true
-            500 -> binding.chip500.isChecked = true
-            else -> binding.chip100.isChecked = true
-        }
+        binding.chip50.isChecked = (dataManager.maxDailyScrolls == 50)
+        binding.etCustomLimit.setText(dataManager.maxDailyScrolls.toString())
+        binding.tvCurrentLimitLabel.text = "Active Cap: ${dataManager.maxDailyScrolls} Reels / day"
 
         binding.switchInstagram.isChecked = dataManager.isInstagramMonitored
         binding.switchYouTube.isChecked = dataManager.isYouTubeMonitored
@@ -156,22 +153,20 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        // Budget Limit chips
-        binding.chipGroupLimits.setOnCheckedStateChangeListener { _, checkedIds ->
-            if (checkGuardianLocked()) {
-                updateDashboard()
-                return@setOnCheckedStateChangeListener
+        // Recommended 50 chip
+        binding.chip50.setOnClickListener {
+            attemptChangeDailyLimit(50)
+        }
+
+        // Custom Limit Set Button
+        binding.btnSetCustomLimit.setOnClickListener {
+            val text = binding.etCustomLimit.text?.toString()?.trim() ?: ""
+            val parsed = text.toIntOrNull()
+            if (parsed == null) {
+                Toast.makeText(this, "Please type a valid number of reels.", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
             }
-            if (checkedIds.isEmpty()) return@setOnCheckedStateChangeListener
-            val newLimit = when (checkedIds.first()) {
-                R.id.chip50 -> 50
-                R.id.chip100 -> 100
-                R.id.chip200 -> 200
-                R.id.chip500 -> 500
-                else -> 100
-            }
-            dataManager.maxDailyScrolls = newLimit
-            updateDashboard()
+            attemptChangeDailyLimit(parsed)
         }
 
         // Target apps toggles
@@ -261,7 +256,10 @@ class MainActivity : AppCompatActivity() {
 
     private fun setSettingsLocked(locked: Boolean) {
         val alpha = if (locked) 0.55f else 1.0f
-        binding.chipGroupLimits.alpha = alpha
+        binding.chip50.alpha = alpha
+        binding.tilCustomLimit.alpha = alpha
+        binding.btnSetCustomLimit.alpha = alpha
+        binding.btnSetCustomLimit.isEnabled = !locked
         binding.switchInstagram.alpha = alpha
         binding.switchYouTube.alpha = alpha
         binding.btnResetToday.alpha = alpha
@@ -334,11 +332,101 @@ class MainActivity : AppCompatActivity() {
         val pct = dataManager.getDropPercentage(screenHeight)
 
         binding.tvScrollCount.text = count.toString()
-        binding.tvMaxScrolls.text = "/ $max scrolls"
+        binding.tvMaxScrolls.text = "/ $max reels"
         binding.tvDropPercentage.text = "${(pct * 100).toInt()}% covered"
+        binding.tvCurrentLimitLabel.text = "Active Cap: $max Reels / day"
+
+        binding.chip50.isChecked = (max == 50)
+        val currentInput = binding.etCustomLimit.text?.toString()?.trim()
+        if (currentInput.isNullOrEmpty() || currentInput.toIntOrNull() != max) {
+            binding.etCustomLimit.setText(max.toString())
+        }
 
         binding.progressScroll.max = max
         binding.progressScroll.progress = count.coerceAtMost(max)
+    }
+
+    private fun attemptChangeDailyLimit(newLimit: Int) {
+        if (checkGuardianLocked()) return
+
+        val currentLimit = dataManager.maxDailyScrolls
+
+        if (newLimit < 5) {
+            Toast.makeText(this, "Minimum allowed limit is 5 reels.", Toast.LENGTH_SHORT).show()
+            updateDashboard()
+            return
+        }
+
+        if (newLimit == currentLimit) {
+            Toast.makeText(this, "Daily limit is already $newLimit reels.", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        // Tightening/reducing the limit is always allowed immediately
+        if (newLimit < currentLimit) {
+            dataManager.maxDailyScrolls = newLimit
+            updateDashboard()
+            Toast.makeText(this, "Daily limit tightened to $newLimit reels! 👏", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        // User is attempting to INCREASE the limit!
+        // 1. If limit is ALREADY REACHED for today -> STRICT LOCKOUT!
+        if (dataManager.isLimitReached()) {
+            MaterialAlertDialogBuilder(this)
+                .setTitle("🔒 Today's Limit Reached")
+                .setMessage("You have already reached your limit of $currentLimit reels today!\n\nTo break the compulsive doomscrolling habit, you cannot increase your cap today. Your limit will reset fresh tomorrow at midnight (00:00).\n\n(If a parent or partner set a Guardian PIN, they can unlock it in the Guardian section.)")
+                .setPositiveButton("I'll Respect My Limit", null)
+                .show()
+            updateDashboard()
+            return
+        }
+
+        // 2. If limit is NOT yet reached, but user is increasing it during the day:
+        // Enforce 30-Second Mindful Reflection Challenge
+        showMindfulIncreaseDialog(newLimit)
+    }
+
+    private fun showMindfulIncreaseDialog(newLimit: Int) {
+        val currentLimit = dataManager.maxDailyScrolls
+
+        val dialog = MaterialAlertDialogBuilder(this)
+            .setTitle("🛑 Mindful Pause")
+            .setMessage("You are increasing your daily limit from $currentLimit to $newLimit reels.\n\nTake a breath: Are you increasing this to give in to doomscrolling?\n\nTo prevent impulsive decisions, please wait 30 seconds before confirming.")
+            .setPositiveButton("Confirm (30s)", null)
+            .setNegativeButton("Cancel (Keep $currentLimit)", null)
+            .setCancelable(false)
+            .create()
+
+        dialog.show()
+
+        val confirmBtn = dialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_POSITIVE)
+        confirmBtn.isEnabled = false
+
+        val timer = object : CountDownTimer(30000, 1000) {
+            override fun onTick(millisUntilFinished: Long) {
+                val sec = (millisUntilFinished / 1000).toInt() + 1
+                confirmBtn.text = "Confirm (${sec}s)"
+            }
+
+            override fun onFinish() {
+                confirmBtn.text = "Yes, Increase to $newLimit"
+                confirmBtn.isEnabled = true
+            }
+        }.start()
+
+        confirmBtn.setOnClickListener {
+            timer.cancel()
+            dataManager.maxDailyScrolls = newLimit
+            updateDashboard()
+            Toast.makeText(this@MainActivity, "Daily limit updated to $newLimit reels.", Toast.LENGTH_SHORT).show()
+            dialog.dismiss()
+        }
+
+        dialog.setOnDismissListener {
+            timer.cancel()
+            updateDashboard()
+        }
     }
 
     private fun checkPermissions() {

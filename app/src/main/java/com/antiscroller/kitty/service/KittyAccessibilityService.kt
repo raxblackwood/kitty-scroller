@@ -60,6 +60,9 @@ class KittyAccessibilityService : AccessibilityService() {
             AccessibilityEvent.TYPE_VIEW_SCROLLED -> {
                 handleViewScrolled(eventPkg, event)
             }
+            AccessibilityEvent.TYPE_VIEW_CLICKED -> {
+                handleViewClicked(eventPkg, event)
+            }
         }
     }
 
@@ -312,12 +315,14 @@ class KittyAccessibilityService : AccessibilityService() {
             isInNonDoomscrollMode = false
         }
 
-        // On YouTube: Only show the Kitty Curtain when inside YouTube Shorts!
-        // If user is on Home feed or watching normal long videos, keep curtain hidden.
+        // On YouTube: Show Kitty Curtain when inside Shorts OR if limit reached while miniplayer is active
         if (packageName == ScrollDataManager.PKG_YOUTUBE) {
             val root = rootInActiveWindow
             val inShorts = isYouTubeShortsActive(root)
-            if (!inShorts) {
+            val miniplayerActive = isYouTubeMiniplayerActive(root)
+
+            // If on Home/long video without active Shorts miniplayer (or limit not reached), keep curtain hidden
+            if (!inShorts && (!miniplayerActive || !dataManager.isLimitReached())) {
                 isInNonDoomscrollMode = true
                 mainHandler.post {
                     overlayManager.hideOverlay()
@@ -413,6 +418,98 @@ class KittyAccessibilityService : AccessibilityService() {
         mainHandler.post {
             overlayManager.showOrUpdateOverlay(newDropPercentage)
         }
+    }
+
+    private fun handleViewClicked(packageName: String, event: AccessibilityEvent) {
+        if (!dataManager.isPackageMonitored(packageName)) return
+        if (packageName != ScrollDataManager.PKG_YOUTUBE) return
+
+        val source = event.source ?: return
+        try {
+            val viewId = source.viewIdResourceName?.lowercase() ?: ""
+            val contentDesc = event.contentDescription?.toString()?.lowercase() ?: ""
+            val text = source.text?.toString()?.lowercase() ?: ""
+
+            // Detect if clicked view is a "Next" / "Skip" button
+            val isNextButton = viewId.contains("next") ||
+                               contentDesc.contains("next") ||
+                               text.contains("next") ||
+                               viewId.contains("skip")
+
+            if (!isNextButton) return
+
+            // Verify if it is in the YouTube Shorts miniplayer or player container
+            if (isMiniplayerOrShortsNext(source)) {
+                Log.i(TAG, "YouTube Shorts / miniplayer Next button clicked -> +1 Reel")
+                val screenHeight = resources.displayMetrics.heightPixels
+                val newDropPercentage = dataManager.addSingleScrollReel(screenHeight)
+
+                mainHandler.post {
+                    overlayManager.showOrUpdateOverlay(newDropPercentage)
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error handling view click: ${e.message}")
+        } finally {
+            source.recycle()
+        }
+    }
+
+    private fun isMiniplayerOrShortsNext(sourceNode: AccessibilityNodeInfo): Boolean {
+        var current: AccessibilityNodeInfo? = sourceNode
+        var depth = 0
+        var isMatch = false
+
+        while (current != null && depth < 10) {
+            val id = current.viewIdResourceName?.lowercase() ?: ""
+            val cls = current.className?.toString()?.lowercase() ?: ""
+
+            if (id.contains("miniplayer") ||
+                id.contains("mini_player") ||
+                id.contains("modern_miniplayer") ||
+                id.contains("reel") ||
+                id.contains("shorts") ||
+                cls.contains("miniplayer") ||
+                cls.contains("reel")) {
+                isMatch = true
+                if (current != sourceNode) current.recycle()
+                break
+            }
+
+            val parent = current.parent
+            if (current != sourceNode) current.recycle()
+            current = parent
+            depth++
+        }
+
+        if (isMatch) return true
+
+        val root = rootInActiveWindow ?: return false
+        try {
+            val miniplayerNodes = root.findAccessibilityNodeInfosByViewId("com.google.android.youtube:id/miniplayer_container")
+                .plus(root.findAccessibilityNodeInfosByViewId("com.google.android.youtube:id/modern_miniplayer"))
+                .plus(root.findAccessibilityNodeInfosByViewId("com.google.android.youtube:id/mini_player"))
+            if (miniplayerNodes.isNotEmpty()) {
+                for (n in miniplayerNodes) n.recycle()
+                return true
+            }
+        } catch (_: Exception) {}
+
+        return false
+    }
+
+    private fun isYouTubeMiniplayerActive(rootNode: AccessibilityNodeInfo?): Boolean {
+        if (rootNode == null) return false
+        try {
+            val miniplayers = rootNode.findAccessibilityNodeInfosByViewId("com.google.android.youtube:id/miniplayer_container")
+                .plus(rootNode.findAccessibilityNodeInfosByViewId("com.google.android.youtube:id/modern_miniplayer"))
+                .plus(rootNode.findAccessibilityNodeInfosByViewId("com.google.android.youtube:id/mini_player"))
+            if (miniplayers.isNotEmpty()) {
+                for (n in miniplayers) n.recycle()
+                return true
+            }
+        } catch (_: Exception) {}
+        return false
     }
 
     private fun isSettingsOrInstaller(pkg: String): Boolean {
