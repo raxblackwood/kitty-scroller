@@ -185,36 +185,39 @@ class KittyCurtainView @JvmOverloads constructor(
 
         val centerX = totalW / 2f
 
-        // Kitty vertical center: descends steadily as a warning indicator (from 160px down to ~82% of screen)
-        val minKittyY = 160f
-        val maxKittyY = totalH * 0.82f
-        val kittyY = minKittyY + (progress * (maxKittyY - minKittyY))
-
-        // Solid blocking curtain: unrolls strictly in the final 20% before limit lock (progress > 0.80)
-        val curtainH = if (progress > 0.80f) {
-            val curtainProgress = ((progress - 0.80f) / 0.20f).coerceIn(0f, 1f)
-            curtainProgress * totalH
-        } else {
-            0f
-        }
-
-        // Draw solid curtain fabric from ceiling down if in final 20%
-        if (curtainH > 0f) {
-            drawCurtainBody(canvas, totalW, curtainH)
-        }
-
-        // Draw Kitty Face & Paws (transition to Sleepy Cat loaf at 96%+)
+        // 100% full screen lock: curtain covers entire screen, sleepy cat loaf in center
         if (progress >= 0.96f) {
+            drawCurtainBody(canvas, totalW, totalH)
             drawFullSleepyCat(canvas, totalH, centerX)
-        } else {
-            drawSlidingKitty(canvas, kittyY, centerX, curtainH, progress)
+            drawSpeechBubble(canvas, totalH * 0.45f - 40f, centerX, progress)
+            return
         }
 
-        // Draw Speech Bubble above Kitty's ears
-        drawSpeechBubble(canvas, kittyY, centerX, progress)
+        // Hanging cat total height from hands down to tail tip is ~195f
+        val catTotalHeight = 195f
+
+        // hemY is where the curtain ends and Kitty's hands grip:
+        // At progress 0: hemY = -catTotalHeight (entire cat is above screen, tail at 0)
+        // At progress ~0.15: hemY = 0 (tail, legs, body, head, and hands have fully emerged)
+        // At progress >0.15: curtain unrolls from 0 down to hemY behind/attached to hands
+        // At progress 1.0: hemY = totalH (curtain covers full screen)
+        val hemY = -catTotalHeight + (progress * (totalH + catTotalHeight))
+
+        // 1. Draw solid curtain fabric from ceiling down to hands hem (only once hands enter screen)
+        if (hemY > 0f) {
+            drawCurtainBody(canvas, totalW, hemY)
+        }
+
+        // 2. Draw Hanging Cat: tail -> legs -> body -> head -> hands attached to hem
+        drawHangingCat(canvas, centerX, hemY, progress)
+
+        // 3. Draw speech bubble on curtain above Kitty's hands
+        drawSpeechBubble(canvas, hemY, centerX, progress)
     }
 
     private fun drawCurtainBody(canvas: Canvas, w: Float, h: Float) {
+        if (h <= 0f) return
+
         val path = Path().apply {
             moveTo(0f, 0f)
             lineTo(w, 0f)
@@ -225,7 +228,7 @@ class KittyCurtainView @JvmOverloads constructor(
                 val startX = i * step
                 val endX = (i - 1) * step
                 val midX = (startX + endX) / 2f
-                val waveDepth = 15f
+                val waveDepth = 12f
                 quadTo(midX, h + waveDepth, endX, h)
             }
             close()
@@ -236,174 +239,24 @@ class KittyCurtainView @JvmOverloads constructor(
         val pleats = 5
         for (i in 1..pleats) {
             val px = w * (i.toFloat() / (pleats + 1))
-            canvas.drawLine(px, 0f, px, h - 5f, stripePaint)
+            canvas.drawLine(px, 0f, px, h - 4f, stripePaint)
         }
     }
 
-    private fun drawSlidingKitty(canvas: Canvas, kittyY: Float, centerX: Float, curtainH: Float, progress: Float) {
-        val headRadius = 75f
-        val headCenterY = kittyY
+    private fun drawHangingCat(canvas: Canvas, centerX: Float, hemY: Float, progress: Float) {
+        val headCenterY = hemY + 45f
+        val headRadius = 40f
+        val bodyTop = headCenterY + 22f
+        val bodyBottom = bodyTop + 65f
 
-        // 1. Paws holding shade cords (0-80%) or bottom curtain hem (80-100%)
-        if (curtainH > 0f) {
-            drawCurtainPaws(canvas, centerX, curtainH)
-        } else {
-            drawPullCordsAndPaws(canvas, centerX, kittyY)
-        }
-
-        // 2. Ears
-        val earSize = 45f
-        val leftEar = Path().apply {
-            moveTo(centerX - 60f, headCenterY - 30f)
-            lineTo(centerX - 80f, headCenterY - 30f - earSize)
-            lineTo(centerX - 25f, headCenterY - 55f)
-            close()
-        }
-        canvas.drawPath(leftEar, furPaint)
-        val leftInnerEar = Path().apply {
-            moveTo(centerX - 55f, headCenterY - 32f)
-            lineTo(centerX - 72f, headCenterY - 32f - earSize * 0.7f)
-            lineTo(centerX - 32f, headCenterY - 50f)
-            close()
-        }
-        canvas.drawPath(leftInnerEar, innerEarPaint)
-
-        val rightEar = Path().apply {
-            moveTo(centerX + 60f, headCenterY - 30f)
-            lineTo(centerX + 80f, headCenterY - 30f - earSize)
-            lineTo(centerX + 25f, headCenterY - 55f)
-            close()
-        }
-        canvas.drawPath(rightEar, furPaint)
-        val rightInnerEar = Path().apply {
-            moveTo(centerX + 55f, headCenterY - 32f)
-            lineTo(centerX + 72f, headCenterY - 32f - earSize * 0.7f)
-            lineTo(centerX + 32f, headCenterY - 50f)
-            close()
-        }
-        canvas.drawPath(rightInnerEar, innerEarPaint)
-
-        // 3. Head shape
-        canvas.drawCircle(centerX, headCenterY, headRadius, furPaint)
-
-        // Forehead stripes (subtle on black cat)
-        val foreheadStripe = Path().apply {
-            moveTo(centerX - 10f, headCenterY - 65f)
-            lineTo(centerX, headCenterY - 45f)
-            lineTo(centerX + 10f, headCenterY - 65f)
-        }
-        canvas.drawPath(foreheadStripe, furDarkPaint)
-
-        // 4. Eyes (Glowing yellow/gold on black cat, dark on ginger)
-        val eyeOffsetY = headCenterY - 8f
-        val eyeSpacing = 32f
-        if (dropPercentage > 0.75f) {
-            val eyePath = Path().apply {
-                moveTo(centerX - eyeSpacing - 14f, eyeOffsetY)
-                quadTo(centerX - eyeSpacing, eyeOffsetY - 10f, centerX - eyeSpacing + 14f, eyeOffsetY)
-                moveTo(centerX + eyeSpacing - 14f, eyeOffsetY)
-                quadTo(centerX + eyeSpacing, eyeOffsetY - 10f, centerX + eyeSpacing + 14f, eyeOffsetY)
-            }
-            canvas.drawPath(eyePath, strokePaint)
-        } else {
-            canvas.drawCircle(centerX - eyeSpacing, eyeOffsetY, 13f, eyePaint)
-            canvas.drawCircle(centerX + eyeSpacing, eyeOffsetY, 13f, eyePaint)
-            // Pupils on black cat
-            if (currentBreed == CatBreed.BLACK) {
-                val pupilPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                    color = Color.parseColor("#111111")
-                    style = Paint.Style.FILL
-                }
-                canvas.drawOval(RectF(centerX - eyeSpacing - 3f, eyeOffsetY - 8f, centerX - eyeSpacing + 3f, eyeOffsetY + 8f), pupilPaint)
-                canvas.drawOval(RectF(centerX + eyeSpacing - 3f, eyeOffsetY - 8f, centerX + eyeSpacing + 3f, eyeOffsetY + 8f), pupilPaint)
-            }
-            // Highlights
-            canvas.drawCircle(centerX - eyeSpacing - 4f, eyeOffsetY - 4f, 4f, eyeHighlightPaint)
-            canvas.drawCircle(centerX + eyeSpacing - 4f, eyeOffsetY - 4f, 4f, eyeHighlightPaint)
-        }
-
-        // 5. Nose & Mouth
-        val noseY = headCenterY + 12f
-        val nosePath = Path().apply {
-            moveTo(centerX, noseY + 6f)
-            lineTo(centerX - 7f, noseY)
-            lineTo(centerX + 7f, noseY)
-            close()
-        }
-        canvas.drawPath(nosePath, nosePaint)
-
-        val mouthPath = Path().apply {
-            moveTo(centerX, noseY + 6f)
-            lineTo(centerX, noseY + 14f)
-            moveTo(centerX, noseY + 14f)
-            quadTo(centerX - 12f, noseY + 22f, centerX - 18f, noseY + 16f)
-            moveTo(centerX, noseY + 14f)
-            quadTo(centerX + 12f, noseY + 22f, centerX + 18f, noseY + 16f)
-        }
-        canvas.drawPath(mouthPath, strokePaint)
-
-        // 6. Whiskers (Light on black cat, dark on ginger)
-        val whiskerPaint = if (currentBreed == CatBreed.BLACK) {
-            Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                color = Color.parseColor("#B0BEC5")
-                strokeWidth = 2.5f
-            }
-        } else strokePaint
-
-        canvas.drawLine(centerX - 35f, noseY + 5f, centerX - 75f, noseY - 2f, whiskerPaint)
-        canvas.drawLine(centerX - 35f, noseY + 12f, centerX - 75f, noseY + 15f, whiskerPaint)
-        canvas.drawLine(centerX + 35f, noseY + 5f, centerX + 75f, noseY - 2f, whiskerPaint)
-        canvas.drawLine(centerX + 35f, noseY + 12f, centerX + 75f, noseY + 15f, whiskerPaint)
-
-        // 7. Dangling Bottom Paws & Tail
-        drawBottomPawsAndTail(canvas, centerX, headCenterY + headRadius)
-    }
-
-    private fun drawPullCordsAndPaws(canvas: Canvas, centerX: Float, kittyY: Float) {
-        val cordPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = if (currentBreed == CatBreed.BLACK) Color.parseColor("#80B0BEC5") else Color.parseColor("#908D6E63")
-            strokeWidth = 3f
-            style = Paint.Style.STROKE
-        }
-
-        val pawTop = kittyY - 78f
-        // Pull cords extending from ceiling down to paws
-        canvas.drawLine(centerX - 68f, 0f, centerX - 68f, pawTop, cordPaint)
-        canvas.drawLine(centerX + 68f, 0f, centerX + 68f, pawTop, cordPaint)
-
-        // Little bead on cords
-        val beadPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = if (currentBreed == CatBreed.BLACK) Color.parseColor("#FFD600") else Color.parseColor("#FF8A65")
-            style = Paint.Style.FILL
-        }
-        canvas.drawCircle(centerX - 68f, pawTop - 8f, 6f, beadPaint)
-        canvas.drawCircle(centerX + 68f, pawTop - 8f, 6f, beadPaint)
-
-        // Paws gripping the cords
-        val leftPawRect = RectF(centerX - 82f, pawTop, centerX - 54f, pawTop + 24f)
-        val rightPawRect = RectF(centerX + 54f, pawTop, centerX + 82f, pawTop + 24f)
-        canvas.drawRoundRect(leftPawRect, 12f, 12f, pawPaint)
-        canvas.drawRoundRect(rightPawRect, 12f, 12f, pawPaint)
-    }
-
-    private fun drawCurtainPaws(canvas: Canvas, centerX: Float, curtainH: Float) {
-        val pawTop = (curtainH - 12f).coerceAtLeast(0f)
-        val leftPawRect = RectF(centerX - 85f, pawTop, centerX - 55f, pawTop + 26f)
-        val rightPawRect = RectF(centerX + 55f, pawTop, centerX + 85f, pawTop + 26f)
-        canvas.drawRoundRect(leftPawRect, 12f, 12f, pawPaint)
-        canvas.drawRoundRect(rightPawRect, 12f, 12f, pawPaint)
-    }
-
-    private fun drawBottomPawsAndTail(canvas: Canvas, centerX: Float, bottomY: Float) {
-        canvas.drawOval(RectF(centerX - 50f, bottomY - 10f, centerX - 20f, bottomY + 22f), pawPaint)
-        canvas.drawOval(RectF(centerX + 20f, bottomY - 10f, centerX + 50f, bottomY + 22f), pawPaint)
-
-        // Animated Wagging Tail
+        // 1. Animated Wagging Tail (at the bottom)
         canvas.save()
-        canvas.rotate(tailAngle, centerX + 55f, bottomY)
+        val tailBaseX = centerX + 12f
+        val tailBaseY = bodyBottom - 8f
+        canvas.rotate(tailAngle, tailBaseX, tailBaseY)
         val tailPath = Path().apply {
-            moveTo(centerX + 45f, bottomY)
-            quadTo(centerX + 85f, bottomY + 25f, centerX + 75f, bottomY + 55f)
+            moveTo(tailBaseX, tailBaseY)
+            quadTo(tailBaseX + 28f, tailBaseY + 24f, tailBaseX + 18f, tailBaseY + 50f)
         }
         val tailPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = currentBreed.furColor
@@ -413,6 +266,167 @@ class KittyCurtainView @JvmOverloads constructor(
         }
         canvas.drawPath(tailPath, tailPaint)
         canvas.restore()
+
+        // 2. Back Legs & Paws (dangling below body)
+        val legWidth = 22f
+        val legHeight = 36f
+        val leftLegRect = RectF(centerX - 30f, bodyBottom - 14f, centerX - 30f + legWidth, bodyBottom - 14f + legHeight)
+        val rightLegRect = RectF(centerX + 8f, bodyBottom - 14f, centerX + 8f + legWidth, bodyBottom - 14f + legHeight)
+        canvas.drawRoundRect(leftLegRect, 11f, 11f, pawPaint)
+        canvas.drawRoundRect(rightLegRect, 11f, 11f, pawPaint)
+
+        // Cute paw pads on back feet
+        val padPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = if (currentBreed == CatBreed.BLACK) Color.parseColor("#FF80AB") else Color.parseColor("#FFAB91")
+            style = Paint.Style.FILL
+        }
+        canvas.drawCircle(leftLegRect.centerX(), leftLegRect.bottom - 8f, 5f, padPaint)
+        canvas.drawCircle(rightLegRect.centerX(), rightLegRect.bottom - 8f, 5f, padPaint)
+
+        // 3. Body (torso hanging below head)
+        val bodyRect = RectF(centerX - 34f, bodyTop, centerX + 34f, bodyBottom)
+        canvas.drawRoundRect(bodyRect, 28f, 28f, furPaint)
+
+        // Tabby stripes on body (subtle)
+        if (currentBreed == CatBreed.ORANGE) {
+            val stripePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = currentBreed.furDarkColor
+                strokeWidth = 3f
+                style = Paint.Style.STROKE
+                strokeCap = Paint.Cap.ROUND
+            }
+            canvas.drawLine(centerX - 22f, bodyTop + 20f, centerX - 8f, bodyTop + 20f, stripePaint)
+            canvas.drawLine(centerX + 8f, bodyTop + 20f, centerX + 22f, bodyTop + 20f, stripePaint)
+            canvas.drawLine(centerX - 24f, bodyTop + 36f, centerX - 10f, bodyTop + 36f, stripePaint)
+            canvas.drawLine(centerX + 10f, bodyTop + 36f, centerX + 24f, bodyTop + 36f, stripePaint)
+        }
+
+        // 4. Ears (pointing up towards hands/curtain)
+        val earSize = 32f
+        val leftEar = Path().apply {
+            moveTo(centerX - 34f, headCenterY - 14f)
+            lineTo(centerX - 42f, headCenterY - 14f - earSize)
+            lineTo(centerX - 14f, headCenterY - 30f)
+            close()
+        }
+        canvas.drawPath(leftEar, furPaint)
+        val leftInnerEar = Path().apply {
+            moveTo(centerX - 32f, headCenterY - 16f)
+            lineTo(centerX - 38f, headCenterY - 16f - earSize * 0.65f)
+            lineTo(centerX - 18f, headCenterY - 26f)
+            close()
+        }
+        canvas.drawPath(leftInnerEar, innerEarPaint)
+
+        val rightEar = Path().apply {
+            moveTo(centerX + 34f, headCenterY - 14f)
+            lineTo(centerX + 42f, headCenterY - 14f - earSize)
+            lineTo(centerX + 14f, headCenterY - 30f)
+            close()
+        }
+        canvas.drawPath(rightEar, furPaint)
+        val rightInnerEar = Path().apply {
+            moveTo(centerX + 32f, headCenterY - 16f)
+            lineTo(centerX + 38f, headCenterY - 16f - earSize * 0.65f)
+            lineTo(centerX + 18f, headCenterY - 26f)
+            close()
+        }
+        canvas.drawPath(rightInnerEar, innerEarPaint)
+
+        // 5. Head
+        canvas.drawCircle(centerX, headCenterY, headRadius, furPaint)
+
+        // Forehead markings
+        if (currentBreed == CatBreed.ORANGE) {
+            val fStripe = Path().apply {
+                moveTo(centerX - 6f, headCenterY - 32f)
+                lineTo(centerX, headCenterY - 22f)
+                lineTo(centerX + 6f, headCenterY - 32f)
+            }
+            canvas.drawPath(fStripe, furDarkPaint)
+        }
+
+        // 6. Eyes
+        val eyeOffsetY = headCenterY - 4f
+        val eyeSpacing = 18f
+        if (progress > 0.85f) {
+            val eyePath = Path().apply {
+                moveTo(centerX - eyeSpacing - 9f, eyeOffsetY)
+                quadTo(centerX - eyeSpacing, eyeOffsetY - 7f, centerX - eyeSpacing + 9f, eyeOffsetY)
+                moveTo(centerX + eyeSpacing - 9f, eyeOffsetY)
+                quadTo(centerX + eyeSpacing, eyeOffsetY - 7f, centerX + eyeSpacing + 9f, eyeOffsetY)
+            }
+            canvas.drawPath(eyePath, strokePaint)
+        } else {
+            canvas.drawCircle(centerX - eyeSpacing, eyeOffsetY, 8.5f, eyePaint)
+            canvas.drawCircle(centerX + eyeSpacing, eyeOffsetY, 8.5f, eyePaint)
+            if (currentBreed == CatBreed.BLACK) {
+                val pupilPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                    color = Color.parseColor("#111111")
+                    style = Paint.Style.FILL
+                }
+                canvas.drawOval(RectF(centerX - eyeSpacing - 2f, eyeOffsetY - 6f, centerX - eyeSpacing + 2f, eyeOffsetY + 6f), pupilPaint)
+                canvas.drawOval(RectF(centerX + eyeSpacing - 2f, eyeOffsetY - 6f, centerX + eyeSpacing + 2f, eyeOffsetY + 6f), pupilPaint)
+            }
+            canvas.drawCircle(centerX - eyeSpacing - 2.5f, eyeOffsetY - 2.5f, 2.5f, eyeHighlightPaint)
+            canvas.drawCircle(centerX + eyeSpacing - 2.5f, eyeOffsetY - 2.5f, 2.5f, eyeHighlightPaint)
+        }
+
+        // 7. Nose & Mouth
+        val noseY = headCenterY + 10f
+        val nosePath = Path().apply {
+            moveTo(centerX, noseY + 4f)
+            lineTo(centerX - 5f, noseY)
+            lineTo(centerX + 5f, noseY)
+            close()
+        }
+        canvas.drawPath(nosePath, nosePaint)
+
+        val mouthPath = Path().apply {
+            moveTo(centerX, noseY + 4f)
+            lineTo(centerX, noseY + 10f)
+            moveTo(centerX, noseY + 10f)
+            quadTo(centerX - 8f, noseY + 15f, centerX - 12f, noseY + 11f)
+            moveTo(centerX, noseY + 10f)
+            quadTo(centerX + 8f, noseY + 15f, centerX + 12f, noseY + 11f)
+        }
+        canvas.drawPath(mouthPath, strokePaint)
+
+        // 8. Whiskers
+        val whiskerPaint = if (currentBreed == CatBreed.BLACK) {
+            Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = Color.parseColor("#B0BEC5")
+                strokeWidth = 2f
+            }
+        } else strokePaint
+
+        canvas.drawLine(centerX - 20f, noseY + 3f, centerX - 48f, noseY - 1f, whiskerPaint)
+        canvas.drawLine(centerX - 20f, noseY + 8f, centerX - 48f, noseY + 10f, whiskerPaint)
+        canvas.drawLine(centerX + 20f, noseY + 3f, centerX + 48f, noseY - 1f, whiskerPaint)
+        canvas.drawLine(centerX + 20f, noseY + 8f, centerX + 48f, noseY + 10f, whiskerPaint)
+
+        // 9. Hands (Front Paws) gripping the bottom hem of the curtain
+        val handTop = hemY - 12f
+        val handWidth = 26f
+        val handHeight = 26f
+        val leftHandRect = RectF(centerX - 46f, handTop, centerX - 46f + handWidth, handTop + handHeight)
+        val rightHandRect = RectF(centerX + 20f, handTop, centerX + 20f + handWidth, handTop + handHeight)
+        canvas.drawRoundRect(leftHandRect, 10f, 10f, pawPaint)
+        canvas.drawRoundRect(rightHandRect, 10f, 10f, pawPaint)
+
+        // Little claw lines gripping the curtain hem
+        val clawPaint = if (currentBreed == CatBreed.BLACK) {
+            Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = Color.parseColor("#FF80AB")
+                strokeWidth = 2.5f
+                strokeCap = Paint.Cap.ROUND
+            }
+        } else strokePaint
+
+        canvas.drawLine(centerX - 40f, handTop + 6f, centerX - 40f, handTop + 14f, clawPaint)
+        canvas.drawLine(centerX - 32f, handTop + 6f, centerX - 32f, handTop + 14f, clawPaint)
+        canvas.drawLine(centerX + 26f, handTop + 6f, centerX + 26f, handTop + 14f, clawPaint)
+        canvas.drawLine(centerX + 34f, handTop + 6f, centerX + 34f, handTop + 14f, clawPaint)
     }
 
     private fun drawFullSleepyCat(canvas: Canvas, totalH: Float, centerX: Float) {
@@ -466,13 +480,13 @@ class KittyCurtainView @JvmOverloads constructor(
         canvas.drawText("z", centerX + 155f, catY - 105f, zPaint)
     }
 
-    private fun drawSpeechBubble(canvas: Canvas, kittyY: Float, centerX: Float, progress: Float) {
-        if (progress <= 0.001f) return
+    private fun drawSpeechBubble(canvas: Canvas, hemY: Float, centerX: Float, progress: Float) {
+        if (progress <= 0.001f || hemY < 75f) return
 
         val message = when {
             progress < 0.25f -> if (currentBreed == CatBreed.BLACK) "Void cat is watching you... 🐈‍⬛" else "Peek-a-boo! Scrolling already? 🐾"
             progress < 0.50f -> "Sliding down... maybe read a book? 📖"
-            progress < 0.75f -> "Halfway there! Take a breath! 😼"
+            progress < 0.75f -> "Half the screen is Kitty now! 😼"
             progress < 0.95f -> "Curtain closing! Final scrolls remaining! ⚠️"
             else -> "STOPPED! Daily scroll limit reached! 💤"
         }
@@ -486,36 +500,24 @@ class KittyCurtainView @JvmOverloads constructor(
         }
 
         val bubbleW = (textWidth + 60f).coerceAtMost(maxAvailableW)
-        val bubbleH = 56f
+        val bubbleH = 54f
 
-        // Position text strictly above Kitty's head & ears
-        val earTipY = if (progress >= 0.96f) {
-            height.toFloat() * 0.45f - 100f // Above sleepy cat loaf
-        } else {
-            val headRadius = 75f
-            val earSize = 45f
-            kittyY - headRadius - earSize // Top tip of ears
-        }
-
-        if (earTipY < 40f) {
-            return
-        }
-
-        val bubbleBottom = (earTipY - 14f)
-        val bubbleY = (bubbleBottom - bubbleH).coerceAtLeast(34f)
+        // Position text strictly ON the curtain, above Kitty's hands (hemY)
+        val bubbleBottom = (hemY - 16f).coerceAtLeast(36f + bubbleH)
+        val bubbleTop = bubbleBottom - bubbleH
 
         val bubbleRect = RectF(
             centerX - (bubbleW / 2f),
-            bubbleY,
+            bubbleTop,
             centerX + (bubbleW / 2f),
-            bubbleY + bubbleH
+            bubbleBottom
         )
 
-        // Triangular pointer pointing DOWN towards Kitty's head
+        // Triangular pointer pointing DOWN towards Kitty's hands at hemY
         val pointerPath = Path().apply {
-            moveTo(centerX - 12f, bubbleY + bubbleH)
-            lineTo(centerX, (bubbleY + bubbleH + 11f).coerceAtMost(earTipY))
-            lineTo(centerX + 12f, bubbleY + bubbleH)
+            moveTo(centerX - 10f, bubbleBottom)
+            lineTo(centerX, (bubbleBottom + 9f).coerceAtMost(hemY))
+            lineTo(centerX + 10f, bubbleBottom)
             close()
         }
 
