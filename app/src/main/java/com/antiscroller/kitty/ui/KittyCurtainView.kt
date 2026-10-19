@@ -116,6 +116,24 @@ class KittyCurtainView @JvmOverloads constructor(
         style = Paint.Style.STROKE
     }
 
+    // Horizontal pole paints (stretching across the screen)
+    private val poleBasePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.FILL
+        color = Color.parseColor("#3E2723") // Deep shadow
+    }
+    private val poleBodyPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.FILL
+        color = Color.parseColor("#6D4C41") // Warm wood body
+    }
+    private val poleHighlightPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.FILL
+        color = Color.parseColor("#A1887F") // Wood sheen highlight
+    }
+    private val poleCapPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.FILL
+        color = Color.parseColor("#8D6E63") // End caps
+    }
+
     // Reusable geometry objects to prevent GC churn during fast scrolling
     private val curtainPath = Path()
     private val catRect = RectF()
@@ -169,9 +187,9 @@ class KittyCurtainView @JvmOverloads constructor(
     }
 
     private fun startAnimations() {
-        // 1. Lively tail wagging (user requested: 'I think the tail will move a bit more')
+        // 1. Lively tail wagging behind body
         tailAnimator?.cancel()
-        tailAnimator = ValueAnimator.ofFloat(-22f, 22f).apply {
+        tailAnimator = ValueAnimator.ofFloat(-12f, 12f).apply {
             duration = 850
             repeatMode = ValueAnimator.REVERSE
             repeatCount = ValueAnimator.INFINITE
@@ -252,8 +270,8 @@ class KittyCurtainView @JvmOverloads constructor(
             return
         }
 
-        // Cat display sizing scaled down to ~1/3.5 of previous size (between 1/3 and 1/4)
-        val catW = (totalW * 0.14f).coerceIn(135f, 165f)
+        // Cat display sizing: increased by 50% from 0.14f to 0.21f (as requested)
+        val catW = (totalW * 0.21f).coerceIn(200f, 260f)
         val catH = catW / 0.54f // 628 / 1162 ≈ 0.54f
 
         // hemY is where the curtain ends and Kitty's paws/bar grip:
@@ -266,6 +284,8 @@ class KittyCurtainView @JvmOverloads constructor(
         // 1. Draw solid curtain fabric from ceiling down to hands hem (only once hands enter screen)
         if (hemY > 0f) {
             drawCurtainBody(canvas, totalW, hemY)
+            // Draw horizontal pole stretching across the entire screen
+            drawHorizontalPole(canvas, totalW, hemY)
         }
 
         // 2. Draw Hanging Cat sprite (body with gentle sway, tail with active wagging)
@@ -273,6 +293,25 @@ class KittyCurtainView @JvmOverloads constructor(
 
         // 3. Draw speech bubble on curtain above Kitty's hands
         drawSpeechBubble(canvas, hemY, centerX, progress)
+    }
+
+    private fun drawHorizontalPole(canvas: Canvas, w: Float, hemY: Float) {
+        val poleThickness = 16f
+        val poleTop = hemY - (poleThickness / 2f)
+        val poleBottom = hemY + (poleThickness / 2f)
+
+        // 1. Pole shadow / base
+        canvas.drawRect(0f, poleTop, w, poleBottom, poleBasePaint)
+
+        // 2. Pole main wooden body
+        canvas.drawRect(0f, poleTop + 2f, w, poleBottom - 2f, poleBodyPaint)
+
+        // 3. Pole top highlight (wood sheen)
+        canvas.drawRect(0f, poleTop + 2f, w, poleTop + 6f, poleHighlightPaint)
+
+        // 4. Pole metallic / rounded brass finials / caps on the edges
+        canvas.drawCircle(8f, hemY, poleThickness * 0.65f, poleCapPaint)
+        canvas.drawCircle(w - 8f, hemY, poleThickness * 0.65f, poleCapPaint)
     }
 
     private fun drawCurtainBody(canvas: Canvas, w: Float, h: Float) {
@@ -318,11 +357,11 @@ class KittyCurtainView @JvmOverloads constructor(
         val pawsPivotY = catRect.top + catH * 0.045f
         canvas.rotate(swayAngle, pawsPivotX, pawsPivotY)
 
-        // 2. Animated lively wagging tail
+        // 2. Animated lively wagging tail behind the body
         canvas.save()
         val isBlack = currentBreed == CatBreed.BLACK
-        val tailPivotXRatio = if (isBlack) 0.570f else 0.589f
-        val tailPivotYRatio = 0.7186f
+        val tailPivotXRatio = if (isBlack) 0.7950f else 0.8288f
+        val tailPivotYRatio = if (isBlack) 0.7487f else 0.7375f
         val tailPivotX = catRect.left + catW * tailPivotXRatio
         val tailPivotY = catRect.top + catH * tailPivotYRatio
 
@@ -330,7 +369,7 @@ class KittyCurtainView @JvmOverloads constructor(
         canvas.drawBitmap(tailBmp, null, catRect, catPaint)
         canvas.restore()
 
-        // 3. Draw cat body (head, arms, torso, back feet) on top of tail
+        // 3. Draw cat body (head, arms, torso, back legs & back feet 100% intact) on top of tail
         canvas.drawBitmap(bodyBmp, null, catRect, catPaint)
 
         canvas.restore()
