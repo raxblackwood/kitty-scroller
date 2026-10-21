@@ -69,6 +69,7 @@ class MainActivity : AppCompatActivity() {
         when (currentTheme) {
             ScrollDataManager.THEME_TABBY, ScrollDataManager.THEME_BLACK -> binding.chipThemeTabby.isChecked = true
             ScrollDataManager.THEME_SATURN -> binding.chipThemeSaturn.isChecked = true
+            ScrollDataManager.THEME_ROLEX -> binding.chipThemeRolex.isChecked = true
             else -> binding.chipThemeGinger.isChecked = true
         }
 
@@ -93,6 +94,7 @@ class MainActivity : AppCompatActivity() {
             val selectedTheme = when (checkedIds.first()) {
                 R.id.chipThemeTabby -> ScrollDataManager.THEME_TABBY
                 R.id.chipThemeSaturn -> ScrollDataManager.THEME_SATURN
+                R.id.chipThemeRolex -> ScrollDataManager.THEME_ROLEX
                 else -> ScrollDataManager.THEME_GINGER
             }
             dataManager.kittyTheme = selectedTheme
@@ -100,6 +102,7 @@ class MainActivity : AppCompatActivity() {
             val breedName = when (selectedTheme) {
                 ScrollDataManager.THEME_TABBY -> "Tabby 🐈‍⬛"
                 ScrollDataManager.THEME_SATURN -> "Saturn 🕶️"
+                ScrollDataManager.THEME_ROLEX -> "Rolex 🐱"
                 else -> "Ginger 🍊"
             }
             Toast.makeText(this, "$breedName selected!", Toast.LENGTH_SHORT).show()

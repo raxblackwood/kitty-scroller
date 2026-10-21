@@ -53,6 +53,7 @@ class ScrollDataManager(context: Context) {
         const val THEME_GINGER = "ginger"
         const val THEME_TABBY = "tabby"
         const val THEME_SATURN = "saturn"
+        const val THEME_ROLEX = "rolex"
 
         // Backward compatibility mappings
         const val THEME_ORANGE = "orange"
@@ -165,6 +166,7 @@ class ScrollDataManager(context: Context) {
             return when (saved.lowercase()) {
                 THEME_BLACK, THEME_TABBY -> THEME_TABBY
                 THEME_SATURN -> THEME_SATURN
+                THEME_ROLEX -> THEME_ROLEX
                 else -> THEME_GINGER
             }
         }

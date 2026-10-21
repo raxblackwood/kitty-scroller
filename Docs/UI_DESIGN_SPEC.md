@@ -75,6 +75,14 @@ ClawBack includes three selectable kitty breeds, each with distinct color mappin
 - Wooden pole border: `#120A05` (dark pixel outline)
 - Sleeping full screen lock: Full noir mobster loaf with fedora and revolver, with speech bubble "Time's up, boss. Take a break 🚬"
 
+#### Breed D: Rolex (`rolex`)
+- Persona: Blocky Siamese cat in grey workout sweater and athletic gripping gloves hanging on a gym pull-up bar
+- Curtain fabric: `#2B303A` (slate titanium)
+- Curtain vertical stripes: `#3378909C` (light slate pleats)
+- Wooden pole body: `#4A382A` (deep cedar gym bar)
+- Wooden pole border: `#14100D` (dark pixel outline)
+- Sleeping full screen lock: Centered blocky Siamese loaf, with speech bubble "Workout complete. Step away ⏱️"
+
 ### 2.3 Typography
 
 - **Headers**: System bold sans-serif, 22sp.
@@ -116,7 +124,7 @@ The main dashboard is arranged vertically inside a `CoordinatorLayout` and `Nest
 |  |  [Live 220dp interactive KittyCurtainView canvas preview]   |  |
 |  +-------------------------------------------------------------+  |
 |  CHOOSE KITTY BREED:                                              |
-|  ( * ) 🍊 Ginger    (   ) 🐈‍⬛ Tabby    (   ) 🕶️ Saturn            |
+|  ( * ) 🍊 Ginger   (   ) 🐈‍⬛ Tabby   (   ) 🕶️ Saturn   (   ) 🐱 Rolex |
 |  Drag slider to test kitty stretch:                               |
 |  [---O---------------------------------------------------------]  |
 |  [ Test Floating Overlay on Real Screen (5s) Button ]             |

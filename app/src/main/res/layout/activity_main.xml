@@ -25,11 +25,12 @@
                 android:orientation="horizontal"
                 android:layout_marginBottom="20dp">
 
-                <ImageView
+                <com.google.android.material.imageview.ShapeableImageView
                     android:layout_width="52dp"
                     android:layout_height="52dp"
-                    android:src="@drawable/ic_kitty_launcher"
-                    android:contentDescription="@string/app_name" />
+                    android:src="@mipmap/ic_kitty_launcher"
+                    android:contentDescription="@string/app_name"
+                    app:shapeAppearanceOverlay="@style/ShapeAppearance.Material3.Corner.Medium" />
 
                 <LinearLayout
                     android:layout_width="0dp"
@@ -192,7 +193,8 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="6dp"
                         android:layout_marginBottom="12dp"
-                        app:singleSelection="true">
+                        app:singleSelection="true"
+                        app:selectionRequired="true">
 
                         <com.google.android.material.chip.Chip
                             android:id="@+id/chipThemeGinger"
@@ -213,6 +215,13 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="🕶️ Saturn"
+                            style="@style/Widget.Material3.Chip.Filter" />
+
+                        <com.google.android.material.chip.Chip
+                            android:id="@+id/chipThemeRolex"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="🐱 Rolex"
                             style="@style/Widget.Material3.Chip.Filter" />
                     </com.google.android.material.chip.ChipGroup>
 

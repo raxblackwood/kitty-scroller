@@ -104,6 +104,25 @@ class KittyCurtainView @JvmOverloads constructor(
             speechTextColor = Color.parseColor("#FFD700"),
             poleWoodColor = Color.parseColor("#76513A"),
             poleOutlineColor = Color.parseColor("#140C08")
+        ),
+        ROLEX(
+            key = "rolex",
+            displayName = "Rolex",
+            furColor = Color.parseColor("#C8B8A6"),
+            furDarkColor = Color.parseColor("#263238"),
+            innerEarColor = Color.parseColor("#37474F"),
+            pawColor = Color.parseColor("#37474F"),
+            pawPadColor = Color.parseColor("#263238"),
+            curtainBodyColor = Color.parseColor("#2B303A"),
+            curtainStripeColor = Color.parseColor("#3378909C"),
+            eyeColor = Color.parseColor("#FFFFFF"),
+            eyeHighlightColor = Color.parseColor("#263238"),
+            noseColor = Color.parseColor("#263238"),
+            strokeColor = Color.parseColor("#12171A"),
+            speechBubbleBg = Color.parseColor("#1E222A"),
+            speechTextColor = Color.parseColor("#B0BEC5"),
+            poleWoodColor = Color.parseColor("#4A382A"),
+            poleOutlineColor = Color.parseColor("#14100D")
         )
     }
 
@@ -121,6 +140,9 @@ class KittyCurtainView @JvmOverloads constructor(
     private var saturnAnimator: ValueAnimator? = null
     private val saturnBitmaps = mutableListOf<Bitmap>()
     private var saturnFullBitmap: Bitmap? = null
+
+    // Rolex sprite bitmap
+    private var rolexBitmap: Bitmap? = null
 
     // Pixel-art sprite bitmaps for Ginger & Tabby
     private var bodyBitmap: Bitmap? = null
@@ -182,12 +204,14 @@ class KittyCurtainView @JvmOverloads constructor(
         val newBreed = when (themeName.lowercase()) {
             "tabby", "black" -> CatBreed.TABBY
             "saturn" -> CatBreed.SATURN
+            "rolex" -> CatBreed.ROLEX
             else -> CatBreed.GINGER
         }
 
         val needsBitmapReload = (currentBreed != newBreed) ||
             (newBreed == CatBreed.SATURN && saturnBitmaps.isEmpty()) ||
-            (newBreed != CatBreed.SATURN && bodyBitmap == null)
+            (newBreed == CatBreed.ROLEX && rolexBitmap == null) ||
+            (newBreed != CatBreed.SATURN && newBreed != CatBreed.ROLEX && bodyBitmap == null)
 
         currentBreed = newBreed
 
@@ -233,6 +257,8 @@ class KittyCurtainView @JvmOverloads constructor(
                 if (bmp != null) saturnBitmaps.add(bmp)
             }
             saturnFullBitmap = BitmapFactory.decodeResource(resources, R.drawable.kitty_saturn_full, options)
+        } else if (currentBreed == CatBreed.ROLEX) {
+            rolexBitmap = BitmapFactory.decodeResource(resources, R.drawable.kitty_rolex, options)
         } else {
             val isTabby = currentBreed == CatBreed.TABBY
             val bodyRes = if (isTabby) R.drawable.kitty_black_body else R.drawable.kitty_orange_body
@@ -253,7 +279,7 @@ class KittyCurtainView @JvmOverloads constructor(
             interpolator = AccelerateDecelerateInterpolator()
             addUpdateListener {
                 tailAngle = it.animatedValue as Float
-                if (currentBreed != CatBreed.SATURN) {
+                if (currentBreed != CatBreed.SATURN && currentBreed != CatBreed.ROLEX) {
                     invalidate()
                 }
             }
@@ -334,15 +360,29 @@ class KittyCurtainView @JvmOverloads constructor(
 
         // Cat display sizing
         val isSaturn = currentBreed == CatBreed.SATURN
-        val catW = (totalW * 0.22f).coerceIn(210f, 270f)
-        // Aspect ratio: Saturn is 280x475 (~0.589), Ginger/Tabby is 628x1162 (~0.540)
-        val catH = if (isSaturn) (catW / 0.589f) else (catW / 0.540f)
+        val isRolex = currentBreed == CatBreed.ROLEX
+        val catW = if (isRolex) (totalW * 0.28f).coerceIn(240f, 320f) else (totalW * 0.22f).coerceIn(210f, 270f)
+        // Aspect ratio: Rolex is 588x587 (~1.0), Saturn is 280x475 (~0.589), Ginger/Tabby is 628x1162 (~0.540)
+        val catH = when {
+            isRolex -> catW * (587f / 588f)
+            isSaturn -> (catW / 0.589f)
+            else -> (catW / 0.540f)
+        }
 
         // Stick offsets within the sprite coordinate space:
+        // Rolex: stick y=18..56 in 587 height space
         // Saturn: stick y=30..46 in 475 height space
         // Ginger/Tabby: stick y=30..72 in 1162 height space
-        val stickTopRatio = if (isSaturn) (30f / 475f) else (30f / 1162f)
-        val stickBotRatio = if (isSaturn) (46f / 475f) else (72f / 1162f)
+        val stickTopRatio = when {
+            isRolex -> (18f / 587f)
+            isSaturn -> (30f / 475f)
+            else -> (30f / 1162f)
+        }
+        val stickBotRatio = when {
+            isRolex -> (56f / 587f)
+            isSaturn -> (46f / 475f)
+            else -> (72f / 1162f)
+        }
 
         // Curtain bottom edge moves down proportionally with progress
         val curtainBottom = progress * totalH
@@ -397,34 +437,39 @@ class KittyCurtainView @JvmOverloads constructor(
         val catLeft = centerX - (catW / 2f)
         catRect.set(catLeft, catTop, catLeft + catW, catTop + catH)
 
-        val isSaturn = currentBreed == CatBreed.SATURN
-        if (isSaturn) {
-            // Saturn: 8-frame cartoon animation loop (cigar smoke, gun shift, tail swish)
-            val frame = if (saturnBitmaps.isNotEmpty()) {
-                val idx = saturnFrameIndex.coerceIn(0, saturnBitmaps.size - 1)
-                saturnBitmaps[idx]
-            } else null
-            if (frame != null) {
-                canvas.drawBitmap(frame, null, catRect, catPaint)
+        when (currentBreed) {
+            CatBreed.ROLEX -> {
+                val bmp = rolexBitmap ?: return
+                canvas.drawBitmap(bmp, null, catRect, catPaint)
             }
-        } else {
-            val bodyBmp = bodyBitmap ?: return
-            val tailBmp = tailBitmap ?: return
+            CatBreed.SATURN -> {
+                val frame = if (saturnBitmaps.isNotEmpty()) {
+                    val idx = saturnFrameIndex.coerceIn(0, saturnBitmaps.size - 1)
+                    saturnBitmaps[idx]
+                } else null
+                if (frame != null) {
+                    canvas.drawBitmap(frame, null, catRect, catPaint)
+                }
+            }
+            else -> {
+                val bodyBmp = bodyBitmap ?: return
+                val tailBmp = tailBitmap ?: return
 
-            // 1. Lively wagging tail behind the body
-            canvas.save()
-            val isTabby = currentBreed == CatBreed.TABBY
-            val tailPivotXRatio = if (isTabby) 0.5207f else 0.5334f
-            val tailPivotYRatio = 0.6885f
-            val tailPivotX = catRect.left + catW * tailPivotXRatio
-            val tailPivotY = catRect.top + catH * tailPivotYRatio
+                // 1. Lively wagging tail behind the body
+                canvas.save()
+                val isTabby = currentBreed == CatBreed.TABBY
+                val tailPivotXRatio = if (isTabby) 0.5207f else 0.5334f
+                val tailPivotYRatio = 0.6885f
+                val tailPivotX = catRect.left + catW * tailPivotXRatio
+                val tailPivotY = catRect.top + catH * tailPivotYRatio
 
-            canvas.rotate(tailAngle, tailPivotX, tailPivotY)
-            canvas.drawBitmap(tailBmp, null, catRect, catPaint)
-            canvas.restore()
+                canvas.rotate(tailAngle, tailPivotX, tailPivotY)
+                canvas.drawBitmap(tailBmp, null, catRect, catPaint)
+                canvas.restore()
 
-            // 2. Body sits firmly on the stick (no wiggling of the stick)
-            canvas.drawBitmap(bodyBmp, null, catRect, catPaint)
+                // 2. Body sits firmly on the stick (no wiggling of the stick)
+                canvas.drawBitmap(bodyBmp, null, catRect, catPaint)
+            }
         }
     }
 
@@ -432,6 +477,19 @@ class KittyCurtainView @JvmOverloads constructor(
         if (currentBreed == CatBreed.SATURN && saturnFullBitmap != null) {
             val bmp = saturnFullBitmap!!
             val bmpW = (totalW * 0.48f).coerceIn(240f, 320f)
+            val bmpH = bmpW * (bmp.height.toFloat() / bmp.width.toFloat())
+            val dstRect = RectF(
+                centerX - (bmpW / 2f),
+                (totalH * 0.45f) - (bmpH / 2f),
+                centerX + (bmpW / 2f),
+                (totalH * 0.45f) + (bmpH / 2f)
+            )
+            canvas.drawBitmap(bmp, null, dstRect, catPaint)
+            return
+        }
+        if (currentBreed == CatBreed.ROLEX && rolexBitmap != null) {
+            val bmp = rolexBitmap!!
+            val bmpW = (totalW * 0.44f).coerceIn(240f, 320f)
             val bmpH = bmpW * (bmp.height.toFloat() / bmp.width.toFloat())
             val dstRect = RectF(
                 centerX - (bmpW / 2f),
@@ -496,10 +554,10 @@ class KittyCurtainView @JvmOverloads constructor(
     private fun drawSpeechBubble(canvas: Canvas, hemY: Float, centerX: Float, progress: Float) {
         if (progress < 0.96f || hemY < 75f) return
 
-        val message = if (currentBreed == CatBreed.SATURN) {
-            "Time's up, boss. Take a break 🚬"
-        } else {
-            "Daily scroll limit reached 💤"
+        val message = when (currentBreed) {
+            CatBreed.SATURN -> "Time's up, boss. Take a break 🚬"
+            CatBreed.ROLEX -> "Workout complete. Step away ⏱️"
+            else -> "Daily scroll limit reached 💤"
         }
 
         textPaint.textSize = 30f
