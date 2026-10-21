@@ -1,17 +1,35 @@
 package com.antiscroller.kitty.admin
 
 import android.app.admin.DeviceAdminReceiver
+import android.app.admin.DevicePolicyManager
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.widget.Toast
 import com.antiscroller.kitty.R
 
 /**
- * Device Admin Receiver that protects AntiScroller against impulsive deletion.
- * When enabled, the user cannot uninstall the app from the home screen or settings
- * without first manually disabling Device Admin, introducing necessary cognitive friction.
+ * Device Admin Receiver that protects ClawBack against impulsive deletion.
+ * Supports standard Device Admin friction as well as Android Enterprise Device Owner mode
+ * (which enforces OS-level setUninstallBlocked).
  */
 class KittyAdminReceiver : DeviceAdminReceiver() {
+
+    override fun onProfileProvisioningComplete(context: Context, intent: Intent) {
+        super.onProfileProvisioningComplete(context, intent)
+        val dpm = context.getSystemService(Context.DEVICE_POLICY_SERVICE) as? DevicePolicyManager ?: return
+        val admin = ComponentName(context, KittyAdminReceiver::class.java)
+        try {
+            dpm.setUninstallBlocked(admin, context.packageName, true)
+            Toast.makeText(
+                context,
+                "🛡️ Device Owner Active: ClawBack is now un-uninstallable!",
+                Toast.LENGTH_LONG
+            ).show()
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
 
     override fun onEnabled(context: Context, intent: Intent) {
         super.onEnabled(context, intent)

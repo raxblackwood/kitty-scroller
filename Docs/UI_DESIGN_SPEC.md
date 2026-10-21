@@ -1,4 +1,4 @@
-﻿# ClawBack (AntiScroller) - UI Design & Architecture Specification
+# ClawBack (AntiScroller) - UI Design & Architecture Specification
 
 ## 1. Overview & Visual Identity
 
@@ -286,3 +286,39 @@ ClawBack strictly limits curtain drops to short-form addiction surfaces while le
 - **Anti-Uninstall Device Admin**:
   - `KittyAdminReceiver.kt` uses Android Device Policy Manager to prevent impulsive app uninstallation during doomscroll sessions.
   - If a Guardian PIN is configured, changing limits or uninstalling requires entering the PIN.
+
+---
+
+## 7. Anti-Uninstall & Self-Defense Architecture
+
+ClawBack deploys a 3-tier defense system against impulsive uninstallation and settings tampering.
+
+### 7.1 Layer 1: Surface Interception & Multi-Lingual Guard
+- `KittyAccessibilityService.kt` monitors settings and package installer events across Android Settings, Package Installer dialogs, and Google Play Store.
+- Multi-lingual keyword matching catches tampering attempts in English, Spanish, French, German, and Hindi.
+- Intercepts:
+  - App Info screen actions: "Uninstall", "Force stop", "Clear storage", "Clear data".
+  - Device Admin deactivation screen: "Deactivate", "Turn off admin", "Remove admin".
+  - Accessibility toggle screen: "Use ClawBack", "Stop ClawBack".
+  - Package installer confirmation dialog: Dialogs prompting for app deletion.
+  - Google Play Store app detail page uninstall buttons.
+
+### 7.2 Layer 2: Cognitive Friction Engine (60-Second Cooling-Off Period)
+- Handled by `BreathingFrictionActivity.kt` and `activity_breathing_friction.xml`.
+- When an uninstallation or tampering attempt is detected and no Guardian PIN is active:
+  - Launches a calm, focused 60-second breathing screen with circular progress countdown.
+  - Explains that the impulsive craving to doomscroll fades within 60 seconds.
+  - Highlights that productive apps remain 100% accessible.
+  - The "Proceed to Settings" button remains disabled and locked for the entire 60 seconds.
+  - When the countdown finishes, tapping proceed activates a 5-minute temporary maintenance window (`dataManager.unlockMaintenance(5)`).
+  - Pressing Back or tapping "Keep My Focus" immediately returns the user to the phone Home screen.
+
+### 7.3 Layer 3: Hardcore Device Owner Mode (OS-Level Lock)
+- Supports enterprise Device Owner provisioning via Android `DevicePolicyManager`.
+- Provisioning command:
+  `adb shell dpm set-device-owner com.antiscroller.kitty/.admin.KittyAdminReceiver`
+- When provisioned as Device Owner:
+  - ClawBack activates `devicePolicyManager.setUninstallBlocked(adminComponent, packageName, true)`.
+  - Android operating system itself greys out and disables the "Uninstall" button across all system settings, launchers, and package installers.
+  - Even Safe Mode cannot bypass the block.
+  - The in-app dashboard dynamically displays an active green status badge confirming the OS hardware lock.

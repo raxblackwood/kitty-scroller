@@ -32,6 +32,12 @@
             android:exported="false"
             android:theme="@style/Theme.AntiScrollerKitty" />
 
+        <!-- 60-Second Cooling-Off Cognitive Friction Activity -->
+        <activity
+            android:name=".ui.BreathingFrictionActivity"
+            android:exported="false"
+            android:theme="@style/Theme.AntiScrollerKitty" />
+
         <!-- Accessibility Service to detect scrolling in Instagram & YouTube Shorts -->
         <service
             android:name=".service.KittyAccessibilityService"

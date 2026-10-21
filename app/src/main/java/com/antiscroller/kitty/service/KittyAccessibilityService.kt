@@ -10,6 +10,7 @@ import android.view.accessibility.AccessibilityNodeInfo
 import android.widget.Toast
 import com.antiscroller.kitty.data.ScrollDataManager
 import com.antiscroller.kitty.overlay.KittyOverlayManager
+import com.antiscroller.kitty.ui.BreathingFrictionActivity
 import com.antiscroller.kitty.ui.GuardianUnlockActivity
 
 /**
@@ -17,7 +18,7 @@ import com.antiscroller.kitty.ui.GuardianUnlockActivity
  * 1. Measures scroll distance in pixels: 1 Reel unit = 1 full phone screen height.
  * 2. Filters out tab switching (Home, Reels, Messages, Profile) and horizontal swipes.
  * 3. Ignores Direct Messages, Profile editing, and Stories.
- * 4. Protects against deletion using Parent / Accountability Partner Guardian PIN.
+ * 4. Multi-layer anti-tamper self-defense (Guardian PIN & 60s Cooling-Off Breathing Room).
  */
 class KittyAccessibilityService : AccessibilityService() {
 
@@ -25,8 +26,24 @@ class KittyAccessibilityService : AccessibilityService() {
         private const val TAG = "KittyAccessibility"
 
         const val PKG_SETTINGS = "com.android.settings"
-        const val PKG_PACKAGE_INSTALLER = "com.google.android.packageinstaller"
+        const val PKG_PACKAGE_INSTALLER_1 = "com.google.android.packageinstaller"
+        const val PKG_PACKAGE_INSTALLER_2 = "com.android.packageinstaller"
         const val PKG_VENDING = "com.android.vending"
+
+        // Multi-language tampering and uninstallation keywords
+        private val TAMPER_KEYWORDS = listOf(
+            // English
+            "uninstall", "force stop", "clear storage", "clear data", "deactivate",
+            "remove admin", "turn off admin", "use clawback", "clawback shortcut", "stop clawback",
+            // Spanish
+            "desinstalar", "forzar detención", "borrar almacenamiento", "borrar datos", "desactivar",
+            // French
+            "désinstaller", "forcer l'arrêt", "effacer le stockage", "effacer les données", "désactiver",
+            // German
+            "deinstallieren", "stoppen erzwingen", "beenden erzwingen", "speicherinhalt löschen", "deaktivieren",
+            // Hindi
+            "अनइंस्टॉल", "फ़ोर्स स्टॉप", "डेटा साफ़ करें"
+        )
     }
 
     private lateinit var dataManager: ScrollDataManager
@@ -64,6 +81,13 @@ class KittyAccessibilityService : AccessibilityService() {
 
         // Ignore our own overlay window, keyboards, and system UI bars
         if (isIgnoredPackage(eventPkg)) {
+            return
+        }
+
+        // Intercept tampering in Settings, Package Installer, or Google Play Store
+        if (isSettingsOrInstaller(eventPkg)) {
+            checkAndApplyUninstallProtection(eventPkg)
+            mainHandler.post { overlayManager.hideOverlay() }
             return
         }
 
@@ -249,7 +273,7 @@ class KittyAccessibilityService : AccessibilityService() {
 
         // Check for Settings uninstall/force-stop protection
         if (isSettingsOrInstaller(packageName)) {
-            checkAndApplyUninstallProtection(event)
+            checkAndApplyUninstallProtection(packageName)
             mainHandler.post {
                 overlayManager.hideOverlay()
             }
@@ -458,55 +482,82 @@ class KittyAccessibilityService : AccessibilityService() {
     private fun isSettingsOrInstaller(pkg: String): Boolean {
         return pkg.startsWith("com.android.settings") ||
                pkg.startsWith("com.google.android.packageinstaller") ||
+               pkg.startsWith("com.android.packageinstaller") ||
                pkg == PKG_VENDING
     }
 
+    private var lastProtectionTriggerTs = 0L
+
     /**
-     * Intercepts uninstallation or force-stop attempts in Settings.
-     * If Guardian PIN is enabled, requires parent / friend to unlock with PIN.
+     * Intercepts uninstallation, force-stop, data clearing, device admin deactivation,
+     * and accessibility disabling across Android Settings, Package Installer, and Google Play Store.
+     * 
+     * Defense Rules:
+     * 1. If maintenance mode is active (granted via PIN or 60s breathing timer), user has 5m unhindered access.
+     * 2. If Guardian Lock is active, requires parent / accountability partner PIN via GuardianUnlockActivity.
+     * 3. If Guardian Lock is not active, enforces a 60-second cooling-off period via BreathingFrictionActivity.
      */
-    private fun checkAndApplyUninstallProtection(event: AccessibilityEvent) {
+    private fun checkAndApplyUninstallProtection(eventPkg: String) {
+        if (dataManager.isMaintenanceModeActive()) return
+
+        val now = System.currentTimeMillis()
+        if (now - lastProtectionTriggerTs < 2000L) return
+
         val rootNode = rootInActiveWindow ?: return
         try {
-            val textNodes = rootNode.findAccessibilityNodeInfosByText("ClawBack")
+            val myPkg = applicationContext.packageName
+
+            // 1. Check if the screen references ClawBack
+            val appNodes = rootNode.findAccessibilityNodeInfosByText("ClawBack")
                 .plus(rootNode.findAccessibilityNodeInfosByText("AntiScroller"))
-            val pkgNodes = rootNode.findAccessibilityNodeInfosByText(packageName)
+                .plus(rootNode.findAccessibilityNodeInfosByText(myPkg))
 
-            if (textNodes.isNotEmpty() || pkgNodes.isNotEmpty()) {
-                val uninstallNodes = rootNode.findAccessibilityNodeInfosByText("Uninstall")
-                    .plus(rootNode.findAccessibilityNodeInfosByText("Force stop"))
-                    .plus(rootNode.findAccessibilityNodeInfosByText("Clear storage"))
+            val hasAppText = appNodes.isNotEmpty()
+            for (node in appNodes) node.recycle()
 
-                if (uninstallNodes.isNotEmpty()) {
-                    // Check if Guardian Lock is active and not currently unlocked by parent
-                    if (dataManager.isGuardianLockEnabled && !dataManager.isMaintenanceModeActive()) {
-                        mainHandler.post {
-                            Toast.makeText(
-                                applicationContext,
-                                "🛡️ Protected by Guardian PIN! Parent / friend must unlock to modify or delete.",
-                                Toast.LENGTH_LONG
-                            ).show()
-                            val intent = Intent(applicationContext, GuardianUnlockActivity::class.java).apply {
-                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
-                            }
-                            startActivity(intent)
-                        }
-                        return
+            // 2. Check if a tampering/uninstall/deactivation keyword exists on screen
+            var hasTamperAction = false
+            for (keyword in TAMPER_KEYWORDS) {
+                val nodes = rootNode.findAccessibilityNodeInfosByText(keyword)
+                if (nodes.isNotEmpty()) {
+                    hasTamperAction = true
+                    for (node in nodes) node.recycle()
+                    break
+                }
+            }
+
+            // 3. For package installer: also check package name
+            val isPackageInstaller = eventPkg.startsWith("com.google.android.packageinstaller") ||
+                                    eventPkg.startsWith("com.android.packageinstaller")
+
+            val isTamperingTarget = (hasAppText && hasTamperAction) ||
+                                    (isPackageInstaller && hasAppText)
+
+            if (!isTamperingTarget) return
+
+            lastProtectionTriggerTs = now
+
+            mainHandler.post {
+                if (dataManager.isGuardianLockEnabled) {
+                    Toast.makeText(
+                        applicationContext,
+                        "🛡️ Protected by Guardian PIN! Parent / partner must enter PIN to modify or delete.",
+                        Toast.LENGTH_LONG
+                    ).show()
+                    val intent = Intent(applicationContext, GuardianUnlockActivity::class.java).apply {
+                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
                     }
-
-                    // Otherwise apply standard smart friction
-                    if (dataManager.isSmartFrictionEnabled && !dataManager.isMaintenanceModeActive()) {
-                        mainHandler.post {
-                            Toast.makeText(
-                                applicationContext,
-                                "🐾 Smart Friction: ClawBack protects your focus! All your other apps remain fully accessible.",
-                                Toast.LENGTH_LONG
-                            ).show()
-                        }
-                        if (dataManager.isLimitReached()) {
-                            performGlobalAction(GLOBAL_ACTION_HOME)
-                        }
+                    startActivity(intent)
+                } else {
+                    Toast.makeText(
+                        applicationContext,
+                        "🌿 60-Second Cooling-Off Period: Pause and take a breath.",
+                        Toast.LENGTH_LONG
+                    ).show()
+                    val intent = Intent(applicationContext, BreathingFrictionActivity::class.java).apply {
+                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
                     }
+                    startActivity(intent)
                 }
             }
         } catch (e: Exception) {

@@ -2,6 +2,8 @@ package com.antiscroller.kitty
 
 import android.accessibilityservice.AccessibilityServiceInfo
 import android.app.admin.DevicePolicyManager
+import android.content.ClipData
+import android.content.ClipboardManager
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
@@ -57,6 +59,7 @@ class MainActivity : AppCompatActivity() {
         updateDashboard()
         checkPermissions()
         updateGuardianUI()
+        updateDeviceOwnerUI()
     }
 
     private fun setupUI() {
@@ -209,6 +212,54 @@ class MainActivity : AppCompatActivity() {
                 // Locked -> Prompt PIN to unlock
                 showUnlockPinDialog()
             }
+        }
+
+        // Hardcore Device Owner Mode ADB command copy
+        binding.btnDeviceOwnerAdb.setOnClickListener {
+            val adbCmd = "adb shell dpm set-device-owner com.antiscroller.kitty/.admin.KittyAdminReceiver"
+            val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+            val clip = ClipData.newPlainText("ClawBack ADB Command", adbCmd)
+            clipboard.setPrimaryClip(clip)
+            Toast.makeText(this, "ADB command copied to clipboard!", Toast.LENGTH_SHORT).show()
+
+            MaterialAlertDialogBuilder(this)
+                .setTitle("Hardcore Un-uninstallable Mode")
+                .setMessage(
+                    "Command copied to clipboard!\n\n" +
+                    "To activate OS-level uninstallation block via ADB:\n\n" +
+                    "1. Connect phone to PC with USB Debugging enabled.\n" +
+                    "2. Run in terminal:\n$adbCmd\n\n" +
+                    "Note: Ensure no other secondary work profiles exist before running."
+                )
+                .setPositiveButton("Got It", null)
+                .show()
+        }
+    }
+
+    private fun updateDeviceOwnerUI() {
+        val isDeviceOwner = try {
+            devicePolicyManager.isDeviceOwnerApp(packageName)
+        } catch (e: Exception) {
+            false
+        }
+
+        if (isDeviceOwner) {
+            try {
+                devicePolicyManager.setUninstallBlocked(adminComponent, packageName, true)
+            } catch (e: Exception) {
+                // Ignore if not allowed
+            }
+            binding.tvDeviceOwnerStatus.text = "Status: 🛡️ Active (OS-Level Uninstall Blocked)"
+            binding.tvDeviceOwnerStatus.setTextColor(getColor(R.color.accent_green))
+            binding.btnDeviceOwnerAdb.text = "Hardcore Mode Active ✅"
+            binding.btnDeviceOwnerAdb.isEnabled = false
+            binding.btnDeviceOwnerAdb.alpha = 0.7f
+        } else {
+            binding.tvDeviceOwnerStatus.text = "Status: Standard Protection"
+            binding.tvDeviceOwnerStatus.setTextColor(getColor(R.color.text_secondary))
+            binding.btnDeviceOwnerAdb.text = "Copy ADB Setup Command"
+            binding.btnDeviceOwnerAdb.isEnabled = true
+            binding.btnDeviceOwnerAdb.alpha = 1.0f
         }
     }
 

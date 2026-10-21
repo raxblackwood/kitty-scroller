@@ -205,7 +205,6 @@ class ScrollDataManager(context: Context) {
     }
 
     fun isMaintenanceModeActive(): Boolean {
-        if (!isGuardianLockEnabled) return true
         val expiresAt = prefs.getLong(KEY_MAINTENANCE_EXPIRES, 0L)
         return System.currentTimeMillis() < expiresAt
     }
