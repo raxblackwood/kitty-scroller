@@ -91,206 +91,354 @@ class KittyAccessibilityService : AccessibilityService() {
     }
 
     /**
-     * Determines whether the user is on Instagram DMs or Story camera (non-doomscroll).
+     * Specifically checks if any comments container, bottom sheet, or engagement panel is active on screen.
      */
-    private fun isInstagramDmOrCamera(className: String, sourceNode: AccessibilityNodeInfo?): Boolean {
-        if (className.contains("Direct", ignoreCase = true) ||
-            className.contains("Message", ignoreCase = true) ||
-            className.contains("Inbox", ignoreCase = true) ||
-            className.contains("StoryCamera", ignoreCase = true) ||
-            className.contains("TransparentModalActivity", ignoreCase = true)) {
-            return true
-        }
+    private fun isCommentOpenOnScreen(rootNode: AccessibilityNodeInfo?): Boolean {
+        if (rootNode == null) return false
+        try {
+            // 1. Instagram comments container / composer / recycler
+            val igCommentIds = arrayOf(
+                "com.instagram.android:id/layout_comment_thread",
+                "com.instagram.android:id/layout_comment_thread_edittext",
+                "com.instagram.android:id/comment_composer",
+                "com.instagram.android:id/comment_composer_view",
+                "com.instagram.android:id/comments_recycler_view",
+                "com.instagram.android:id/row_comment_container",
+                "com.instagram.android:id/comment_feed",
+                "com.instagram.android:id/comment_sheet"
+            )
+            for (id in igCommentIds) {
+                val nodes = rootNode.findAccessibilityNodeInfosByViewId(id)
+                if (nodes.isNotEmpty()) {
+                    for (n in nodes) n.recycle()
+                    return true
+                }
+            }
 
-        val viewId = sourceNode?.viewIdResourceName?.lowercase() ?: ""
-        if (viewId.contains("direct_") ||
-            viewId.contains("thread_") ||
-            viewId.contains("message_composer")) {
-            return true
+            // 2. YouTube comments engagement panel / container
+            val ytCommentIds = arrayOf(
+                "com.google.android.youtube:id/engagement_panel",
+                "com.google.android.youtube:id/engagement_panel_wrapper",
+                "com.google.android.youtube:id/comment_section",
+                "com.google.android.youtube:id/comments_entry_point",
+                "com.google.android.youtube:id/comment_composer"
+            )
+            for (id in ytCommentIds) {
+                val nodes = rootNode.findAccessibilityNodeInfosByViewId(id)
+                if (nodes.isNotEmpty()) {
+                    for (n in nodes) n.recycle()
+                    return true
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error checking comments on screen: ${e.message}")
         }
-
         return false
     }
 
     /**
-     * Fast, zero-IPC check to detect if the scrolled view belongs to comments.
-     * Uses in-memory hierarchy traversal only (completes in < 0.05ms).
+     * Fast check to see if the scrolled view belongs to a comment section or bottom sheet.
      */
-    private fun isCommentSectionOrSheet(sourceNode: AccessibilityNodeInfo?): Boolean {
+    private fun isCommentScroller(sourceNode: AccessibilityNodeInfo?): Boolean {
         if (sourceNode == null) return false
-
         val sourceId = sourceNode.viewIdResourceName?.lowercase() ?: ""
-
-        // Fast-path: Main feed and video scrollers are NEVER comments!
-        if (sourceId.contains("reel_recycler") ||
-            sourceId.contains("clips_view_pager") ||
-            sourceId.contains("vertical_view_pager") ||
-            sourceId.contains("feed_recycler") ||
-            sourceId.contains("sticky_header_list")) {
-            return false
-        }
-
         val sourceCls = sourceNode.className?.toString()?.lowercase() ?: ""
         val sourceDesc = sourceNode.contentDescription?.toString()?.lowercase() ?: ""
 
-        // Direct check on the scrolling container ID / class / desc
-        if (isCommentOrSheetIdentifier(sourceId, sourceCls, sourceDesc)) {
+        if (sourceId.contains("comment") || sourceId.contains("engagement_panel") ||
+            sourceId.contains("bottom_sheet") || sourceId.contains("reply") ||
+            sourceCls.contains("comment") || sourceDesc.contains("comment")) {
             return true
         }
 
-        // Fast in-memory hierarchy walk (up to 8 levels) looking for comment containers
         var current: AccessibilityNodeInfo? = sourceNode.parent
         var depth = 0
         var isComment = false
+        while (current != null && depth < 6) {
+            val pId = current.viewIdResourceName?.lowercase() ?: ""
+            val pCls = current.className?.toString()?.lowercase() ?: ""
+            val pDesc = current.contentDescription?.toString()?.lowercase() ?: ""
 
-        while (current != null && depth < 8) {
-            val parentId = current.viewIdResourceName?.lowercase() ?: ""
-
-            if (parentId.contains("reel_recycler") ||
-                parentId.contains("clips_view_pager") ||
-                parentId.contains("vertical_view_pager") ||
-                parentId.contains("feed_recycler")) {
-                current.recycle()
-                return false
-            }
-
-            val parentCls = current.className?.toString()?.lowercase() ?: ""
-            val parentDesc = current.contentDescription?.toString()?.lowercase() ?: ""
-
-            if (isCommentOrSheetIdentifier(parentId, parentCls, parentDesc)) {
+            if (pId.contains("comment") || pId.contains("engagement_panel") ||
+                pId.contains("bottom_sheet") || pId.contains("reply") ||
+                pCls.contains("comment") || pDesc.contains("comment")) {
                 isComment = true
                 current.recycle()
                 break
             }
-
-            val nextParent = current.parent
+            val next = current.parent
             current.recycle()
-            current = nextParent
+            current = next
             depth++
         }
-
         return isComment
     }
 
-    private fun isCommentOrSheetIdentifier(id: String, cls: String, desc: String): Boolean {
-        return id.contains("comment") ||
-               id.contains("engagement_panel") ||
-               id.contains("panel_content") ||
-               id.contains("bottom_sheet") ||
-               id.contains("touch_container") ||
-               id.contains("design_bottom_sheet") ||
-               id.contains("modal_container") ||
-               id.contains("sheet_container") ||
-               id.contains("reply") ||
-               cls.contains("bottomsheet") ||
-               cls.contains("comment") ||
-               desc.contains("comment")
-    }
-
     /**
-     * Specifically verifies if a scroll in YouTube is occurring inside YouTube Shorts.
-     * Filters out YouTube Home feed, search results, subscriptions, and comments.
+     * Strictly verifies whether the user is in Instagram Direct Messages (chat thread or inbox).
      */
-    private fun isYouTubeShortsScroller(sourceNode: AccessibilityNodeInfo?): Boolean {
-        if (sourceNode == null) return false
-
-        // Comments or engagement panels are never Shorts video scrollers
-        if (isCommentSectionOrSheet(sourceNode)) {
-            return false
-        }
-
-        val sourceId = sourceNode.viewIdResourceName?.lowercase() ?: ""
-        val sourceClass = sourceNode.className?.toString()?.lowercase() ?: ""
-
-        // 1. If it's reel_recycler or contains shorts/reel, it's definitely Shorts!
-        if (sourceId.contains("reel") || sourceId.contains("shorts") ||
-            sourceClass.contains("reel") || sourceClass.contains("shorts")) {
+    private fun isInstagramDirectMessages(rootNode: AccessibilityNodeInfo?, sourceNode: AccessibilityNodeInfo?): Boolean {
+        val sourceId = sourceNode?.viewIdResourceName?.lowercase() ?: ""
+        if (sourceId.contains("direct") || sourceId.contains("thread") ||
+            sourceId.contains("message") || sourceId.contains("inbox")) {
             return true
         }
 
-        // 2. Reject if the scroller itself is the home feed results list
-        if (sourceId.contains("results_recycler_view") ||
-            sourceId.contains("feed_filter_bar") ||
-            sourceId.contains("pane_fragment") ||
-            sourceId.contains("elements_recycler_view")) {
-            return false
-        }
-
-        // 3. Walk up the parent hierarchy (up to 8 levels) looking for Shorts container
-        var current: AccessibilityNodeInfo? = sourceNode.parent
-        var depth = 0
-        var isShorts = false
-
-        while (current != null && depth < 8) {
-            val parentId = current.viewIdResourceName?.lowercase() ?: ""
-            val parentClass = current.className?.toString()?.lowercase() ?: ""
-
-            if (parentId.contains("reel") || parentId.contains("shorts") ||
-                parentClass.contains("reel") || parentClass.contains("shorts")) {
-                isShorts = true
-                current.recycle()
-                break
-            }
-
-            // Reject if it belongs to Home results
-            if (parentId.contains("results_recycler_view") || parentId.contains("pane_fragment")) {
-                current.recycle()
-                return false
-            }
-
-            val nextParent = current.parent
-            current.recycle()
-            current = nextParent
-            depth++
-        }
-
-        return isShorts
-    }
-
-    /**
-     * Determines whether YouTube is currently in Shorts mode (vs Home feed or long videos).
-     */
-    private fun isYouTubeShortsActive(rootNode: AccessibilityNodeInfo?): Boolean {
         if (rootNode == null) return false
         try {
-            val reelRecyclers = rootNode.findAccessibilityNodeInfosByViewId("com.google.android.youtube:id/reel_recycler")
-            if (reelRecyclers.isNotEmpty()) {
-                for (node in reelRecyclers) node.recycle()
-                return true
-            }
-
-            val shortsContainers = rootNode.findAccessibilityNodeInfosByViewId("com.google.android.youtube:id/reel_watch_fragment")
-            if (shortsContainers.isNotEmpty()) {
-                for (node in shortsContainers) node.recycle()
-                return true
-            }
-
-            val shortsTabs = rootNode.findAccessibilityNodeInfosByText("Shorts")
-            for (tab in shortsTabs) {
-                val isSel = tab.isSelected || tab.parent?.isSelected == true
-                tab.recycle()
-                if (isSel) return true
+            val dmIds = arrayOf(
+                "com.instagram.android:id/row_thread_composer",
+                "com.instagram.android:id/message_composer",
+                "com.instagram.android:id/direct_inbox",
+                "com.instagram.android:id/inbox_action_bar",
+                "com.instagram.android:id/direct_text_message_text_view",
+                "com.instagram.android:id/layout_thread_title",
+                "com.instagram.android:id/thread_title",
+                "com.instagram.android:id/message_list",
+                "com.instagram.android:id/direct_unified_inbox"
+            )
+            for (id in dmIds) {
+                val nodes = rootNode.findAccessibilityNodeInfosByViewId(id)
+                if (nodes.isNotEmpty()) {
+                    for (n in nodes) n.recycle()
+                    return true
+                }
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Error checking YouTube Shorts state: ${e.message}")
+            Log.e(TAG, "Error checking Instagram DM: ${e.message}")
         }
         return false
     }
 
-    private fun handleWindowStateChanged(packageName: String, event: AccessibilityEvent) {
-        val className = event.className?.toString() ?: ""
+    /**
+     * Whitelist Target 1: Instagram Homepage Feed.
+     * Rejects DMs, Comments, Explore, Profile, and Stories.
+     */
+    private fun isInstagramHomeFeed(sourceNode: AccessibilityNodeInfo?, rootNode: AccessibilityNodeInfo?): Boolean {
+        if (isInstagramDirectMessages(rootNode, sourceNode)) return false
+        if (isCommentScroller(sourceNode) || isCommentOpenOnScreen(rootNode)) return false
 
+        val sourceId = sourceNode?.viewIdResourceName?.lowercase() ?: ""
+
+        // Hard reject if scroller belongs to explore, profile, or reels
+        if (sourceId.contains("clips_view_pager") ||
+            sourceId.contains("explore_recycler_view") ||
+            sourceId.contains("profile_recycler_view")) {
+            return false
+        }
+
+        // Direct feed recycler ID
+        if (sourceId.contains("feed_recycler_view") || sourceId.contains("sticky_header_list")) {
+            return true
+        }
+
+        // Check if Home tab is currently selected in the bottom navigation bar
+        if (rootNode != null) {
+            try {
+                // Reject if Explore, Profile, or Creation tab is selected
+                val exploreTabs = rootNode.findAccessibilityNodeInfosByViewId("com.instagram.android:id/search_tab")
+                for (t in exploreTabs) {
+                    val sel = t.isSelected || t.parent?.isSelected == true
+                    t.recycle()
+                    if (sel) return false
+                }
+
+                val profileTabs = rootNode.findAccessibilityNodeInfosByViewId("com.instagram.android:id/profile_tab")
+                for (t in profileTabs) {
+                    val sel = t.isSelected || t.parent?.isSelected == true
+                    t.recycle()
+                    if (sel) return false
+                }
+
+                val homeTabs = rootNode.findAccessibilityNodeInfosByViewId("com.instagram.android:id/feed_tab")
+                for (t in homeTabs) {
+                    val sel = t.isSelected || t.parent?.isSelected == true
+                    t.recycle()
+                    if (sel) return true
+                }
+
+                val homeDescTabs = rootNode.findAccessibilityNodeInfosByText("Home")
+                for (t in homeDescTabs) {
+                    val sel = t.isSelected || t.parent?.isSelected == true
+                    t.recycle()
+                    if (sel) return true
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error checking Instagram Home feed: ${e.message}")
+            }
+        }
+
+        return false
+    }
+
+    /**
+     * Whitelist Target 2: Instagram Reels (swiping reels).
+     * Rejects Comments, DMs, Feed, Explore, and Stories.
+     */
+    private fun isInstagramReels(sourceNode: AccessibilityNodeInfo?, rootNode: AccessibilityNodeInfo?): Boolean {
+        if (isInstagramDirectMessages(rootNode, sourceNode)) return false
+        if (isCommentScroller(sourceNode) || isCommentOpenOnScreen(rootNode)) return false
+
+        val sourceId = sourceNode?.viewIdResourceName?.lowercase() ?: ""
+
+        // 1. Direct Reels pager
+        if (sourceId.contains("clips_view_pager") ||
+            sourceId.contains("reel_viewer") ||
+            sourceId.contains("vertical_view_pager") ||
+            sourceId.contains("clips_media_container") ||
+            sourceId.contains("reel_recycler")) {
+            return true
+        }
+
+        // 2. Parent hierarchy
+        var current: AccessibilityNodeInfo? = sourceNode?.parent
+        var depth = 0
+        var isReel = false
+        while (current != null && depth < 6) {
+            val pId = current.viewIdResourceName?.lowercase() ?: ""
+            if (pId.contains("clips_view_pager") ||
+                pId.contains("reel_viewer") ||
+                pId.contains("vertical_view_pager") ||
+                pId.contains("clips_media_container") ||
+                pId.contains("reel_recycler")) {
+                isReel = true
+                current.recycle()
+                break
+            }
+            val next = current.parent
+            current.recycle()
+            current = next
+            depth++
+        }
+        if (isReel) return true
+
+        // 3. Reels tab selected in bottom bar
+        if (rootNode != null) {
+            try {
+                val reelsTabs = rootNode.findAccessibilityNodeInfosByViewId("com.instagram.android:id/reels_tab")
+                    .plus(rootNode.findAccessibilityNodeInfosByViewId("com.instagram.android:id/clips_tab"))
+                for (t in reelsTabs) {
+                    val sel = t.isSelected || t.parent?.isSelected == true
+                    t.recycle()
+                    if (sel) return true
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error checking Reels tab: ${e.message}")
+            }
+        }
+
+        return false
+    }
+
+    /**
+     * Whitelist Target 3: YouTube Shorts (swiping shorts).
+     * STRICTLY rejects YouTube Homepage (results_recycler_view), Search, Subscriptions, and Comments.
+     */
+    private fun isYouTubeShorts(sourceNode: AccessibilityNodeInfo?, rootNode: AccessibilityNodeInfo?): Boolean {
+        if (isCommentScroller(sourceNode) || isCommentOpenOnScreen(rootNode)) return false
+
+        val sourceId = sourceNode?.viewIdResourceName?.lowercase() ?: ""
+
+        // HARD REJECT: Homepage feed, search results, filter bars, and video panels
+        if (sourceId.contains("results_recycler_view") ||
+            sourceId.contains("feed_filter_bar") ||
+            sourceId.contains("elements_recycler_view") ||
+            sourceId.contains("pane_fragment") ||
+            sourceId.contains("watch_panel") ||
+            sourceId.contains("player_view")) {
+            return false
+        }
+
+        // Check root navigation tabs: if Home, Subscriptions, or Library tab is selected, NEVER allow!
+        if (rootNode != null) {
+            try {
+                val homeTabs = rootNode.findAccessibilityNodeInfosByText("Home")
+                for (t in homeTabs) {
+                    val sel = t.isSelected || t.parent?.isSelected == true
+                    t.recycle()
+                    if (sel) return false
+                }
+
+                val subTabs = rootNode.findAccessibilityNodeInfosByText("Subscriptions")
+                for (t in subTabs) {
+                    val sel = t.isSelected || t.parent?.isSelected == true
+                    t.recycle()
+                    if (sel) return false
+                }
+
+                val youTabs = rootNode.findAccessibilityNodeInfosByText("You")
+                    .plus(rootNode.findAccessibilityNodeInfosByText("Library"))
+                for (t in youTabs) {
+                    val sel = t.isSelected || t.parent?.isSelected == true
+                    t.recycle()
+                    if (sel) return false
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error checking YouTube tabs: ${e.message}")
+            }
+        }
+
+        // POSITIVE CHECK: Must be reel_recycler or inside reel_watch_fragment / shorts container
+        if (sourceId.contains("reel_recycler")) {
+            return true
+        }
+
+        var current: AccessibilityNodeInfo? = sourceNode?.parent
+        var depth = 0
+        var isShorts = false
+        while (current != null && depth < 6) {
+            val pId = current.viewIdResourceName?.lowercase() ?: ""
+            if (pId.contains("results_recycler_view") || pId.contains("pane_fragment")) {
+                current.recycle()
+                return false
+            }
+            if (pId.contains("reel_recycler") || pId.contains("reel_watch_fragment") || pId.contains("shorts_container")) {
+                isShorts = true
+                current.recycle()
+                break
+            }
+            val next = current.parent
+            current.recycle()
+            current = next
+            depth++
+        }
+        if (isShorts) return true
+
+        // Check if Shorts tab is explicitly selected in bottom navigation
+        if (rootNode != null) {
+            try {
+                val shortsTabs = rootNode.findAccessibilityNodeInfosByText("Shorts")
+                for (t in shortsTabs) {
+                    val sel = t.isSelected || t.parent?.isSelected == true
+                    t.recycle()
+                    if (sel) return true
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error checking Shorts tab: ${e.message}")
+            }
+        }
+
+        return false
+    }
+
+    private fun handleWindowStateChanged(packageName: String, event: AccessibilityEvent) {
         if (packageName != currentForegroundPackage) {
             currentForegroundPackage = packageName
             lastInstagramIndex = -1
             lastYouTubeIndex = -1
         }
 
-        // 1. Instagram: hide overlay in DMs/Camera, show overlay on Feed / Reels
+        // 1. Instagram: ONLY show overlay on Home feed or Reels (hide in DMs, Comments, Explore, Profile)
         if (packageName == ScrollDataManager.PKG_INSTAGRAM) {
             dataManager.checkAndPerformMidnightReset()
 
-            if (isInstagramDmOrCamera(className, event.source)) {
+            val root = rootInActiveWindow
+            val isTargetActive = (isInstagramHomeFeed(null, root) || isInstagramReels(null, root)) &&
+                                 !isCommentOpenOnScreen(root) &&
+                                 !isInstagramDirectMessages(root, null)
+            root?.recycle()
+
+            if (!isTargetActive) {
                 mainHandler.post { overlayManager.hideOverlay() }
                 return
             }
@@ -307,27 +455,28 @@ class KittyAccessibilityService : AccessibilityService() {
             return
         }
 
-        // 2. YouTube: show overlay when inside Shorts or when miniplayer is active if limit reached
+        // 2. YouTube: ONLY show overlay on Shorts (hide on Homepage, Subscriptions, Search, Comments)
         if (packageName == ScrollDataManager.PKG_YOUTUBE) {
             dataManager.checkAndPerformMidnightReset()
 
             val root = rootInActiveWindow
-            val inShorts = isYouTubeShortsActive(root)
-            val miniplayerActive = isYouTubeMiniplayerActive(root)
+            val inShorts = isYouTubeShorts(null, root) && !isCommentOpenOnScreen(root)
+            root?.recycle()
 
-            if (inShorts || (miniplayerActive && dataManager.isLimitReached())) {
-                val screenHeight = resources.displayMetrics.heightPixels
-                val dropPercentage = dataManager.getDropPercentage(screenHeight)
-                if (dropPercentage <= 0.0001f) {
-                    mainHandler.post { overlayManager.hideOverlay() }
-                } else {
-                    mainHandler.post {
-                        overlayManager.showOrUpdateOverlay(dropPercentage)
-                    }
-                }
-            } else {
+            if (!inShorts) {
                 mainHandler.post {
                     overlayManager.hideOverlay()
+                }
+                return
+            }
+
+            val screenHeight = resources.displayMetrics.heightPixels
+            val dropPercentage = dataManager.getDropPercentage(screenHeight)
+            if (dropPercentage <= 0.0001f) {
+                mainHandler.post { overlayManager.hideOverlay() }
+            } else {
+                mainHandler.post {
+                    overlayManager.showOrUpdateOverlay(dropPercentage)
                 }
             }
             return
@@ -357,25 +506,23 @@ class KittyAccessibilityService : AccessibilityService() {
         if (!dataManager.isPackageMonitored(packageName)) return
 
         val source = event.source
+        val root = rootInActiveWindow
 
-        // 1. Strict YouTube filter: MUST be YouTube Shorts! (Ignore Home feed, long videos, etc.)
-        if (packageName == ScrollDataManager.PKG_YOUTUBE) {
-            if (!isYouTubeShortsScroller(source)) {
-                source?.recycle()
-                return
+        // STRICT WHITELIST: ONLY 3 ALLOWED TARGETS (Instagram Home Feed, Instagram Reels, YouTube Shorts)
+        val isAllowed = when (packageName) {
+            ScrollDataManager.PKG_INSTAGRAM -> {
+                isInstagramHomeFeed(source, root) || isInstagramReels(source, root)
             }
+            ScrollDataManager.PKG_YOUTUBE -> {
+                isYouTubeShorts(source, root)
+            }
+            else -> false
         }
 
-        // 2. Filter out Comments completely on both Instagram and YouTube!
-        if (isCommentSectionOrSheet(source)) {
-            Log.d(TAG, "Scroll ignored: Inside comments section or sheet ($packageName)")
-            source?.recycle()
-            return
-        }
+        root?.recycle()
 
-        // 3. Instagram non-doomscroll check (DMs, story camera)
-        val className = event.className?.toString() ?: ""
-        if (packageName == ScrollDataManager.PKG_INSTAGRAM && isInstagramDmOrCamera(className, source)) {
+        if (!isAllowed) {
+            Log.d(TAG, "Scroll ignored: Not on allowed target screen (pkg=$packageName)")
             source?.recycle()
             return
         }
@@ -463,6 +610,11 @@ class KittyAccessibilityService : AccessibilityService() {
                                viewId.contains("skip")
 
             if (!isNextButton) return
+
+            val root = rootInActiveWindow
+            val inShorts = isYouTubeShorts(source, root)
+            root?.recycle()
+            if (!inShorts) return
 
             // Verify if it is in the YouTube Shorts miniplayer or player container
             if (isMiniplayerOrShortsNext(source)) {
