@@ -40,19 +40,20 @@ The app uses a focused high-contrast dark theme optimized for OLED displays.
 
 ### 2.2 Kitty Breed Theme Tokens
 
-ClawBack includes two selectable kitty breeds, each with distinct color mappings across the canvas and dashboard:
+ClawBack includes three selectable kitty breeds, each with distinct color mappings and animations across the canvas and dashboard:
 
-#### Breed A: Ginger Tabby (`orange`)
+#### Breed A: Ginger (`ginger`)
 - Main fur tone: `#FFA726`
 - Fur dark shading: `#FB8C00`
 - Curtain fabric: `#FFE0B2` (cream fabric)
 - Curtain vertical stripes: `#33FFA726` (semi-transparent orange)
 - Wooden pole body: `#8F5E40` (classic warm cedar wood)
 - Wooden pole border: `#120A05` (dark pixel outline)
+- Tail animation: Physics-inspired sine wave oscillation (-12° to +12°) behind body
 - Sleeping eyes & smile: `#4E342E`
 - Sleeping Zzz text: `#FF6E40`
 
-#### Breed B: Midnight Black Cat (`black`)
+#### Breed B: Tabby (`tabby`)
 - Main fur tone: `#262626`
 - Fur dark shading: `#141414`
 - Eyes: `#FFD600` (luminous golden yellow)
@@ -61,8 +62,18 @@ ClawBack includes two selectable kitty breeds, each with distinct color mappings
 - Curtain vertical stripes: `#33FFD600` (subtle gold pleats)
 - Wooden pole body: `#8A5F4A` (dark walnut wood)
 - Wooden pole border: `#120A05` (dark pixel outline)
+- Tail animation: Physics-inspired sine wave oscillation (-12° to +12°) behind body
 - Sleeping eyes & smile: `#FFD600` (golden)
 - Sleeping Zzz text: `#FFD600`
+
+#### Breed C: Saturn (`saturn`)
+- Persona: 1940s Noir mobster cat with fedora hat, pinstriped vest, gold dollar chain, and revolver
+- Animation: 8-frame cartoon sprite loop cycling through curling cigar smoke, gun repositioning, and swishing tail
+- Curtain fabric: `#222026` (noir deep velvet)
+- Curtain vertical stripes: `#33D4AF37` (subtle gold pinstripes)
+- Wooden pole body: `#76513A` (vintage mahogany wood)
+- Wooden pole border: `#120A05` (dark pixel outline)
+- Sleeping full screen lock: Full noir mobster loaf with fedora and revolver, with speech bubble "Time's up, boss. Take a break 🚬"
 
 ### 2.3 Typography
 
@@ -105,7 +116,7 @@ The main dashboard is arranged vertically inside a `CoordinatorLayout` and `Nest
 |  |  [Live 220dp interactive KittyCurtainView canvas preview]   |  |
 |  +-------------------------------------------------------------+  |
 |  CHOOSE KITTY BREED:                                              |
-|  ( * ) 🍊 Ginger Tabby        (   ) 🐈‍⬛ Midnight Black Cat        |
+|  ( * ) 🍊 Ginger    (   ) 🐈‍⬛ Tabby    (   ) 🕶️ Saturn            |
 |  Drag slider to test kitty stretch:                               |
 |  [---O---------------------------------------------------------]  |
 |  [ Test Floating Overlay on Real Screen (5s) Button ]             |
