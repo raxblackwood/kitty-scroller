@@ -96,7 +96,7 @@ class KittyAccessibilityService : AccessibilityService() {
     private fun isCommentOpenOnScreen(rootNode: AccessibilityNodeInfo?): Boolean {
         if (rootNode == null) return false
         try {
-            // 1. Instagram comments container / composer / recycler
+            // 1. Instagram comments container / composer / recycler / sheet
             val igCommentIds = arrayOf(
                 "com.instagram.android:id/layout_comment_thread",
                 "com.instagram.android:id/layout_comment_thread_edittext",
@@ -105,7 +105,8 @@ class KittyAccessibilityService : AccessibilityService() {
                 "com.instagram.android:id/comments_recycler_view",
                 "com.instagram.android:id/row_comment_container",
                 "com.instagram.android:id/comment_feed",
-                "com.instagram.android:id/comment_sheet"
+                "com.instagram.android:id/comment_sheet",
+                "com.instagram.android:id/bottom_sheet_container"
             )
             for (id in igCommentIds) {
                 val nodes = rootNode.findAccessibilityNodeInfosByViewId(id)
@@ -115,13 +116,14 @@ class KittyAccessibilityService : AccessibilityService() {
                 }
             }
 
-            // 2. YouTube comments engagement panel / container
+            // 2. YouTube comments engagement panel / container (EXCLUDING button comments_entry_point)
             val ytCommentIds = arrayOf(
                 "com.google.android.youtube:id/engagement_panel",
                 "com.google.android.youtube:id/engagement_panel_wrapper",
                 "com.google.android.youtube:id/comment_section",
-                "com.google.android.youtube:id/comments_entry_point",
-                "com.google.android.youtube:id/comment_composer"
+                "com.google.android.youtube:id/comment_composer",
+                "com.google.android.youtube:id/comment_thread",
+                "com.google.android.youtube:id/comments_sheet"
             )
             for (id in ytCommentIds) {
                 val nodes = rootNode.findAccessibilityNodeInfosByViewId(id)
@@ -129,6 +131,14 @@ class KittyAccessibilityService : AccessibilityService() {
                     for (n in nodes) n.recycle()
                     return true
                 }
+            }
+
+            // 3. Fallback text search for open comment sheet headers / composers
+            val commentTexts = rootNode.findAccessibilityNodeInfosByText("Add a comment")
+                .plus(rootNode.findAccessibilityNodeInfosByText("Add a public comment"))
+            if (commentTexts.isNotEmpty()) {
+                for (n in commentTexts) n.recycle()
+                return true
             }
         } catch (e: Exception) {
             Log.e(TAG, "Error checking comments on screen: ${e.message}")
@@ -154,7 +164,7 @@ class KittyAccessibilityService : AccessibilityService() {
         var current: AccessibilityNodeInfo? = sourceNode.parent
         var depth = 0
         var isComment = false
-        while (current != null && depth < 6) {
+        while (current != null && depth < 8) {
             val pId = current.viewIdResourceName?.lowercase() ?: ""
             val pCls = current.className?.toString()?.lowercase() ?: ""
             val pDesc = current.contentDescription?.toString()?.lowercase() ?: ""
@@ -180,7 +190,8 @@ class KittyAccessibilityService : AccessibilityService() {
     private fun isInstagramDirectMessages(rootNode: AccessibilityNodeInfo?, sourceNode: AccessibilityNodeInfo?): Boolean {
         val sourceId = sourceNode?.viewIdResourceName?.lowercase() ?: ""
         if (sourceId.contains("direct") || sourceId.contains("thread") ||
-            sourceId.contains("message") || sourceId.contains("inbox")) {
+            sourceId.contains("message") || sourceId.contains("inbox") ||
+            sourceId.contains("recipient")) {
             return true
         }
 
@@ -195,7 +206,12 @@ class KittyAccessibilityService : AccessibilityService() {
                 "com.instagram.android:id/layout_thread_title",
                 "com.instagram.android:id/thread_title",
                 "com.instagram.android:id/message_list",
-                "com.instagram.android:id/direct_unified_inbox"
+                "com.instagram.android:id/direct_unified_inbox",
+                "com.instagram.android:id/direct_message_list",
+                "com.instagram.android:id/row_inbox_container",
+                "com.instagram.android:id/inbox_recycler_view",
+                "com.instagram.android:id/direct_recycler_view",
+                "com.instagram.android:id/direct_search"
             )
             for (id in dmIds) {
                 val nodes = rootNode.findAccessibilityNodeInfosByViewId(id)
@@ -211,6 +227,34 @@ class KittyAccessibilityService : AccessibilityService() {
     }
 
     /**
+     * Helper to verify if an Instagram navigation tab is currently selected.
+     */
+    private fun isInstagramTabSelected(rootNode: AccessibilityNodeInfo?, tabId: String, tabText: String): Boolean {
+        if (rootNode == null) return false
+        try {
+            val tabsById = rootNode.findAccessibilityNodeInfosByViewId("com.instagram.android:id/$tabId")
+            for (t in tabsById) {
+                val sel = t.isSelected || t.parent?.isSelected == true
+                t.recycle()
+                if (sel) return true
+            }
+
+            val tabsByText = rootNode.findAccessibilityNodeInfosByText(tabText)
+            for (t in tabsByText) {
+                val isTabNode = t.className?.contains("Tab", ignoreCase = true) == true ||
+                                t.viewIdResourceName?.contains("tab", ignoreCase = true) == true ||
+                                t.parent?.viewIdResourceName?.contains("tab", ignoreCase = true) == true
+                val sel = t.isSelected || t.parent?.isSelected == true
+                t.recycle()
+                if (isTabNode && sel) return true
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error checking Instagram tab $tabId: ${e.message}")
+        }
+        return false
+    }
+
+    /**
      * Whitelist Target 1: Instagram Homepage Feed.
      * Rejects DMs, Comments, Explore, Profile, and Stories.
      */
@@ -220,51 +264,50 @@ class KittyAccessibilityService : AccessibilityService() {
 
         val sourceId = sourceNode?.viewIdResourceName?.lowercase() ?: ""
 
-        // Hard reject if scroller belongs to explore, profile, or reels
+        // Hard reject if scroller belongs to explore, profile, reels, direct, or stories
         if (sourceId.contains("clips_view_pager") ||
             sourceId.contains("explore_recycler_view") ||
-            sourceId.contains("profile_recycler_view")) {
+            sourceId.contains("profile_recycler_view") ||
+            sourceId.contains("direct") ||
+            sourceId.contains("story_viewer") ||
+            sourceId.contains("camera")) {
             return false
         }
 
-        // Direct feed recycler ID
-        if (sourceId.contains("feed_recycler_view") || sourceId.contains("sticky_header_list")) {
-            return true
+        // When sourceNode is available (during scroll events):
+        if (sourceNode != null) {
+            if (sourceId.contains("feed_recycler_view") || sourceId.contains("sticky_header_list")) {
+                return true
+            }
+
+            var current: AccessibilityNodeInfo? = sourceNode.parent
+            var depth = 0
+            while (current != null && depth < 8) {
+                val pId = current.viewIdResourceName?.lowercase() ?: ""
+                if (pId.contains("explore") || pId.contains("profile") || pId.contains("clips") || pId.contains("direct")) {
+                    current.recycle()
+                    return false
+                }
+                if (pId.contains("feed_recycler_view") || pId.contains("sticky_header_list")) {
+                    current.recycle()
+                    return true
+                }
+                val next = current.parent
+                current.recycle()
+                current = next
+                depth++
+            }
+            return false
         }
 
-        // Check if Home tab is currently selected in the bottom navigation bar
+        // When sourceNode is null (e.g. window state change check):
         if (rootNode != null) {
-            try {
-                // Reject if Explore, Profile, or Creation tab is selected
-                val exploreTabs = rootNode.findAccessibilityNodeInfosByViewId("com.instagram.android:id/search_tab")
-                for (t in exploreTabs) {
-                    val sel = t.isSelected || t.parent?.isSelected == true
-                    t.recycle()
-                    if (sel) return false
+            if (isInstagramTabSelected(rootNode, "feed_tab", "Home")) {
+                if (!isInstagramTabSelected(rootNode, "search_tab", "Search") &&
+                    !isInstagramTabSelected(rootNode, "profile_tab", "Profile") &&
+                    !isInstagramTabSelected(rootNode, "reels_tab", "Reels")) {
+                    return true
                 }
-
-                val profileTabs = rootNode.findAccessibilityNodeInfosByViewId("com.instagram.android:id/profile_tab")
-                for (t in profileTabs) {
-                    val sel = t.isSelected || t.parent?.isSelected == true
-                    t.recycle()
-                    if (sel) return false
-                }
-
-                val homeTabs = rootNode.findAccessibilityNodeInfosByViewId("com.instagram.android:id/feed_tab")
-                for (t in homeTabs) {
-                    val sel = t.isSelected || t.parent?.isSelected == true
-                    t.recycle()
-                    if (sel) return true
-                }
-
-                val homeDescTabs = rootNode.findAccessibilityNodeInfosByText("Home")
-                for (t in homeDescTabs) {
-                    val sel = t.isSelected || t.parent?.isSelected == true
-                    t.recycle()
-                    if (sel) return true
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "Error checking Instagram Home feed: ${e.message}")
             }
         }
 
@@ -281,49 +324,59 @@ class KittyAccessibilityService : AccessibilityService() {
 
         val sourceId = sourceNode?.viewIdResourceName?.lowercase() ?: ""
 
-        // 1. Direct Reels pager
-        if (sourceId.contains("clips_view_pager") ||
-            sourceId.contains("reel_viewer") ||
-            sourceId.contains("vertical_view_pager") ||
-            sourceId.contains("clips_media_container") ||
-            sourceId.contains("reel_recycler")) {
-            return true
+        // Hard reject feed, explore, profile, and direct scrollers
+        if (sourceId.contains("feed_recycler_view") ||
+            sourceId.contains("explore_recycler_view") ||
+            sourceId.contains("profile_recycler_view") ||
+            sourceId.contains("direct")) {
+            return false
         }
 
-        // 2. Parent hierarchy
-        var current: AccessibilityNodeInfo? = sourceNode?.parent
-        var depth = 0
-        var isReel = false
-        while (current != null && depth < 6) {
-            val pId = current.viewIdResourceName?.lowercase() ?: ""
-            if (pId.contains("clips_view_pager") ||
-                pId.contains("reel_viewer") ||
-                pId.contains("vertical_view_pager") ||
-                pId.contains("clips_media_container") ||
-                pId.contains("reel_recycler")) {
-                isReel = true
-                current.recycle()
-                break
+        // When sourceNode is available (during scroll events):
+        if (sourceNode != null) {
+            if (sourceId.contains("clips_view_pager") ||
+                sourceId.contains("reel_viewer") ||
+                sourceId.contains("vertical_view_pager") ||
+                sourceId.contains("clips_media_container") ||
+                sourceId.contains("reel_recycler")) {
+                return true
             }
-            val next = current.parent
-            current.recycle()
-            current = next
-            depth++
-        }
-        if (isReel) return true
 
-        // 3. Reels tab selected in bottom bar
-        if (rootNode != null) {
-            try {
-                val reelsTabs = rootNode.findAccessibilityNodeInfosByViewId("com.instagram.android:id/reels_tab")
-                    .plus(rootNode.findAccessibilityNodeInfosByViewId("com.instagram.android:id/clips_tab"))
-                for (t in reelsTabs) {
-                    val sel = t.isSelected || t.parent?.isSelected == true
-                    t.recycle()
-                    if (sel) return true
+            var current: AccessibilityNodeInfo? = sourceNode.parent
+            var depth = 0
+            while (current != null && depth < 8) {
+                val pId = current.viewIdResourceName?.lowercase() ?: ""
+                if (pId.contains("feed_recycler_view") || pId.contains("explore_recycler_view") || pId.contains("profile_recycler_view")) {
+                    current.recycle()
+                    return false
                 }
-            } catch (e: Exception) {
-                Log.e(TAG, "Error checking Reels tab: ${e.message}")
+                if (pId.contains("clips_view_pager") ||
+                    pId.contains("reel_viewer") ||
+                    pId.contains("vertical_view_pager") ||
+                    pId.contains("clips_media_container") ||
+                    pId.contains("reel_recycler")) {
+                    current.recycle()
+                    return true
+                }
+                val next = current.parent
+                current.recycle()
+                current = next
+                depth++
+            }
+            return false
+        }
+
+        // When sourceNode is null (e.g. window state change check):
+        if (rootNode != null) {
+            val reelsView = rootNode.findAccessibilityNodeInfosByViewId("com.instagram.android:id/clips_view_pager")
+                .plus(rootNode.findAccessibilityNodeInfosByViewId("com.instagram.android:id/reel_viewer"))
+            if (reelsView.isNotEmpty()) {
+                for (n in reelsView) n.recycle()
+                return true
+            }
+            if (isInstagramTabSelected(rootNode, "reels_tab", "Reels") ||
+                isInstagramTabSelected(rootNode, "clips_tab", "Clips")) {
+                return true
             }
         }
 
@@ -339,79 +392,67 @@ class KittyAccessibilityService : AccessibilityService() {
 
         val sourceId = sourceNode?.viewIdResourceName?.lowercase() ?: ""
 
-        // HARD REJECT: Homepage feed, search results, filter bars, and video panels
+        // HARD REJECT: Homepage feed, search results, filter bars, watch panel, and elements recycler
         if (sourceId.contains("results_recycler_view") ||
             sourceId.contains("feed_filter_bar") ||
             sourceId.contains("elements_recycler_view") ||
             sourceId.contains("pane_fragment") ||
             sourceId.contains("watch_panel") ||
-            sourceId.contains("player_view")) {
+            sourceId.contains("player_view") ||
+            sourceId.contains("watch_scroll_view") ||
+            sourceId.contains("channel_page")) {
             return false
         }
 
-        // Check root navigation tabs: if Home, Subscriptions, or Library tab is selected, NEVER allow!
-        if (rootNode != null) {
-            try {
-                val homeTabs = rootNode.findAccessibilityNodeInfosByText("Home")
-                for (t in homeTabs) {
-                    val sel = t.isSelected || t.parent?.isSelected == true
-                    t.recycle()
-                    if (sel) return false
-                }
-
-                val subTabs = rootNode.findAccessibilityNodeInfosByText("Subscriptions")
-                for (t in subTabs) {
-                    val sel = t.isSelected || t.parent?.isSelected == true
-                    t.recycle()
-                    if (sel) return false
-                }
-
-                val youTabs = rootNode.findAccessibilityNodeInfosByText("You")
-                    .plus(rootNode.findAccessibilityNodeInfosByText("Library"))
-                for (t in youTabs) {
-                    val sel = t.isSelected || t.parent?.isSelected == true
-                    t.recycle()
-                    if (sel) return false
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "Error checking YouTube tabs: ${e.message}")
+        // When sourceNode is available (during scroll events):
+        if (sourceNode != null) {
+            if (sourceId.contains("reel_recycler") ||
+                sourceId.contains("reel_watch_fragment") ||
+                sourceId.contains("shorts_container")) {
+                return true
             }
-        }
 
-        // POSITIVE CHECK: Must be reel_recycler or inside reel_watch_fragment / shorts container
-        if (sourceId.contains("reel_recycler")) {
-            return true
-        }
-
-        var current: AccessibilityNodeInfo? = sourceNode?.parent
-        var depth = 0
-        var isShorts = false
-        while (current != null && depth < 6) {
-            val pId = current.viewIdResourceName?.lowercase() ?: ""
-            if (pId.contains("results_recycler_view") || pId.contains("pane_fragment")) {
+            var current: AccessibilityNodeInfo? = sourceNode.parent
+            var depth = 0
+            while (current != null && depth < 8) {
+                val pId = current.viewIdResourceName?.lowercase() ?: ""
+                if (pId.contains("results_recycler_view") || pId.contains("pane_fragment") || pId.contains("watch_panel")) {
+                    current.recycle()
+                    return false
+                }
+                if (pId.contains("reel_recycler") ||
+                    pId.contains("reel_watch_fragment") ||
+                    pId.contains("shorts_container") ||
+                    pId.contains("reel_player_overlay")) {
+                    current.recycle()
+                    return true
+                }
+                val next = current.parent
                 current.recycle()
-                return false
+                current = next
+                depth++
             }
-            if (pId.contains("reel_recycler") || pId.contains("reel_watch_fragment") || pId.contains("shorts_container")) {
-                isShorts = true
-                current.recycle()
-                break
-            }
-            val next = current.parent
-            current.recycle()
-            current = next
-            depth++
+            return false
         }
-        if (isShorts) return true
 
-        // Check if Shorts tab is explicitly selected in bottom navigation
+        // When sourceNode is null (e.g. window state change check):
         if (rootNode != null) {
+            val shortsNodes = rootNode.findAccessibilityNodeInfosByViewId("com.google.android.youtube:id/reel_recycler")
+                .plus(rootNode.findAccessibilityNodeInfosByViewId("com.google.android.youtube:id/reel_watch_fragment"))
+            if (shortsNodes.isNotEmpty()) {
+                for (n in shortsNodes) n.recycle()
+                return true
+            }
+
             try {
                 val shortsTabs = rootNode.findAccessibilityNodeInfosByText("Shorts")
                 for (t in shortsTabs) {
+                    val isTab = t.className?.contains("Tab", ignoreCase = true) == true ||
+                                t.viewIdResourceName?.contains("pivot", ignoreCase = true) == true ||
+                                t.parent?.viewIdResourceName?.contains("pivot", ignoreCase = true) == true
                     val sel = t.isSelected || t.parent?.isSelected == true
                     t.recycle()
-                    if (sel) return true
+                    if (isTab && sel) return true
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Error checking Shorts tab: ${e.message}")

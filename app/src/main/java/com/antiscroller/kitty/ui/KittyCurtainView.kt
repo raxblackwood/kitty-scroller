@@ -283,9 +283,6 @@ class KittyCurtainView @JvmOverloads constructor(
 
         // 2. Draw Hanging Cat sprite (body with gentle sway, tail with active wagging)
         drawHangingSpriteCat(canvas, centerX, hemY, catW, catH)
-
-        // 3. Draw speech bubble on curtain above Kitty's hands
-        drawSpeechBubble(canvas, hemY, centerX, progress)
     }
 
     private fun drawHorizontalPole(canvas: Canvas, w: Float, hemY: Float, catH: Float) {
@@ -416,15 +413,10 @@ class KittyCurtainView @JvmOverloads constructor(
     }
 
     private fun drawSpeechBubble(canvas: Canvas, hemY: Float, centerX: Float, progress: Float) {
-        if (progress <= 0.001f || hemY < 75f) return
+        // Zero talking / chatter during scrolling. Only show clean notice at 100% full lock.
+        if (progress < 0.96f || hemY < 75f) return
 
-        val message = when {
-            progress < 0.25f -> if (currentBreed == CatBreed.BLACK) "Void cat is watching you... 🐈‍⬛" else "Peek-a-boo! Scrolling already? 🐾"
-            progress < 0.50f -> "Sliding down... maybe read a book? 📖"
-            progress < 0.75f -> "Half the screen is Kitty now! 😼"
-            progress < 0.95f -> "Curtain closing! Final scrolls remaining! ⚠️"
-            else -> "STOPPED! Daily scroll limit reached! 💤"
-        }
+        val message = "Daily scroll limit reached 💤"
 
         textPaint.textSize = 30f
         var textWidth = textPaint.measureText(message)
