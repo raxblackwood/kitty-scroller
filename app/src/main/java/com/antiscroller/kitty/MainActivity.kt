@@ -14,6 +14,7 @@ import android.os.Handler
 import android.os.Looper
 import android.provider.Settings
 import android.text.InputType
+import android.text.TextUtils
 import android.view.Gravity
 import android.view.View
 import android.view.accessibility.AccessibilityManager
@@ -519,8 +520,27 @@ class MainActivity : AppCompatActivity() {
 
     private fun isAccessibilityServiceEnabled(serviceClass: Class<*>): Boolean {
         val expectedComponentName = ComponentName(this, serviceClass)
+        val enabledServicesSetting = Settings.Secure.getString(
+            contentResolver,
+            Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES
+        ) ?: ""
+        if (enabledServicesSetting.isNotEmpty()) {
+            val colonSplitter = TextUtils.SimpleStringSplitter(':')
+            colonSplitter.setString(enabledServicesSetting)
+            while (colonSplitter.hasNext()) {
+                val componentNameString = colonSplitter.next()
+                val enabledComponent = ComponentName.unflattenFromString(componentNameString)
+                if (enabledComponent != null &&
+                    enabledComponent.packageName == expectedComponentName.packageName &&
+                    enabledComponent.className == expectedComponentName.className
+                ) {
+                    return true
+                }
+            }
+        }
+
         val am = getSystemService(Context.ACCESSIBILITY_SERVICE) as AccessibilityManager
-        val enabledServices = am.getEnabledAccessibilityServiceList(AccessibilityServiceInfo.FEEDBACK_GENERIC)
+        val enabledServices = am.getEnabledAccessibilityServiceList(AccessibilityServiceInfo.FEEDBACK_ALL_MASK)
         for (service in enabledServices) {
             if (service.id.contains(expectedComponentName.packageName) &&
                 service.id.contains(expectedComponentName.className)) {

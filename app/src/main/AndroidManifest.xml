@@ -30,12 +30,14 @@
         <activity
             android:name=".ui.GuardianUnlockActivity"
             android:exported="false"
+            android:windowSoftInputMode="adjustResize"
             android:theme="@style/Theme.AntiScrollerKitty" />
 
         <!-- 60-Second Cooling-Off Cognitive Friction Activity -->
         <activity
             android:name=".ui.BreathingFrictionActivity"
             android:exported="false"
+            android:windowSoftInputMode="adjustResize"
             android:theme="@style/Theme.AntiScrollerKitty" />
 
         <!-- Accessibility Service to detect scrolling in Instagram & YouTube Shorts -->

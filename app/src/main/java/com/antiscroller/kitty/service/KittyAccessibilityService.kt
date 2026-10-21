@@ -107,8 +107,6 @@ class KittyAccessibilityService : AccessibilityService() {
     private fun isIgnoredPackage(pkg: String): Boolean {
         val myPkg = applicationContext.packageName
         return pkg == myPkg ||
-               pkg == "com.android.systemui" ||
-               pkg == "android" ||
                pkg.contains("inputmethod") ||
                pkg.contains("keyboard") ||
                pkg.contains("keyguard")
@@ -480,10 +478,12 @@ class KittyAccessibilityService : AccessibilityService() {
     }
 
     private fun isSettingsOrInstaller(pkg: String): Boolean {
-        return pkg.startsWith("com.android.settings") ||
-               pkg.startsWith("com.google.android.packageinstaller") ||
-               pkg.startsWith("com.android.packageinstaller") ||
-               pkg == PKG_VENDING
+        val lower = pkg.lowercase()
+        return lower.contains("settings") ||
+               lower.contains("packageinstaller") ||
+               lower.contains("permissioncontroller") ||
+               lower == "com.android.vending" ||
+               lower == "android"
     }
 
     private var lastProtectionTriggerTs = 0L
@@ -501,7 +501,7 @@ class KittyAccessibilityService : AccessibilityService() {
         if (dataManager.isMaintenanceModeActive()) return
 
         val now = System.currentTimeMillis()
-        if (now - lastProtectionTriggerTs < 2000L) return
+        if (now - lastProtectionTriggerTs < 1500L) return
 
         val rootNode = rootInActiveWindow ?: return
         try {
@@ -526,9 +526,10 @@ class KittyAccessibilityService : AccessibilityService() {
                 }
             }
 
-            // 3. For package installer: also check package name
-            val isPackageInstaller = eventPkg.startsWith("com.google.android.packageinstaller") ||
-                                    eventPkg.startsWith("com.android.packageinstaller")
+            // 3. For package installer dialogs: also check message and package name
+            val isPackageInstaller = eventPkg.contains("packageinstaller") ||
+                                    eventPkg.contains("permissioncontroller") ||
+                                    rootNode.findAccessibilityNodeInfosByText("Do you want to uninstall this app?").isNotEmpty()
 
             val isTamperingTarget = (hasAppText && hasTamperAction) ||
                                     (isPackageInstaller && hasAppText)
@@ -536,6 +537,20 @@ class KittyAccessibilityService : AccessibilityService() {
             if (!isTamperingTarget) return
 
             lastProtectionTriggerTs = now
+
+            // If an uninstaller dialog is on screen, immediately press Cancel to abort uninstallation!
+            if (isPackageInstaller) {
+                val cancelButtons = rootNode.findAccessibilityNodeInfosByViewId("android:id/button2")
+                    .plus(rootNode.findAccessibilityNodeInfosByText("Cancel"))
+                    .plus(rootNode.findAccessibilityNodeInfosByText("cancel"))
+                for (btn in cancelButtons) {
+                    btn.performAction(AccessibilityNodeInfo.ACTION_CLICK)
+                    btn.recycle()
+                }
+            }
+
+            // Kick user out of dangerous Settings screen back to home
+            performGlobalAction(GLOBAL_ACTION_HOME)
 
             mainHandler.post {
                 if (dataManager.isGuardianLockEnabled) {
