@@ -7,13 +7,21 @@ import android.util.AttributeSet
 import android.view.View
 import android.view.animation.AccelerateDecelerateInterpolator
 import android.view.animation.DecelerateInterpolator
-import android.view.animation.OvershootInterpolator
+import android.view.animation.LinearInterpolator
 import com.antiscroller.kitty.R
 
 /**
  * Custom View that renders the adorable Kitty Curtain dropping down from the ceiling.
- * Supports multiple Kitty Breeds (Ginger Tabby, Midnight Black Cat).
- * Stays persistently visible on screen as the user scrolls.
+ * Supports multiple Kitty Breeds:
+ * - Ginger (Orange Cat)
+ * - Tabby (Black Cat)
+ * - Saturn (Gangster Cat with 8-frame animated sprite)
+ *
+ * Features:
+ * - Unified horizontal pole stretching continuously across the screen at the bottom of the curtain.
+ * - Straight flush curtain hem connecting directly to the top edge of the stick (no separate curtain stick below).
+ * - Rock-solid, non-wiggling stick anchored across the curtain.
+ * - Stays persistently visible on screen as the user scrolls.
  */
 class KittyCurtainView @JvmOverloads constructor(
     context: Context,
@@ -22,6 +30,8 @@ class KittyCurtainView @JvmOverloads constructor(
 ) : View(context, attrs, defStyleAttr) {
 
     enum class CatBreed(
+        val key: String,
+        val displayName: String,
         val furColor: Int,
         val furDarkColor: Int,
         val innerEarColor: Int,
@@ -34,9 +44,13 @@ class KittyCurtainView @JvmOverloads constructor(
         val noseColor: Int,
         val strokeColor: Int,
         val speechBubbleBg: Int,
-        val speechTextColor: Int
+        val speechTextColor: Int,
+        val poleWoodColor: Int,
+        val poleOutlineColor: Int
     ) {
-        ORANGE(
+        GINGER(
+            key = "ginger",
+            displayName = "Ginger",
             furColor = Color.parseColor("#FFA726"),
             furDarkColor = Color.parseColor("#FB8C00"),
             innerEarColor = Color.parseColor("#FF8A80"),
@@ -49,9 +63,13 @@ class KittyCurtainView @JvmOverloads constructor(
             noseColor = Color.parseColor("#FF5252"),
             strokeColor = Color.parseColor("#4E342E"),
             speechBubbleBg = Color.parseColor("#F5F5F5"),
-            speechTextColor = Color.parseColor("#212121")
+            speechTextColor = Color.parseColor("#212121"),
+            poleWoodColor = Color.parseColor("#936043"),
+            poleOutlineColor = Color.parseColor("#120A05")
         ),
-        BLACK(
+        TABBY(
+            key = "tabby",
+            displayName = "Tabby",
             furColor = Color.parseColor("#262626"),
             furDarkColor = Color.parseColor("#141414"),
             innerEarColor = Color.parseColor("#FF80AB"),
@@ -59,29 +77,52 @@ class KittyCurtainView @JvmOverloads constructor(
             pawPadColor = Color.parseColor("#FF80AB"),
             curtainBodyColor = Color.parseColor("#2A2D34"),
             curtainStripeColor = Color.parseColor("#33FFD600"),
-            eyeColor = Color.parseColor("#FFD600"), // Iconic luminous golden/yellow eyes
+            eyeColor = Color.parseColor("#FFD600"),
             eyeHighlightColor = Color.WHITE,
             noseColor = Color.parseColor("#FF4081"),
             strokeColor = Color.parseColor("#111111"),
             speechBubbleBg = Color.parseColor("#1E1E1E"),
-            speechTextColor = Color.parseColor("#FFD600")
+            speechTextColor = Color.parseColor("#FFD600"),
+            poleWoodColor = Color.parseColor("#724A39"),
+            poleOutlineColor = Color.parseColor("#0E0704")
+        ),
+        SATURN(
+            key = "saturn",
+            displayName = "Saturn",
+            furColor = Color.parseColor("#E0D3C1"),
+            furDarkColor = Color.parseColor("#4A2E1B"),
+            innerEarColor = Color.parseColor("#8A5040"),
+            pawColor = Color.parseColor("#3D2415"),
+            pawPadColor = Color.parseColor("#2D1B10"),
+            curtainBodyColor = Color.parseColor("#222026"),
+            curtainStripeColor = Color.parseColor("#33FFD700"),
+            eyeColor = Color.parseColor("#FFB300"),
+            eyeHighlightColor = Color.WHITE,
+            noseColor = Color.parseColor("#22150E"),
+            strokeColor = Color.parseColor("#150E0A"),
+            speechBubbleBg = Color.parseColor("#18161C"),
+            speechTextColor = Color.parseColor("#FFD700"),
+            poleWoodColor = Color.parseColor("#76513A"),
+            poleOutlineColor = Color.parseColor("#140C08")
         )
     }
 
-    private var currentBreed: CatBreed = CatBreed.ORANGE
+    private var currentBreed: CatBreed = CatBreed.GINGER
     private var dropPercentage: Float = 0f
     private var animatedProgress: Float = 0f
     private var animator: ValueAnimator? = null
 
-    // Tail wagging animation (more active/lively)
+    // Tail wagging animation for Ginger & Tabby
     private var tailAngle: Float = 0f
     private var tailAnimator: ValueAnimator? = null
 
-    // Gentle hanging body sway (pendulum swing)
-    private var swayAngle: Float = 0f
-    private var swayAnimator: ValueAnimator? = null
+    // Saturn 8-frame cartoon animation loop
+    private var saturnFrameIndex: Int = 0
+    private var saturnAnimator: ValueAnimator? = null
+    private val saturnBitmaps = mutableListOf<Bitmap>()
+    private var saturnFullBitmap: Bitmap? = null
 
-    // Pixel-art sprite bitmaps
+    // Pixel-art sprite bitmaps for Ginger & Tabby
     private var bodyBitmap: Bitmap? = null
     private var tailBitmap: Bitmap? = null
     private val catPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -119,11 +160,11 @@ class KittyCurtainView @JvmOverloads constructor(
     // Horizontal pole paints (matching pixel-art sprite bar)
     private val poleOutlinePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.FILL
-        color = Color.parseColor("#120A05") // Dark pixel-art border
+        color = Color.parseColor("#120A05")
     }
     private val poleBodyPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.FILL
-        color = Color.parseColor("#8F5E40") // Wood body (updated in applyTheme)
+        color = Color.parseColor("#8F5E40")
     }
 
     // Reusable geometry objects to prevent GC churn during fast scrolling
@@ -133,18 +174,21 @@ class KittyCurtainView @JvmOverloads constructor(
     private val pointerPath = Path()
 
     init {
-        applyTheme("orange")
+        applyTheme("ginger")
         startAnimations()
     }
 
     fun applyTheme(themeName: String) {
-        val newBreed = if (themeName.equals("black", ignoreCase = true)) {
-            CatBreed.BLACK
-        } else {
-            CatBreed.ORANGE
+        val newBreed = when (themeName.lowercase()) {
+            "tabby", "black" -> CatBreed.TABBY
+            "saturn" -> CatBreed.SATURN
+            else -> CatBreed.GINGER
         }
 
-        val needsBitmapReload = (currentBreed != newBreed) || (bodyBitmap == null)
+        val needsBitmapReload = (currentBreed != newBreed) ||
+            (newBreed == CatBreed.SATURN && saturnBitmaps.isEmpty()) ||
+            (newBreed != CatBreed.SATURN && bodyBitmap == null)
+
         currentBreed = newBreed
 
         furPaint.color = currentBreed.furColor
@@ -159,28 +203,48 @@ class KittyCurtainView @JvmOverloads constructor(
         textPaint.color = currentBreed.speechTextColor
         curtainBodyPaint.color = currentBreed.curtainBodyColor
         stripePaint.color = currentBreed.curtainStripeColor
-        poleBodyPaint.color = if (newBreed == CatBreed.BLACK) Color.parseColor("#8A5F4A") else Color.parseColor("#8F5E40")
+        poleBodyPaint.color = currentBreed.poleWoodColor
+        poleOutlinePaint.color = currentBreed.poleOutlineColor
 
         if (needsBitmapReload) {
-            loadCatBitmaps(themeName)
+            loadCatBitmaps()
             invalidate()
         }
     }
 
-    private fun loadCatBitmaps(theme: String) {
-        val isBlack = theme.equals("black", ignoreCase = true)
-        val bodyRes = if (isBlack) R.drawable.kitty_black_body else R.drawable.kitty_orange_body
-        val tailRes = if (isBlack) R.drawable.kitty_black_tail else R.drawable.kitty_orange_tail
-
+    private fun loadCatBitmaps() {
         val options = BitmapFactory.Options().apply {
             inScaled = false
         }
-        bodyBitmap = BitmapFactory.decodeResource(resources, bodyRes, options)
-        tailBitmap = BitmapFactory.decodeResource(resources, tailRes, options)
+        if (currentBreed == CatBreed.SATURN) {
+            saturnBitmaps.clear()
+            val saturnResIds = intArrayOf(
+                R.drawable.kitty_saturn_0,
+                R.drawable.kitty_saturn_1,
+                R.drawable.kitty_saturn_2,
+                R.drawable.kitty_saturn_3,
+                R.drawable.kitty_saturn_4,
+                R.drawable.kitty_saturn_5,
+                R.drawable.kitty_saturn_6,
+                R.drawable.kitty_saturn_7
+            )
+            for (resId in saturnResIds) {
+                val bmp = BitmapFactory.decodeResource(resources, resId, options)
+                if (bmp != null) saturnBitmaps.add(bmp)
+            }
+            saturnFullBitmap = BitmapFactory.decodeResource(resources, R.drawable.kitty_saturn_full, options)
+        } else {
+            val isTabby = currentBreed == CatBreed.TABBY
+            val bodyRes = if (isTabby) R.drawable.kitty_black_body else R.drawable.kitty_orange_body
+            val tailRes = if (isTabby) R.drawable.kitty_black_tail else R.drawable.kitty_orange_tail
+
+            bodyBitmap = BitmapFactory.decodeResource(resources, bodyRes, options)
+            tailBitmap = BitmapFactory.decodeResource(resources, tailRes, options)
+        }
     }
 
     private fun startAnimations() {
-        // 1. Lively tail wagging behind body
+        // 1. Lively tail wagging behind body for Ginger & Tabby
         tailAnimator?.cancel()
         tailAnimator = ValueAnimator.ofFloat(-12f, 12f).apply {
             duration = 850
@@ -189,21 +253,28 @@ class KittyCurtainView @JvmOverloads constructor(
             interpolator = AccelerateDecelerateInterpolator()
             addUpdateListener {
                 tailAngle = it.animatedValue as Float
-                invalidate()
+                if (currentBreed != CatBreed.SATURN) {
+                    invalidate()
+                }
             }
             start()
         }
 
-        // 2. Gentle hanging body sway (pendulum swing)
-        swayAnimator?.cancel()
-        swayAnimator = ValueAnimator.ofFloat(-2.2f, 2.2f).apply {
-            duration = 1750
-            repeatMode = ValueAnimator.REVERSE
+        // 2. Fluid 8-frame cartoon animation loop for Saturn (~130ms per frame)
+        saturnAnimator?.cancel()
+        saturnAnimator = ValueAnimator.ofInt(0, 7).apply {
+            duration = 1040
             repeatCount = ValueAnimator.INFINITE
-            interpolator = AccelerateDecelerateInterpolator()
+            repeatMode = ValueAnimator.RESTART
+            interpolator = LinearInterpolator()
             addUpdateListener {
-                swayAngle = it.animatedValue as Float
-                invalidate()
+                val newIndex = it.animatedValue as Int
+                if (newIndex != saturnFrameIndex) {
+                    saturnFrameIndex = newIndex
+                    if (currentBreed == CatBreed.SATURN) {
+                        invalidate()
+                    }
+                }
             }
             start()
         }
@@ -220,14 +291,13 @@ class KittyCurtainView @JvmOverloads constructor(
             return
         }
 
-        // If target is virtually identical, let existing animation run
         if (Math.abs(clamped - animatedProgress) < 0.002f) {
             return
         }
 
         animator?.cancel()
         animator = ValueAnimator.ofFloat(animatedProgress, clamped).apply {
-            duration = 200 // Snappy 200ms responsive tracking without delay
+            duration = 200
             interpolator = DecelerateInterpolator(1.2f)
             addUpdateListener {
                 animatedProgress = it.animatedValue as Float
@@ -246,7 +316,6 @@ class KittyCurtainView @JvmOverloads constructor(
         super.onDraw(canvas)
 
         val progress = animatedProgress
-        // At 0 scrolls: curtain and Kitty remain strictly hidden at ceiling (0px)
         if (progress <= 0.0001f) return
 
         val totalW = width.toFloat()
@@ -255,67 +324,51 @@ class KittyCurtainView @JvmOverloads constructor(
 
         val centerX = totalW / 2f
 
-        // 100% full screen lock: curtain covers entire screen, sleepy cat loaf in center
+        // 100% full screen lock: curtain covers entire screen, cat loaf in center
         if (progress >= 0.96f) {
             drawCurtainBody(canvas, totalW, totalH)
-            drawFullSleepyCat(canvas, totalH, centerX)
+            drawFullSleepyCat(canvas, totalH, centerX, totalW)
             drawSpeechBubble(canvas, totalH * 0.45f - 40f, centerX, progress)
             return
         }
 
-        // Cat display sizing: increased by 50% from 0.14f to 0.21f (as requested)
-        val catW = (totalW * 0.21f).coerceIn(200f, 260f)
-        val catH = catW / 0.54f // 628 / 1162 ≈ 0.54f
+        // Cat display sizing
+        val isSaturn = currentBreed == CatBreed.SATURN
+        val catW = (totalW * 0.22f).coerceIn(210f, 270f)
+        // Aspect ratio: Saturn is 280x475 (~0.589), Ginger/Tabby is 628x1162 (~0.540)
+        val catH = if (isSaturn) (catW / 0.589f) else (catW / 0.540f)
 
-        // hemY is where the curtain ends and Kitty's paws/bar grip:
-        // At progress 0: hemY = -catH (entire cat is above screen, tail tip at 0)
-        // At progress ~0.20: hemY = 0 (tail, legs, body, head, and hands have fully emerged)
-        // At progress >0.20: curtain unrolls from 0 down to hemY behind/attached to hands
-        // At progress 1.0: hemY = totalH (curtain covers full screen)
-        val hemY = -catH + (progress * (totalH + catH))
+        // Stick offsets within the sprite coordinate space:
+        // Saturn: stick y=30..46 in 475 height space
+        // Ginger/Tabby: stick y=30..72 in 1162 height space
+        val stickTopRatio = if (isSaturn) (30f / 475f) else (30f / 1162f)
+        val stickBotRatio = if (isSaturn) (46f / 475f) else (72f / 1162f)
 
-        // 1. Draw solid curtain fabric from ceiling down to hands hem (only once hands enter screen)
-        if (hemY > 0f) {
-            drawCurtainBody(canvas, totalW, hemY)
-            // Draw horizontal pole stretching across the entire screen
-            drawHorizontalPole(canvas, totalW, hemY, catH)
+        // Curtain bottom edge moves down proportionally with progress
+        val curtainBottom = progress * totalH
+        val stickTop = curtainBottom
+        val stickBottom = stickTop + (catH * (stickBotRatio - stickTopRatio))
+
+        // 1. Draw solid curtain fabric from ceiling straight down to top edge of the stick
+        if (stickTop > 0f) {
+            drawCurtainBody(canvas, totalW, stickTop + 1.5f)
+            // 2. Extend the stick seamlessly across the entire width of the curtain
+            drawExtendedStick(canvas, totalW, stickTop, stickBottom)
         }
 
-        // 2. Draw Hanging Cat sprite (body with gentle sway, tail with active wagging)
-        drawHangingSpriteCat(canvas, centerX, hemY, catW, catH)
+        // 3. Draw Hanging Cat sprite (stick stays rock-solid, animated paws/body/tail)
+        val catTop = stickTop - (catH * stickTopRatio)
+        drawHangingSpriteCat(canvas, centerX, catTop, catW, catH)
     }
 
-    private fun drawHorizontalPole(canvas: Canvas, w: Float, hemY: Float, catH: Float) {
-        val catTop = hemY - (catH * (51f / 1162f))
-        val poleTop = catTop + (catH * (30f / 1162f))
-        val poleWoodTop = catTop + (catH * (41f / 1162f))
-        val poleWoodBottom = catTop + (catH * (62f / 1162f))
-        val poleBottom = catTop + (catH * (72f / 1162f))
-
-        // 1. Pole top black border matching pixel art outline
-        canvas.drawRect(0f, poleTop, w, poleWoodTop, poleOutlinePaint)
-        // 2. Pole main wooden body matching sprite wood tone
-        canvas.drawRect(0f, poleWoodTop, w, poleWoodBottom, poleBodyPaint)
-        // 3. Pole bottom black border matching pixel art outline
-        canvas.drawRect(0f, poleWoodBottom, w, poleBottom, poleOutlinePaint)
-    }
-
-    private fun drawCurtainBody(canvas: Canvas, w: Float, h: Float) {
-        if (h <= 0f) return
+    private fun drawCurtainBody(canvas: Canvas, w: Float, bottomY: Float) {
+        if (bottomY <= 0f) return
 
         curtainPath.reset()
         curtainPath.moveTo(0f, 0f)
         curtainPath.lineTo(w, 0f)
-        val scallops = 6
-        val step = w / scallops
-        curtainPath.lineTo(w, h)
-        for (i in scallops downTo 1) {
-            val startX = i * step
-            val endX = (i - 1) * step
-            val midX = (startX + endX) / 2f
-            val waveDepth = 12f
-            curtainPath.quadTo(midX, h + waveDepth, endX, h)
-        }
+        curtainPath.lineTo(w, bottomY)
+        curtainPath.lineTo(0f, bottomY)
         curtainPath.close()
         canvas.drawPath(curtainPath, curtainBodyPaint)
 
@@ -323,51 +376,79 @@ class KittyCurtainView @JvmOverloads constructor(
         val pleats = 5
         for (i in 1..pleats) {
             val px = w * (i.toFloat() / (pleats + 1))
-            canvas.drawLine(px, 0f, px, h - 4f, stripePaint)
+            canvas.drawLine(px, 0f, px, bottomY, stripePaint)
         }
     }
 
-    private fun drawHangingSpriteCat(canvas: Canvas, centerX: Float, hemY: Float, catW: Float, catH: Float) {
-        val bodyBmp = bodyBitmap
-        val tailBmp = tailBitmap
-        if (bodyBmp == null || tailBmp == null) return
+    private fun drawExtendedStick(canvas: Canvas, w: Float, stickTop: Float, stickBottom: Float) {
+        val stickH = stickBottom - stickTop
+        if (stickH <= 0f) return
+        val borderThick = (stickH * 0.13f).coerceAtLeast(2f)
 
-        val catLeft = centerX - (catW / 2f)
-        // Centerline of the horizontal wooden bar is at y=51 in 1162 sprite space
-        val catTop = hemY - (catH * (51f / 1162f))
-        catRect.set(catLeft, catTop, catLeft + catW, catTop + catH)
-
-        canvas.save()
-        // 1. Gentle body sway around paws holding the bar
-        val pawsPivotX = catRect.left + catW * 0.50f
-        val pawsPivotY = hemY
-        canvas.rotate(swayAngle, pawsPivotX, pawsPivotY)
-
-        // 2. Animated lively wagging tail behind the body (originating from hip root behind crotch)
-        canvas.save()
-        val isBlack = currentBreed == CatBreed.BLACK
-        val tailPivotXRatio = if (isBlack) 0.5207f else 0.5334f
-        val tailPivotYRatio = 0.6885f
-        val tailPivotX = catRect.left + catW * tailPivotXRatio
-        val tailPivotY = catRect.top + catH * tailPivotYRatio
-
-        canvas.rotate(tailAngle, tailPivotX, tailPivotY)
-        canvas.drawBitmap(tailBmp, null, catRect, catPaint)
-        canvas.restore()
-
-        // 3. Draw cat body (head, arms, torso, back legs & back feet 100% intact) on top of tail
-        canvas.drawBitmap(bodyBmp, null, catRect, catPaint)
-
-        canvas.restore()
+        // 1. Pole top black border matching pixel art outline
+        canvas.drawRect(0f, stickTop, w, stickTop + borderThick, poleOutlinePaint)
+        // 2. Pole main wooden body matching sprite wood tone
+        canvas.drawRect(0f, stickTop + borderThick, w, stickBottom - borderThick, poleBodyPaint)
+        // 3. Pole bottom black border matching pixel art outline
+        canvas.drawRect(0f, stickBottom - borderThick, w, stickBottom, poleOutlinePaint)
     }
 
-    private fun drawFullSleepyCat(canvas: Canvas, totalH: Float, centerX: Float) {
+    private fun drawHangingSpriteCat(canvas: Canvas, centerX: Float, catTop: Float, catW: Float, catH: Float) {
+        val catLeft = centerX - (catW / 2f)
+        catRect.set(catLeft, catTop, catLeft + catW, catTop + catH)
+
+        val isSaturn = currentBreed == CatBreed.SATURN
+        if (isSaturn) {
+            // Saturn: 8-frame cartoon animation loop (cigar smoke, gun shift, tail swish)
+            val frame = if (saturnBitmaps.isNotEmpty()) {
+                val idx = saturnFrameIndex.coerceIn(0, saturnBitmaps.size - 1)
+                saturnBitmaps[idx]
+            } else null
+            if (frame != null) {
+                canvas.drawBitmap(frame, null, catRect, catPaint)
+            }
+        } else {
+            val bodyBmp = bodyBitmap ?: return
+            val tailBmp = tailBitmap ?: return
+
+            // 1. Lively wagging tail behind the body
+            canvas.save()
+            val isTabby = currentBreed == CatBreed.TABBY
+            val tailPivotXRatio = if (isTabby) 0.5207f else 0.5334f
+            val tailPivotYRatio = 0.6885f
+            val tailPivotX = catRect.left + catW * tailPivotXRatio
+            val tailPivotY = catRect.top + catH * tailPivotYRatio
+
+            canvas.rotate(tailAngle, tailPivotX, tailPivotY)
+            canvas.drawBitmap(tailBmp, null, catRect, catPaint)
+            canvas.restore()
+
+            // 2. Body sits firmly on the stick (no wiggling of the stick)
+            canvas.drawBitmap(bodyBmp, null, catRect, catPaint)
+        }
+    }
+
+    private fun drawFullSleepyCat(canvas: Canvas, totalH: Float, centerX: Float, totalW: Float) {
+        if (currentBreed == CatBreed.SATURN && saturnFullBitmap != null) {
+            val bmp = saturnFullBitmap!!
+            val bmpW = (totalW * 0.48f).coerceIn(240f, 320f)
+            val bmpH = bmpW * (bmp.height.toFloat() / bmp.width.toFloat())
+            val dstRect = RectF(
+                centerX - (bmpW / 2f),
+                (totalH * 0.45f) - (bmpH / 2f),
+                centerX + (bmpW / 2f),
+                (totalH * 0.45f) + (bmpH / 2f)
+            )
+            canvas.drawBitmap(bmp, null, dstRect, catPaint)
+            return
+        }
+
         val catY = totalH * 0.45f
         val loafRect = RectF(centerX - 180f, catY - 100f, centerX + 180f, catY + 110f)
         canvas.drawRoundRect(loafRect, 90f, 90f, furPaint)
 
         val sleepEyePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = if (currentBreed == CatBreed.BLACK) Color.parseColor("#FFD600") else Color.parseColor("#4E342E")
+            color = if (currentBreed == CatBreed.TABBY) Color.parseColor("#FFD600") else Color.parseColor("#4E342E")
             style = Paint.Style.STROKE
             strokeWidth = 6f
             strokeCap = Paint.Cap.ROUND
@@ -401,7 +482,7 @@ class KittyCurtainView @JvmOverloads constructor(
         canvas.drawPath(smilePath, sleepEyePaint)
 
         val zPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = if (currentBreed == CatBreed.BLACK) Color.parseColor("#FFD600") else Color.parseColor("#FF6E40")
+            color = if (currentBreed == CatBreed.TABBY) Color.parseColor("#FFD600") else Color.parseColor("#FF6E40")
             textSize = 42f
             typeface = Typeface.DEFAULT_BOLD
         }
@@ -413,10 +494,13 @@ class KittyCurtainView @JvmOverloads constructor(
     }
 
     private fun drawSpeechBubble(canvas: Canvas, hemY: Float, centerX: Float, progress: Float) {
-        // Zero talking / chatter during scrolling. Only show clean notice at 100% full lock.
         if (progress < 0.96f || hemY < 75f) return
 
-        val message = "Daily scroll limit reached 💤"
+        val message = if (currentBreed == CatBreed.SATURN) {
+            "Time's up, boss. Take a break 🚬"
+        } else {
+            "Daily scroll limit reached 💤"
+        }
 
         textPaint.textSize = 30f
         var textWidth = textPaint.measureText(message)
@@ -429,7 +513,6 @@ class KittyCurtainView @JvmOverloads constructor(
         val bubbleW = (textWidth + 60f).coerceAtMost(maxAvailableW)
         val bubbleH = 54f
 
-        // Position text strictly ON the curtain, above Kitty's hands (hemY)
         val bubbleBottom = (hemY - 16f).coerceAtLeast(36f + bubbleH)
         val bubbleTop = bubbleBottom - bubbleH
 
@@ -440,7 +523,6 @@ class KittyCurtainView @JvmOverloads constructor(
             bubbleBottom
         )
 
-        // Triangular pointer pointing DOWN towards Kitty's hands at hemY
         pointerPath.reset()
         pointerPath.moveTo(centerX - 10f, bubbleBottom)
         pointerPath.lineTo(centerX, (bubbleBottom + 9f).coerceAtMost(hemY))

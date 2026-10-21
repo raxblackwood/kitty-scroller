@@ -50,6 +50,11 @@ class ScrollDataManager(context: Context) {
         private const val KEY_GUARDIAN_PIN = "guardian_pin"
         private const val KEY_MAINTENANCE_EXPIRES = "maintenance_expires_ts"
 
+        const val THEME_GINGER = "ginger"
+        const val THEME_TABBY = "tabby"
+        const val THEME_SATURN = "saturn"
+
+        // Backward compatibility mappings
         const val THEME_ORANGE = "orange"
         const val THEME_BLACK = "black"
 
@@ -155,7 +160,14 @@ class ScrollDataManager(context: Context) {
         }
 
     var kittyTheme: String
-        get() = prefs.getString(KEY_KITTY_THEME, THEME_ORANGE) ?: THEME_ORANGE
+        get() {
+            val saved = prefs.getString(KEY_KITTY_THEME, THEME_GINGER) ?: THEME_GINGER
+            return when (saved.lowercase()) {
+                THEME_BLACK, THEME_TABBY -> THEME_TABBY
+                THEME_SATURN -> THEME_SATURN
+                else -> THEME_GINGER
+            }
+        }
         set(value) {
             prefs.edit().putString(KEY_KITTY_THEME, value).apply()
         }

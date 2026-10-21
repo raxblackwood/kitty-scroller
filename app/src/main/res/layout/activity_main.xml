@@ -195,17 +195,24 @@
                         app:singleSelection="true">
 
                         <com.google.android.material.chip.Chip
-                            android:id="@+id/chipThemeOrange"
+                            android:id="@+id/chipThemeGinger"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="🍊 Ginger Tabby"
+                            android:text="🍊 Ginger"
                             style="@style/Widget.Material3.Chip.Filter" />
 
                         <com.google.android.material.chip.Chip
-                            android:id="@+id/chipThemeBlack"
+                            android:id="@+id/chipThemeTabby"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="🐈‍⬛ Midnight Black Cat"
+                            android:text="🐈‍⬛ Tabby"
+                            style="@style/Widget.Material3.Chip.Filter" />
+
+                        <com.google.android.material.chip.Chip
+                            android:id="@+id/chipThemeSaturn"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="🕶️ Saturn"
                             style="@style/Widget.Material3.Chip.Filter" />
                     </com.google.android.material.chip.ChipGroup>
 

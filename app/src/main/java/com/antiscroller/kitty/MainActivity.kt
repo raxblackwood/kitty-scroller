@@ -66,10 +66,10 @@ class MainActivity : AppCompatActivity() {
     private fun setupUI() {
         val currentTheme = dataManager.kittyTheme
         binding.previewCurtain.applyTheme(currentTheme)
-        if (currentTheme == ScrollDataManager.THEME_BLACK) {
-            binding.chipThemeBlack.isChecked = true
-        } else {
-            binding.chipThemeOrange.isChecked = true
+        when (currentTheme) {
+            ScrollDataManager.THEME_TABBY, ScrollDataManager.THEME_BLACK -> binding.chipThemeTabby.isChecked = true
+            ScrollDataManager.THEME_SATURN -> binding.chipThemeSaturn.isChecked = true
+            else -> binding.chipThemeGinger.isChecked = true
         }
 
         val screenHeight = resources.displayMetrics.heightPixels
@@ -90,14 +90,18 @@ class MainActivity : AppCompatActivity() {
         // Kitty Breed Selection
         binding.chipGroupKittyTheme.setOnCheckedStateChangeListener { _, checkedIds ->
             if (checkedIds.isEmpty()) return@setOnCheckedStateChangeListener
-            val selectedTheme = if (checkedIds.first() == R.id.chipThemeBlack) {
-                ScrollDataManager.THEME_BLACK
-            } else {
-                ScrollDataManager.THEME_ORANGE
+            val selectedTheme = when (checkedIds.first()) {
+                R.id.chipThemeTabby -> ScrollDataManager.THEME_TABBY
+                R.id.chipThemeSaturn -> ScrollDataManager.THEME_SATURN
+                else -> ScrollDataManager.THEME_GINGER
             }
             dataManager.kittyTheme = selectedTheme
             binding.previewCurtain.applyTheme(selectedTheme)
-            val breedName = if (selectedTheme == ScrollDataManager.THEME_BLACK) "Midnight Black Cat 🐈‍⬛" else "Ginger Tabby 🍊"
+            val breedName = when (selectedTheme) {
+                ScrollDataManager.THEME_TABBY -> "Tabby 🐈‍⬛"
+                ScrollDataManager.THEME_SATURN -> "Saturn 🕶️"
+                else -> "Ginger 🍊"
+            }
             Toast.makeText(this, "$breedName selected!", Toast.LENGTH_SHORT).show()
         }
 
