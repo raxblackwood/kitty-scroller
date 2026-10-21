@@ -1,4 +1,4 @@
-# ClawBack (AntiScroller) - UI Design & Architecture Specification
+﻿# ClawBack (AntiScroller) - UI Design & Architecture Specification
 
 ## 1. Overview & Visual Identity
 

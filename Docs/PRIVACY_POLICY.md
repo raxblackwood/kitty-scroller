@@ -1,4 +1,4 @@
-# Privacy Policy for ClawBack: Kitty Screen Curtain
+﻿# Privacy Policy for ClawBack: Kitty Screen Curtain
 
 **Last updated:** October 19, 2026
 

@@ -1,4 +1,4 @@
-# Google Play Store Listing & Submission Guide
+﻿# Google Play Store Listing & Submission Guide
 **App Name:** ClawBack: Kitty Screen Curtain  
 **Package ID:** `com.antiscroller.kitty`  
 **Version:** 1.0.0 (Version Code: 1)  
@@ -23,7 +23,7 @@ ClawBack: Kitty Screen Curtain is the gentle, playful, yet firmly effective digi
 1. Choose Your Daily Limit: Pick how many Reels or Shorts you want to allow yourself each day (e.g., 10, 20, 50, or custom).
 2. Browse Mindfully: As you scroll through Instagram Reels or YouTube Shorts, ClawBack accurately measures your scroll distance (1 screen height = 1 Reel).
 3. The Curtain Descends: The more you scroll, the further your cute kitty curtain lowers from the top of your screen, progressively covering your view.
-4. Take a Break: Once you reach 100% of your limit, the screen is covered—signaling it's time to put your phone down and get back to your life!
+4. Take a Break: Once you reach 100% of your limit, the screen is covered-signaling it's time to put your phone down and get back to your life!
 5. Daily Midnight Reset: Your counter resets automatically every night at midnight so you start fresh each morning.
 
 ✨ KEY FEATURES

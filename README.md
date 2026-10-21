@@ -6,7 +6,7 @@ Unlike brute-force app lockers that brick your entire phone or trap you into del
 WhatsApp, Notion, Chrome, Phone, and all productive apps remain 100% accessible and completely unrestricted.
 
 > [!NOTE]
-> For the complete visual design system, canvas mathematics, sprite animation physics, and token hierarchy, see [UI_DESIGN_SPEC.md](file:///e:/CODES/anti%20scroller/UI_DESIGN_SPEC.md).
+> For the complete visual design system, canvas mathematics, sprite animation physics, and token hierarchy, see [UI_DESIGN_SPEC.md](file:///e:/CODES/anti%20scroller/Docs/UI_DESIGN_SPEC.md).
 
 ---
 
@@ -80,10 +80,12 @@ flowchart TD
 
 ```
 anti scroller/
-├── UI_DESIGN_SPEC.md                            # Comprehensive UI & visual design specification
-├── MONETIZATION_PLAN.md                         # Business & monetization strategy
-├── PLAY_STORE_LISTING.md                        # Google Play store copy & metadata
-├── PRIVACY_POLICY.md                            # Complete privacy policy
+├── Docs/
+│   ├── UI_DESIGN_SPEC.md                        # Comprehensive UI & visual design specification
+│   ├── MONETIZATION_PLAN.md                     # Business & monetization strategy
+│   ├── PLAY_STORE_LISTING.md                    # Google Play store copy & metadata
+│   ├── PRIVACY_POLICY.md                        # Complete privacy policy
+│   └── PRIVACY_POLICY.html                      # Standalone privacy policy HTML page
 ├── app/
 │   ├── build.gradle.kts
 │   ├── proguard-rules.pro
