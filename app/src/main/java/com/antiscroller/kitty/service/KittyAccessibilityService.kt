@@ -538,6 +538,13 @@ class KittyAccessibilityService : AccessibilityService() {
 
             lastProtectionTriggerTs = now
 
+            // Dispatch guardian alert immediately
+            com.antiscroller.kitty.guardian.GuardianAlertManager.sendAlert(
+                applicationContext,
+                com.antiscroller.kitty.guardian.GuardianAlertManager.EVENT_UNINSTALL_ATTEMPT,
+                "Uninstall or tamper attempt intercepted in $eventPkg"
+            )
+
             // If an uninstaller dialog is on screen, immediately press Cancel to abort uninstallation!
             if (isPackageInstaller) {
                 val cancelButtons = rootNode.findAccessibilityNodeInfosByViewId("android:id/button2")

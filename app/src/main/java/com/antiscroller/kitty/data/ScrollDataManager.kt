@@ -50,6 +50,14 @@ class ScrollDataManager(context: Context) {
         private const val KEY_GUARDIAN_PIN = "guardian_pin"
         private const val KEY_MAINTENANCE_EXPIRES = "maintenance_expires_ts"
 
+        // Play Store In-App Purchases & Parental Subscriptions
+        private const val KEY_COSMETIC_PACK_UNLOCKED = "cosmetic_pack_unlocked"
+        private const val KEY_PARENTAL_SUBSCRIBED = "parental_control_subscribed"
+        private const val KEY_CHILD_MODE_ENABLED = "child_mode_enabled"
+        private const val KEY_GUARDIAN_ENDPOINT = "guardian_alert_endpoint"
+        private const val KEY_CHILD_DEVICE_NAME = "child_device_name"
+        private const val KEY_LAST_HEARTBEAT_TS = "last_heartbeat_timestamp"
+
         const val THEME_GINGER = "ginger"
         const val THEME_TABBY = "tabby"
         const val THEME_SATURN = "saturn"
@@ -172,6 +180,53 @@ class ScrollDataManager(context: Context) {
         }
         set(value) {
             prefs.edit().putString(KEY_KITTY_THEME, value).apply()
+        }
+
+    // ==========================================
+    // COSMETIC PACK & PARENTAL CONTROL BILLING
+    // ==========================================
+
+    var isCosmeticPackUnlocked: Boolean
+        get() = prefs.getBoolean(KEY_COSMETIC_PACK_UNLOCKED, false)
+        set(value) {
+            prefs.edit().putBoolean(KEY_COSMETIC_PACK_UNLOCKED, value).apply()
+        }
+
+    fun isThemeUnlocked(theme: String): Boolean {
+        return when (theme.lowercase()) {
+            THEME_GINGER, THEME_ORANGE -> true
+            else -> isCosmeticPackUnlocked
+        }
+    }
+
+    var isParentalSubscribed: Boolean
+        get() = prefs.getBoolean(KEY_PARENTAL_SUBSCRIBED, false)
+        set(value) {
+            prefs.edit().putBoolean(KEY_PARENTAL_SUBSCRIBED, value).apply()
+        }
+
+    var isChildModeEnabled: Boolean
+        get() = prefs.getBoolean(KEY_CHILD_MODE_ENABLED, false)
+        set(value) {
+            prefs.edit().putBoolean(KEY_CHILD_MODE_ENABLED, value).apply()
+        }
+
+    var guardianAlertEndpoint: String
+        get() = prefs.getString(KEY_GUARDIAN_ENDPOINT, "") ?: ""
+        set(value) {
+            prefs.edit().putString(KEY_GUARDIAN_ENDPOINT, value.trim()).apply()
+        }
+
+    var childDeviceName: String
+        get() = prefs.getString(KEY_CHILD_DEVICE_NAME, android.os.Build.MODEL) ?: android.os.Build.MODEL
+        set(value) {
+            prefs.edit().putString(KEY_CHILD_DEVICE_NAME, value.trim()).apply()
+        }
+
+    var lastHeartbeatTimestamp: Long
+        get() = prefs.getLong(KEY_LAST_HEARTBEAT_TS, 0L)
+        set(value) {
+            prefs.edit().putLong(KEY_LAST_HEARTBEAT_TS, value).apply()
         }
 
     // ==========================================

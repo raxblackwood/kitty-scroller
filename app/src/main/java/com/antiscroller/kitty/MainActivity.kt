@@ -19,14 +19,20 @@ import android.view.Gravity
 import android.view.View
 import android.view.accessibility.AccessibilityManager
 import android.widget.EditText
+import android.widget.LinearLayout
+import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.antiscroller.kitty.admin.KittyAdminReceiver
+import com.antiscroller.kitty.billing.BillingManager
 import com.antiscroller.kitty.data.ScrollDataManager
 import com.antiscroller.kitty.databinding.ActivityMainBinding
+import com.antiscroller.kitty.guardian.GuardianAlertManager
 import com.antiscroller.kitty.overlay.KittyOverlayManager
 import com.antiscroller.kitty.service.KittyAccessibilityService
+import com.antiscroller.kitty.ui.PaywallBottomSheetDialog
 import com.antiscroller.kitty.worker.DailyResetWorker
+import com.antiscroller.kitty.worker.GuardianHeartbeatWorker
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 
 class MainActivity : AppCompatActivity() {
@@ -36,6 +42,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var overlayManager: KittyOverlayManager
     private lateinit var devicePolicyManager: DevicePolicyManager
     private lateinit var adminComponent: ComponentName
+    private lateinit var billingManager: BillingManager
 
     private val handler = Handler(Looper.getMainLooper())
 
@@ -49,6 +56,14 @@ class MainActivity : AppCompatActivity() {
         devicePolicyManager = getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
         adminComponent = ComponentName(this, KittyAdminReceiver::class.java)
 
+        billingManager = BillingManager(this) { _, msg ->
+            runOnUiThread {
+                Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
+                updateThemeChips()
+                updateGuardianChildModeUI()
+            }
+        }
+
         DailyResetWorker.scheduleMidnightReset(this)
 
         setupUI()
@@ -59,19 +74,21 @@ class MainActivity : AppCompatActivity() {
         super.onResume()
         updateDashboard()
         checkPermissions()
+        updateThemeChips()
+        updateGuardianChildModeUI()
         updateGuardianUI()
         updateDeviceOwnerUI()
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        billingManager.endConnection()
     }
 
     private fun setupUI() {
         val currentTheme = dataManager.kittyTheme
         binding.previewCurtain.applyTheme(currentTheme)
-        when (currentTheme) {
-            ScrollDataManager.THEME_TABBY, ScrollDataManager.THEME_BLACK -> binding.chipThemeTabby.isChecked = true
-            ScrollDataManager.THEME_SATURN -> binding.chipThemeSaturn.isChecked = true
-            ScrollDataManager.THEME_ROLEX -> binding.chipThemeRolex.isChecked = true
-            else -> binding.chipThemeGinger.isChecked = true
-        }
+        updateThemeChips()
 
         val screenHeight = resources.displayMetrics.heightPixels
         val dropPct = dataManager.getDropPercentage(screenHeight)
@@ -84,10 +101,16 @@ class MainActivity : AppCompatActivity() {
         binding.switchInstagram.isChecked = dataManager.isInstagramMonitored
         binding.switchYouTube.isChecked = dataManager.isYouTubeMonitored
 
+        updateGuardianChildModeUI()
         updateGuardianUI()
     }
 
     private fun setupListeners() {
+        // Unlock Cosmetics Banner
+        binding.btnUnlockCosmeticsBanner.setOnClickListener {
+            showPaywallDialog(BillingManager.PRODUCT_COSMETIC_PACK)
+        }
+
         // Kitty Breed Selection
         binding.chipGroupKittyTheme.setOnCheckedStateChangeListener { _, checkedIds ->
             if (checkedIds.isEmpty()) return@setOnCheckedStateChangeListener
@@ -96,6 +119,11 @@ class MainActivity : AppCompatActivity() {
                 R.id.chipThemeSaturn -> ScrollDataManager.THEME_SATURN
                 R.id.chipThemeRolex -> ScrollDataManager.THEME_ROLEX
                 else -> ScrollDataManager.THEME_GINGER
+            }
+            if (!dataManager.isThemeUnlocked(selectedTheme)) {
+                updateThemeChips()
+                showPaywallDialog(BillingManager.PRODUCT_COSMETIC_PACK)
+                return@setOnCheckedStateChangeListener
             }
             dataManager.kittyTheme = selectedTheme
             binding.previewCurtain.applyTheme(selectedTheme)
@@ -106,6 +134,24 @@ class MainActivity : AppCompatActivity() {
                 else -> "Ginger 🍊"
             }
             Toast.makeText(this, "$breedName selected!", Toast.LENGTH_SHORT).show()
+        }
+
+        // Guardian Child Protection Pipeline Buttons
+        binding.btnConfigGuardianEndpoint.setOnClickListener {
+            showConfigureGuardianEndpointDialog()
+        }
+
+        binding.btnTestGuardianAlert.setOnClickListener {
+            val endpoint = dataManager.guardianAlertEndpoint
+            if (endpoint.isEmpty()) {
+                Toast.makeText(this, "Please configure an alert endpoint first!", Toast.LENGTH_SHORT).show()
+                showConfigureGuardianEndpointDialog()
+                return@setOnClickListener
+            }
+            Toast.makeText(this, "Sending test ping to guardian endpoint...", Toast.LENGTH_SHORT).show()
+            GuardianAlertManager.sendAlert(this, GuardianAlertManager.EVENT_SETUP_TEST) { _, msg ->
+                Toast.makeText(this, "Test Ping: $msg", Toast.LENGTH_LONG).show()
+            }
         }
 
         // Live preview slider
@@ -281,6 +327,133 @@ class MainActivity : AppCompatActivity() {
             return true
         }
         return false
+    }
+
+    private fun updateThemeChips() {
+        val isUnlocked = dataManager.isCosmeticPackUnlocked
+        binding.btnUnlockCosmeticsBanner.visibility = if (isUnlocked) View.GONE else View.VISIBLE
+
+        binding.chipThemeGinger.text = if (isUnlocked) "🍊 Ginger" else "🍊 Ginger (Free)"
+        binding.chipThemeTabby.text = if (isUnlocked) "🐈‍⬛ Tabby" else "🔒 Tabby"
+        binding.chipThemeSaturn.text = if (isUnlocked) "🕶️ Saturn" else "🔒 Saturn"
+        binding.chipThemeRolex.text = if (isUnlocked) "🐱 Rolex" else "🔒 Rolex"
+
+        when (dataManager.kittyTheme) {
+            ScrollDataManager.THEME_TABBY, ScrollDataManager.THEME_BLACK -> binding.chipThemeTabby.isChecked = true
+            ScrollDataManager.THEME_SATURN -> binding.chipThemeSaturn.isChecked = true
+            ScrollDataManager.THEME_ROLEX -> binding.chipThemeRolex.isChecked = true
+            else -> binding.chipThemeGinger.isChecked = true
+        }
+    }
+
+    private fun updateGuardianChildModeUI() {
+        val isSubscribed = dataManager.isParentalSubscribed
+        binding.tvGuardianSubBadge.text = if (isSubscribed) "SUBSCRIBED" else "$0.50/mo"
+
+        binding.switchChildMode.setOnCheckedChangeListener(null)
+        binding.switchChildMode.isChecked = dataManager.isChildModeEnabled
+        binding.switchChildMode.setOnCheckedChangeListener { _, isChecked ->
+            if (isChecked && !dataManager.isParentalSubscribed) {
+                binding.switchChildMode.isChecked = false
+                Toast.makeText(this, "Subscription required for Child Phone Guardian Alerts", Toast.LENGTH_LONG).show()
+                showPaywallDialog(BillingManager.PRODUCT_PARENTAL_MONTHLY)
+                return@setOnCheckedChangeListener
+            }
+
+            if (isChecked && dataManager.guardianAlertEndpoint.isEmpty()) {
+                binding.switchChildMode.isChecked = false
+                showConfigureGuardianEndpointDialog {
+                    if (dataManager.guardianAlertEndpoint.isNotEmpty()) {
+                        dataManager.isChildModeEnabled = true
+                        binding.switchChildMode.isChecked = true
+                        GuardianHeartbeatWorker.scheduleHeartbeat(this)
+                        updateGuardianChildModeUI()
+                    }
+                }
+                return@setOnCheckedChangeListener
+            }
+
+            dataManager.isChildModeEnabled = isChecked
+            if (isChecked) {
+                GuardianHeartbeatWorker.scheduleHeartbeat(this)
+                Toast.makeText(this, "🛡️ Child Phone Protection active! Guardian will be alerted on uninstall attempts.", Toast.LENGTH_LONG).show()
+            } else {
+                GuardianHeartbeatWorker.cancelHeartbeat(this)
+                Toast.makeText(this, "Child Phone Protection paused.", Toast.LENGTH_SHORT).show()
+            }
+            updateGuardianChildModeUI()
+        }
+
+        val ep = dataManager.guardianAlertEndpoint
+        val device = dataManager.childDeviceName
+        binding.tvGuardianEndpointSummary.text = if (ep.isEmpty()) {
+            "Endpoint: Not configured (Tap Configure below)"
+        } else {
+            "Alert Target: $ep ($device)"
+        }
+    }
+
+    private fun showConfigureGuardianEndpointDialog(onSaved: (() -> Unit)? = null) {
+        val layout = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(50, 20, 50, 10)
+        }
+
+        val tvEpLabel = TextView(this).apply {
+            text = "Guardian Webhook, ntfy topic, or Email:"
+            setTextColor(getColor(R.color.text_secondary))
+            textSize = 12f
+        }
+        val etEndpoint = EditText(this).apply {
+            hint = "e.g. https://discord.com/api/webhooks/... or alerts_topic"
+            setText(dataManager.guardianAlertEndpoint)
+            inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_URI
+        }
+
+        val tvDeviceLabel = TextView(this).apply {
+            text = "Child Device Identifier:"
+            setTextColor(getColor(R.color.text_secondary))
+            textSize = 12f
+            setPadding(0, 24, 0, 0)
+        }
+        val etDeviceName = EditText(this).apply {
+            hint = "e.g. Timmy's Phone"
+            setText(dataManager.childDeviceName)
+            inputType = InputType.TYPE_CLASS_TEXT
+        }
+
+        layout.addView(tvEpLabel)
+        layout.addView(etEndpoint)
+        layout.addView(tvDeviceLabel)
+        layout.addView(etDeviceName)
+
+        MaterialAlertDialogBuilder(this)
+            .setTitle("Guardian Alert Endpoint")
+            .setMessage("Set where uninstallation and tamper alerts should be sent in real-time.")
+            .setView(layout)
+            .setPositiveButton("Save") { _, _ ->
+                val ep = etEndpoint.text.toString().trim()
+                val dev = etDeviceName.text.toString().trim()
+                dataManager.guardianAlertEndpoint = ep
+                if (dev.isNotEmpty()) {
+                    dataManager.childDeviceName = dev
+                }
+                updateGuardianChildModeUI()
+                onSaved?.invoke()
+                Toast.makeText(this, "Guardian alert configuration saved!", Toast.LENGTH_SHORT).show()
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
+    private fun showPaywallDialog(targetProduct: String? = null) {
+        val dialog = PaywallBottomSheetDialog.newInstance(targetProduct)
+        dialog.setBillingManager(billingManager)
+        dialog.onPurchaseCompletedListener = {
+            updateThemeChips()
+            updateGuardianChildModeUI()
+        }
+        dialog.show(supportFragmentManager, PaywallBottomSheetDialog.TAG)
     }
 
     private fun updateGuardianUI() {

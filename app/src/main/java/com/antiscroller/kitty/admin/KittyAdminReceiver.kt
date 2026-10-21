@@ -7,6 +7,7 @@ import android.content.Context
 import android.content.Intent
 import android.widget.Toast
 import com.antiscroller.kitty.R
+import com.antiscroller.kitty.guardian.GuardianAlertManager
 
 /**
  * Device Admin Receiver that protects ClawBack against impulsive deletion.
@@ -41,11 +42,21 @@ class KittyAdminReceiver : DeviceAdminReceiver() {
     }
 
     override fun onDisableRequested(context: Context, intent: Intent): CharSequence {
+        GuardianAlertManager.sendAlert(
+            context,
+            GuardianAlertManager.EVENT_ADMIN_DISABLE_ATTEMPT,
+            "User requested Device Administrator deactivation."
+        )
         return context.getString(R.string.admin_warning_disable)
     }
 
     override fun onDisabled(context: Context, intent: Intent) {
         super.onDisabled(context, intent)
+        GuardianAlertManager.sendAlert(
+            context,
+            GuardianAlertManager.EVENT_ADMIN_DISABLED,
+            "Device Administrator privileges were revoked!"
+        )
         Toast.makeText(
             context,
             "ClawBack Protection Disabled.",
