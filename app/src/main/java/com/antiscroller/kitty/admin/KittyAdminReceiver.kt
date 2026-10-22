@@ -24,7 +24,7 @@ class KittyAdminReceiver : DeviceAdminReceiver() {
             dpm.setUninstallBlocked(admin, context.packageName, true)
             Toast.makeText(
                 context,
-                "🛡️ Device Owner Active: ClawBack is now un-uninstallable!",
+                "🛡️ Device Owner Active: Pawse is now un-uninstallable!",
                 Toast.LENGTH_LONG
             ).show()
         } catch (e: Exception) {
@@ -36,7 +36,7 @@ class KittyAdminReceiver : DeviceAdminReceiver() {
         super.onEnabled(context, intent)
         Toast.makeText(
             context,
-            "ClawBack Protection Enabled! Impulsive uninstall is now guarded.",
+            "Pawse Protection Enabled! Impulsive uninstall is now guarded.",
             Toast.LENGTH_SHORT
         ).show()
     }
@@ -59,7 +59,7 @@ class KittyAdminReceiver : DeviceAdminReceiver() {
         )
         Toast.makeText(
             context,
-            "ClawBack Protection Disabled.",
+            "Pawse Protection Disabled.",
             Toast.LENGTH_SHORT
         ).show()
     }

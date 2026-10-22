@@ -182,7 +182,7 @@ class MainActivity : AppCompatActivity() {
             startActivity(intent)
             Toast.makeText(
                 this,
-                "Find 'ClawBack' under Downloaded Apps and turn it ON",
+                "Find 'Pawse' under Downloaded Apps and turn it ON",
                 Toast.LENGTH_LONG
             ).show()
         }
@@ -272,7 +272,7 @@ class MainActivity : AppCompatActivity() {
         binding.btnDeviceOwnerAdb.setOnClickListener {
             val adbCmd = "adb shell dpm set-device-owner com.antiscroller.kitty/.admin.KittyAdminReceiver"
             val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-            val clip = ClipData.newPlainText("ClawBack ADB Command", adbCmd)
+            val clip = ClipData.newPlainText("Pawse ADB Command", adbCmd)
             clipboard.setPrimaryClip(clip)
             Toast.makeText(this, "ADB command copied to clipboard!", Toast.LENGTH_SHORT).show()
 

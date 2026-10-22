@@ -72,14 +72,14 @@ class EntitlementsAndGuardianTest {
         val summary = "Uninstall attempt intercepted"
 
         val map = mapOf(
-            "app" to "ClawBack",
+            "app" to "Pawse",
             "event" to eventType,
             "device" to deviceName,
             "message" to summary,
             "content" to summary
         )
 
-        assertEquals("ClawBack", map["app"])
+        assertEquals("Pawse", map["app"])
         assertEquals("UNINSTALL_ATTEMPT", map["event"])
         assertEquals("Child Phone", map["device"])
         assertEquals(summary, map["content"])

@@ -92,7 +92,7 @@
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
                         android:layout_marginStart="10dp"
-                        android:text="ClawBack only limits reels. WhatsApp, Chrome, Notion, Phone, and all other apps are 100% accessible."
+                        android:text="Pawse only limits reels. WhatsApp, Chrome, Notion, Phone, and all other apps are 100% accessible."
                         android:textColor="@color/text_primary"
                         android:textSize="12sp"
                         android:lineSpacingExtra="1dp" />

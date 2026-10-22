@@ -554,11 +554,7 @@ class KittyCurtainView @JvmOverloads constructor(
     private fun drawSpeechBubble(canvas: Canvas, hemY: Float, centerX: Float, progress: Float) {
         if (progress < 0.96f || hemY < 75f) return
 
-        val message = when (currentBreed) {
-            CatBreed.SATURN -> "Time's up, boss. Take a break 🚬"
-            CatBreed.ROLEX -> "Workout complete. Step away ⏱️"
-            else -> "Daily scroll limit reached 💤"
-        }
+        val message = "It's time to pause Pawse."
 
         textPaint.textSize = 30f
         var textWidth = textPaint.measureText(message)

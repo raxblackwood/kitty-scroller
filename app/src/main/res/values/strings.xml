@@ -1,7 +1,7 @@
 <resources>
-    <string name="app_name">ClawBack</string>
+    <string name="app_name">Pawse</string>
     <string name="accessibility_service_description">Detects scrolling activity in Instagram and YouTube Shorts to lower the Kitty Curtain and helps prevent impulsive uninstallation.</string>
-    <string name="device_admin_label">ClawBack Protection</string>
+    <string name="device_admin_label">Pawse Protection</string>
     <string name="device_admin_description">Enables anti-uninstall friction so you cannot impulsively delete the app while doomscrolling.</string>
     <string name="admin_warning_disable">Are you sure? Removing protection will reset your focus streak and make doomscrolling tempting again!</string>
 
