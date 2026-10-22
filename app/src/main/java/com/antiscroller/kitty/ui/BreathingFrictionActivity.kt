@@ -5,6 +5,9 @@ import android.os.Bundle
 import android.os.CountDownTimer
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.updatePadding
 import com.antiscroller.kitty.R
 import com.antiscroller.kitty.data.ScrollDataManager
 import com.antiscroller.kitty.databinding.ActivityBreathingFrictionBinding
@@ -25,6 +28,19 @@ class BreathingFrictionActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityBreathingFrictionBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        ViewCompat.setOnApplyWindowInsetsListener(binding.root) { view, windowInsets ->
+            val insets = windowInsets.getInsets(
+                WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout()
+            )
+            view.updatePadding(
+                left = insets.left,
+                top = insets.top,
+                right = insets.right,
+                bottom = insets.bottom
+            )
+            windowInsets
+        }
 
         dataManager = ScrollDataManager.getInstance(this)
 
