@@ -50,6 +50,11 @@ class ScrollDataManager(context: Context) {
         private const val KEY_GUARDIAN_PIN = "guardian_pin"
         private const val KEY_MAINTENANCE_EXPIRES = "maintenance_expires_ts"
 
+        // Anti-Impulse Cooling-Off Keys
+        private const val KEY_PENDING_MAX_SCROLLS = "pending_max_scrolls"
+        private const val KEY_PENDING_DISABLE_INSTA = "pending_disable_insta"
+        private const val KEY_PENDING_DISABLE_YOUTUBE = "pending_disable_youtube"
+
         // Play Store In-App Purchases & Parental Subscriptions
         private const val KEY_COSMETIC_PACK_UNLOCKED = "cosmetic_pack_unlocked"
         private const val KEY_PARENTAL_SUBSCRIBED = "parental_control_subscribed"
@@ -93,7 +98,8 @@ class ScrollDataManager(context: Context) {
     private fun getTodayDateString(): String = dateFormat.format(Date())
 
     /**
-     * Checks if a new day has arrived. If so, automatically resets daily scroll count to 0.
+     * Checks if a new day has arrived. If so, automatically resets daily scroll count to 0
+     * and applies any scheduled anti-impulse cooling-off adjustments.
      */
     fun checkAndPerformMidnightReset(): Boolean {
         val today = getTodayDateString()
@@ -101,11 +107,30 @@ class ScrollDataManager(context: Context) {
         if (today != lastDate) {
             inMemoryScrollCount = 0
             inMemoryAccumulatedPx = 0f
-            prefs.edit()
+            val editor = prefs.edit()
                 .putString(KEY_LAST_DATE, today)
                 .putInt(KEY_SCROLL_COUNT, 0)
                 .putFloat(KEY_ACCUMULATED_PX, 0f)
-                .apply()
+
+            // Apply any pending limit increase scheduled during cooling-off
+            val pendingCap = prefs.getInt(KEY_PENDING_MAX_SCROLLS, 0)
+            if (pendingCap > 0) {
+                inMemoryMaxScrolls = pendingCap
+                editor.putInt(KEY_MAX_SCROLLS, pendingCap)
+                editor.remove(KEY_PENDING_MAX_SCROLLS)
+            }
+
+            // Apply any pending app monitoring unhooks scheduled during cooling-off
+            if (prefs.getBoolean(KEY_PENDING_DISABLE_INSTA, false)) {
+                editor.putBoolean(KEY_TARGET_INSTA, false)
+                editor.remove(KEY_PENDING_DISABLE_INSTA)
+            }
+            if (prefs.getBoolean(KEY_PENDING_DISABLE_YOUTUBE, false)) {
+                editor.putBoolean(KEY_TARGET_YOUTUBE, false)
+                editor.remove(KEY_PENDING_DISABLE_YOUTUBE)
+            }
+
+            editor.apply()
             return true
         }
         return false
@@ -166,6 +191,28 @@ class ScrollDataManager(context: Context) {
         get() = prefs.getBoolean(KEY_TARGET_YOUTUBE, true)
         set(value) {
             prefs.edit().putBoolean(KEY_TARGET_YOUTUBE, value).apply()
+        }
+
+    var pendingMaxDailyScrolls: Int
+        get() = prefs.getInt(KEY_PENDING_MAX_SCROLLS, 0)
+        set(value) {
+            if (value <= 0) {
+                prefs.edit().remove(KEY_PENDING_MAX_SCROLLS).apply()
+            } else {
+                prefs.edit().putInt(KEY_PENDING_MAX_SCROLLS, value).apply()
+            }
+        }
+
+    var pendingDisableInstagram: Boolean
+        get() = prefs.getBoolean(KEY_PENDING_DISABLE_INSTA, false)
+        set(value) {
+            prefs.edit().putBoolean(KEY_PENDING_DISABLE_INSTA, value).apply()
+        }
+
+    var pendingDisableYouTube: Boolean
+        get() = prefs.getBoolean(KEY_PENDING_DISABLE_YOUTUBE, false)
+        set(value) {
+            prefs.edit().putBoolean(KEY_PENDING_DISABLE_YOUTUBE, value).apply()
         }
 
     var kittyTheme: String

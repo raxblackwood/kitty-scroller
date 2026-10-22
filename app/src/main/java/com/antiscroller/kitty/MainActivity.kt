@@ -101,8 +101,13 @@ class MainActivity : AppCompatActivity() {
         binding.etCustomLimit.setText(dataManager.maxDailyScrolls.toString())
         binding.tvCurrentLimitLabel.text = "Active Cap: ${dataManager.maxDailyScrolls} Reels / day"
 
+        binding.switchInstagram.tag = "PROGRAMMATIC"
         binding.switchInstagram.isChecked = dataManager.isInstagramMonitored
+        binding.switchInstagram.tag = null
+
+        binding.switchYouTube.tag = "PROGRAMMATIC"
         binding.switchYouTube.isChecked = dataManager.isYouTubeMonitored
+        binding.switchYouTube.tag = null
 
         updateGuardianChildModeUI()
         updateGuardianUI()
@@ -231,20 +236,95 @@ class MainActivity : AppCompatActivity() {
             attemptChangeDailyLimit(parsed)
         }
 
-        // Target apps toggles
+        // Target apps toggles with anti-impulse cooling-off protection
         binding.switchInstagram.setOnCheckedChangeListener { _, isChecked ->
-            if (checkGuardianLocked()) {
-                binding.switchInstagram.isChecked = dataManager.isInstagramMonitored
-                return@setOnCheckedChangeListener
+            if (binding.switchInstagram.tag == "PROGRAMMATIC") return@setOnCheckedChangeListener
+            if (isChecked) {
+                dataManager.isInstagramMonitored = true
+                dataManager.pendingDisableInstagram = false
+                Toast.makeText(this, "Instagram Reels protection active.", Toast.LENGTH_SHORT).show()
+            } else {
+                if (checkGuardianLocked()) {
+                    binding.switchInstagram.tag = "PROGRAMMATIC"
+                    binding.switchInstagram.isChecked = true
+                    binding.switchInstagram.tag = null
+                    return@setOnCheckedChangeListener
+                }
+                if (dataManager.isMaintenanceModeActive()) {
+                    dataManager.isInstagramMonitored = false
+                    dataManager.pendingDisableInstagram = false
+                    Toast.makeText(this, "Instagram monitoring disabled by Guardian.", Toast.LENGTH_SHORT).show()
+                    return@setOnCheckedChangeListener
+                }
+
+                // Solo mode: Revert switch back to ON and offer cooling-off schedule
+                binding.switchInstagram.tag = "PROGRAMMATIC"
+                binding.switchInstagram.isChecked = true
+                binding.switchInstagram.tag = null
+
+                if (dataManager.isLimitReached()) {
+                    MaterialAlertDialogBuilder(this)
+                        .setTitle("🔒 Today's Limit Reached")
+                        .setMessage("You have completed your daily scroll budget today!\n\nTo break compulsive doomscrolling loops, you cannot turn off app protection to bypass the curtain. Protection stays active until tomorrow at midnight (00:00).")
+                        .setPositiveButton("I'll Respect My Limit", null)
+                        .show()
+                } else {
+                    MaterialAlertDialogBuilder(this)
+                        .setTitle("🛡️ Anti-Doomscroll Cooling-Off")
+                        .setMessage("To stop impulsive binge scrolling, turning off protection for Instagram cannot be done instantly during an active day.\n\nWould you like to schedule turning off protection starting tomorrow at midnight (00:00)?")
+                        .setPositiveButton("Schedule for Tomorrow") { _, _ ->
+                            dataManager.pendingDisableInstagram = true
+                            Toast.makeText(this, "Protection stays active today and will turn off tomorrow at midnight.", Toast.LENGTH_LONG).show()
+                        }
+                        .setNegativeButton("Keep Active Today", null)
+                        .show()
+                }
             }
-            dataManager.isInstagramMonitored = isChecked
         }
+
         binding.switchYouTube.setOnCheckedChangeListener { _, isChecked ->
-            if (checkGuardianLocked()) {
-                binding.switchYouTube.isChecked = dataManager.isYouTubeMonitored
-                return@setOnCheckedChangeListener
+            if (binding.switchYouTube.tag == "PROGRAMMATIC") return@setOnCheckedChangeListener
+            if (isChecked) {
+                dataManager.isYouTubeMonitored = true
+                dataManager.pendingDisableYouTube = false
+                Toast.makeText(this, "YouTube Shorts protection active.", Toast.LENGTH_SHORT).show()
+            } else {
+                if (checkGuardianLocked()) {
+                    binding.switchYouTube.tag = "PROGRAMMATIC"
+                    binding.switchYouTube.isChecked = true
+                    binding.switchYouTube.tag = null
+                    return@setOnCheckedChangeListener
+                }
+                if (dataManager.isMaintenanceModeActive()) {
+                    dataManager.isYouTubeMonitored = false
+                    dataManager.pendingDisableYouTube = false
+                    Toast.makeText(this, "YouTube monitoring disabled by Guardian.", Toast.LENGTH_SHORT).show()
+                    return@setOnCheckedChangeListener
+                }
+
+                // Solo mode: Revert switch back to ON and offer cooling-off schedule
+                binding.switchYouTube.tag = "PROGRAMMATIC"
+                binding.switchYouTube.isChecked = true
+                binding.switchYouTube.tag = null
+
+                if (dataManager.isLimitReached()) {
+                    MaterialAlertDialogBuilder(this)
+                        .setTitle("🔒 Today's Limit Reached")
+                        .setMessage("You have completed your daily scroll budget today!\n\nTo break compulsive doomscrolling loops, you cannot turn off app protection to bypass the curtain. Protection stays active until tomorrow at midnight (00:00).")
+                        .setPositiveButton("I'll Respect My Limit", null)
+                        .show()
+                } else {
+                    MaterialAlertDialogBuilder(this)
+                        .setTitle("🛡️ Anti-Doomscroll Cooling-Off")
+                        .setMessage("To stop impulsive binge scrolling, turning off protection for YouTube Shorts cannot be done instantly during an active day.\n\nWould you like to schedule turning off protection starting tomorrow at midnight (00:00)?")
+                        .setPositiveButton("Schedule for Tomorrow") { _, _ ->
+                            dataManager.pendingDisableYouTube = true
+                            Toast.makeText(this, "Protection stays active today and will turn off tomorrow at midnight.", Toast.LENGTH_LONG).show()
+                        }
+                        .setNegativeButton("Keep Active Today", null)
+                        .show()
+                }
             }
-            dataManager.isYouTubeMonitored = isChecked
         }
 
         // Guardian PIN Controls
@@ -610,7 +690,13 @@ class MainActivity : AppCompatActivity() {
         binding.tvScrollCount.text = count.toString()
         binding.tvMaxScrolls.text = "/ $max reels"
         binding.tvDropPercentage.text = "${(pct * 100).toInt()}% covered"
-        binding.tvCurrentLimitLabel.text = "Active Cap: $max Reels / day"
+
+        val pending = dataManager.pendingMaxDailyScrolls
+        if (pending > 0) {
+            binding.tvCurrentLimitLabel.text = "Active Cap: $max Reels / day (Tomorrow: $pending Reels)"
+        } else {
+            binding.tvCurrentLimitLabel.text = "Active Cap: $max Reels / day"
+        }
 
         val currentInput = binding.etCustomLimit.text?.toString()?.trim()
         if (currentInput.isNullOrEmpty() || currentInput.toIntOrNull() != max) {
@@ -640,68 +726,44 @@ class MainActivity : AppCompatActivity() {
         // Tightening/reducing the limit is always allowed immediately
         if (newLimit < currentLimit) {
             dataManager.maxDailyScrolls = newLimit
+            dataManager.pendingMaxDailyScrolls = 0
             updateDashboard()
             Toast.makeText(this, "Daily limit tightened to $newLimit reels! 👏", Toast.LENGTH_SHORT).show()
             return
         }
 
-        // User is attempting to INCREASE the limit!
-        // 1. If limit is ALREADY REACHED for today -> STRICT LOCKOUT!
-        if (dataManager.isLimitReached()) {
-            MaterialAlertDialogBuilder(this)
-                .setTitle("🔒 Today's Limit Reached")
-                .setMessage("You have already reached your limit of $currentLimit reels today!\n\nTo break the compulsive doomscrolling habit, you cannot increase your cap today. Your limit will reset fresh tomorrow at midnight (00:00).\n\n(If a parent or partner set a Guardian PIN, they can unlock it in the Guardian section.)")
-                .setPositiveButton("I'll Respect My Limit", null)
-                .show()
+        // Guardian unlocked (maintenance mode): immediate increase
+        if (dataManager.isMaintenanceModeActive()) {
+            dataManager.maxDailyScrolls = newLimit
+            dataManager.pendingMaxDailyScrolls = 0
             updateDashboard()
+            Toast.makeText(this, "Daily limit updated to $newLimit reels by Guardian.", Toast.LENGTH_SHORT).show()
             return
         }
 
-        // 2. If limit is NOT yet reached, but user is increasing it during the day:
-        // Enforce 30-Second Mindful Reflection Challenge
-        showMindfulIncreaseDialog(newLimit)
-    }
-
-    private fun showMindfulIncreaseDialog(newLimit: Int) {
-        val currentLimit = dataManager.maxDailyScrolls
-
-        val dialog = MaterialAlertDialogBuilder(this)
-            .setTitle("🛑 Mindful Pause")
-            .setMessage("You are increasing your daily limit from $currentLimit to $newLimit reels.\n\nTake a breath: Are you increasing this to give in to doomscrolling?\n\nTo prevent impulsive decisions, please wait 30 seconds before confirming.")
-            .setPositiveButton("Confirm (30s)", null)
-            .setNegativeButton("Cancel (Keep $currentLimit)", null)
-            .setCancelable(false)
-            .create()
-
-        dialog.show()
-
-        val confirmBtn = dialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_POSITIVE)
-        confirmBtn.isEnabled = false
-
-        val timer = object : CountDownTimer(30000, 1000) {
-            override fun onTick(millisUntilFinished: Long) {
-                val sec = (millisUntilFinished / 1000).toInt() + 1
-                confirmBtn.text = "Confirm (${sec}s)"
-            }
-
-            override fun onFinish() {
-                confirmBtn.text = "Yes, Increase to $newLimit"
-                confirmBtn.isEnabled = true
-            }
-        }.start()
-
-        confirmBtn.setOnClickListener {
-            timer.cancel()
-            dataManager.maxDailyScrolls = newLimit
-            updateDashboard()
-            Toast.makeText(this@MainActivity, "Daily limit updated to $newLimit reels.", Toast.LENGTH_SHORT).show()
-            dialog.dismiss()
+        // Solo Mode: Enforce 24-hour cooling-off (scheduled for tomorrow at midnight)
+        val isReached = dataManager.isLimitReached()
+        val title = if (isReached) "🔒 Today's Limit Reached" else "🛑 24-Hour Cooling-Off"
+        val message = if (isReached) {
+            "You have already reached your limit of $currentLimit reels today!\n\nTo break the compulsive doomscrolling habit, you cannot increase your cap today.\n\nWould you like to schedule this increase ($newLimit reels) to take effect tomorrow at midnight (00:00)?"
+        } else {
+            "To prevent impulsive binge scrolling, increasing your cap from $currentLimit to $newLimit reels takes effect tomorrow at midnight (00:00).\n\nTightening your limit is always applied immediately.\n\nSchedule this limit increase for tomorrow?"
         }
 
-        dialog.setOnDismissListener {
-            timer.cancel()
-            updateDashboard()
-        }
+        MaterialAlertDialogBuilder(this)
+            .setTitle(title)
+            .setMessage(message)
+            .setPositiveButton("Schedule for Tomorrow ($newLimit Reels)") { _, _ ->
+                dataManager.pendingMaxDailyScrolls = newLimit
+                updateDashboard()
+                Toast.makeText(
+                    this,
+                    "Scheduled: Daily limit will increase to $newLimit reels tomorrow at midnight.",
+                    Toast.LENGTH_LONG
+                ).show()
+            }
+            .setNegativeButton("Keep Today's Cap ($currentLimit)", null)
+            .show()
     }
 
     private fun checkPermissions() {
