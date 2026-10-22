@@ -581,7 +581,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun updateGuardianUI() {
         val isUnlocked = dataManager.isMaintenanceModeActive()
-        binding.btnGuardianResetToday.visibility = if (isUnlocked) View.VISIBLE else View.GONE
+        binding.llGuardianProtectedSettings.visibility = if (isUnlocked) View.VISIBLE else View.GONE
 
         if (!dataManager.isGuardianLockEnabled) {
             binding.tvGuardianStatus.text = "Status: Inactive (Tap to set Parent/Partner PIN)"
