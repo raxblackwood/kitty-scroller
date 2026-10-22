@@ -1,127 +1,228 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:orientation="vertical"
-    android:padding="24dp"
-    android:background="@color/surface">
+    android:fillViewport="true">
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Welcome to Clawse 🐾"
-        android:textColor="@color/text_primary"
-        android:textSize="20sp"
-        android:textStyle="bold" />
-
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="6dp"
-        android:text="Lock in your daily reel boundary before you start. Once confirmed, this budget will be locked to keep you focused."
-        android:textColor="@color/text_secondary"
-        android:textSize="13sp"
-        android:lineSpacingExtra="2dp" />
-
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        android:text="1. DAILY REEL LIMIT"
-        android:textColor="@color/kitty_peach"
-        android:textSize="12sp"
-        android:letterSpacing="0.08"
-        android:textStyle="bold" />
-
-    <com.google.android.material.chip.ChipGroup
-        android:id="@+id/chipGroupSetupLimit"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="6dp"
-        app:singleSelection="true">
+        android:orientation="vertical"
+        android:padding="24dp"
+        android:background="@color/surface">
 
-        <com.google.android.material.chip.Chip
-            android:id="@+id/chipLimit15"
+        <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="15 Reels"
-            style="@style/Widget.Material3.Chip.Filter" />
+            android:text="Welcome to Clawse 🐾"
+            android:textColor="@color/text_primary"
+            android:textSize="20sp"
+            android:textStyle="bold" />
 
-        <com.google.android.material.chip.Chip
-            android:id="@+id/chipLimit25"
+        <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="25 Reels (Recommended)"
-            android:checked="true"
-            style="@style/Widget.Material3.Chip.Filter" />
+            android:layout_marginTop="6dp"
+            android:text="Set your daily reel boundary and enable the 2 required Android settings so the Kitty Curtain can protect your focus."
+            android:textColor="@color/text_secondary"
+            android:textSize="13sp"
+            android:lineSpacingExtra="2dp" />
 
-        <com.google.android.material.chip.Chip
-            android:id="@+id/chipLimit50"
+        <!-- 1. Limit -->
+        <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="50 Reels"
-            style="@style/Widget.Material3.Chip.Filter" />
-    </com.google.android.material.chip.ChipGroup>
+            android:layout_marginTop="16dp"
+            android:text="1. DAILY REEL LIMIT"
+            android:textColor="@color/kitty_peach"
+            android:textSize="12sp"
+            android:letterSpacing="0.08"
+            android:textStyle="bold" />
 
-    <com.google.android.material.textfield.TextInputLayout
-        android:id="@+id/tilSetupLimit"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:hint="Custom daily reels"
-        app:boxCornerRadiusBottomEnd="8dp"
-        app:boxCornerRadiusBottomStart="8dp"
-        app:boxCornerRadiusTopEnd="8dp"
-        app:boxCornerRadiusTopStart="8dp"
-        style="@style/Widget.Material3.TextInputLayout.OutlinedBox">
-
-        <com.google.android.material.textfield.TextInputEditText
-            android:id="@+id/etSetupLimit"
+        <com.google.android.material.chip.ChipGroup
+            android:id="@+id/chipGroupSetupLimit"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:inputType="number"
-            android:maxLength="4"
-            android:text="25"
+            android:layout_marginTop="6dp"
+            app:singleSelection="true">
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chipLimit15"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="15 Reels"
+                style="@style/Widget.Material3.Chip.Filter" />
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chipLimit25"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="25 Reels (Recommended)"
+                android:checked="true"
+                style="@style/Widget.Material3.Chip.Filter" />
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chipLimit50"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="50 Reels"
+                style="@style/Widget.Material3.Chip.Filter" />
+        </com.google.android.material.chip.ChipGroup>
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/tilSetupLimit"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:hint="Custom daily reels"
+            app:boxCornerRadiusBottomEnd="8dp"
+            app:boxCornerRadiusBottomStart="8dp"
+            app:boxCornerRadiusTopEnd="8dp"
+            app:boxCornerRadiusTopStart="8dp"
+            style="@style/Widget.Material3.TextInputLayout.OutlinedBox">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/etSetupLimit"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="number"
+                android:maxLength="4"
+                android:text="25"
+                android:textColor="@color/text_primary" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- 2. Protected Apps -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="2. PROTECTED APPS"
+            android:textColor="@color/secondary"
+            android:textSize="12sp"
+            android:letterSpacing="0.08"
+            android:textStyle="bold" />
+
+        <com.google.android.material.switchmaterial.SwitchMaterial
+            android:id="@+id/switchSetupInstagram"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:checked="true"
+            android:text="Instagram (Reels &amp; Feed)"
             android:textColor="@color/text_primary" />
-    </com.google.android.material.textfield.TextInputLayout>
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        android:text="2. PROTECTED APPS"
-        android:textColor="@color/secondary"
-        android:textSize="12sp"
-        android:letterSpacing="0.08"
-        android:textStyle="bold" />
+        <com.google.android.material.switchmaterial.SwitchMaterial
+            android:id="@+id/switchSetupYouTube"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:checked="true"
+            android:text="YouTube (Shorts)"
+            android:textColor="@color/text_primary" />
 
-    <com.google.android.material.switchmaterial.SwitchMaterial
-        android:id="@+id/switchSetupInstagram"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:checked="true"
-        android:text="Instagram (Reels &amp; Feed)"
-        android:textColor="@color/text_primary" />
+        <!-- 3. Required Permissions -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="3. REQUIRED SETTINGS (MUST ENABLE)"
+            android:textColor="@color/kitty_orange"
+            android:textSize="12sp"
+            android:letterSpacing="0.08"
+            android:textStyle="bold" />
 
-    <com.google.android.material.switchmaterial.SwitchMaterial
-        android:id="@+id/switchSetupYouTube"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:checked="true"
-        android:text="YouTube (Shorts)"
-        android:textColor="@color/text_primary" />
+        <!-- Overlay row -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
 
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/btnLockInSetup"
-        android:layout_width="match_parent"
-        android:layout_height="50dp"
-        android:layout_marginTop="20dp"
-        android:text="Lock In Daily Boundary 🔒"
-        android:backgroundTint="@color/primary"
-        android:textColor="@color/on_primary"
-        android:textSize="14sp"
-        android:textStyle="bold"
-        app:cornerRadius="10dp" />
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
 
-</LinearLayout>
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Display Over Other Apps"
+                    android:textColor="@color/text_primary"
+                    android:textSize="14sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Lowers the Kitty Curtain over reels"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="11sp" />
+            </LinearLayout>
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnSetupOverlay"
+                android:layout_width="wrap_content"
+                android:layout_height="38dp"
+                android:text="Enable"
+                android:textSize="12sp"
+                android:backgroundTint="@color/primary"
+                android:textColor="@color/on_primary"
+                app:cornerRadius="8dp" />
+        </LinearLayout>
+
+        <!-- Accessibility row -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Accessibility Service"
+                    android:textColor="@color/text_primary"
+                    android:textSize="14sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Measures scrolls &amp; stops uninstalls"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="11sp" />
+            </LinearLayout>
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnSetupAccessibility"
+                android:layout_width="wrap_content"
+                android:layout_height="38dp"
+                android:text="Enable"
+                android:textSize="12sp"
+                android:backgroundTint="@color/primary"
+                android:textColor="@color/on_primary"
+                app:cornerRadius="8dp" />
+        </LinearLayout>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnLockInSetup"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:layout_marginTop="20dp"
+            android:text="Activate Clawse 🐾"
+            android:backgroundTint="@color/primary"
+            android:textColor="@color/on_primary"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            app:cornerRadius="10dp" />
+
+    </LinearLayout>
+</ScrollView>
