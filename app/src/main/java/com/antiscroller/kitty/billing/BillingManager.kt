@@ -89,9 +89,9 @@ class BillingManager(
             .setProductList(inAppProductList)
             .build()
 
-        billingClient.queryProductDetailsAsync(inAppParams) { billingResult, queryProductDetailsList ->
+        billingClient.queryProductDetailsAsync(inAppParams) { billingResult, productDetailsResult ->
             if (billingResult.responseCode == BillingClient.BillingResponseCode.OK) {
-                for (details in queryProductDetailsList) {
+                for (details in productDetailsResult.productDetailsList) {
                     if (details.productId == PRODUCT_COSMETIC_PACK) {
                         cosmeticProductDetails = details
                         Log.i(TAG, "Loaded cosmetic details: ${details.name} - ${getCosmeticFormattedPrice()}")
@@ -111,9 +111,9 @@ class BillingManager(
             .setProductList(subsProductList)
             .build()
 
-        billingClient.queryProductDetailsAsync(subsParams) { billingResult, queryProductDetailsList ->
+        billingClient.queryProductDetailsAsync(subsParams) { billingResult, productDetailsResult ->
             if (billingResult.responseCode == BillingClient.BillingResponseCode.OK) {
-                for (details in queryProductDetailsList) {
+                for (details in productDetailsResult.productDetailsList) {
                     if (details.productId == PRODUCT_PARENTAL_MONTHLY) {
                         parentalProductDetails = details
                         Log.i(TAG, "Loaded parental sub details: ${details.name} - ${getParentalFormattedPrice()}")
