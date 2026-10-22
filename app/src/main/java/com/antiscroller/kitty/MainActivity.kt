@@ -44,6 +44,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var adminComponent: ComponentName
     private lateinit var billingManager: BillingManager
 
+    private var previewedTheme: String = ScrollDataManager.THEME_GINGER
+
     private val handler = Handler(Looper.getMainLooper())
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -61,6 +63,7 @@ class MainActivity : AppCompatActivity() {
                 Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
                 updateThemeChips()
                 updateGuardianChildModeUI()
+                updateEquipButtonState()
             }
         }
 
@@ -86,9 +89,10 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setupUI() {
-        val currentTheme = dataManager.kittyTheme
-        binding.previewCurtain.applyTheme(currentTheme)
+        previewedTheme = dataManager.kittyTheme
+        binding.previewCurtain.applyTheme(previewedTheme)
         updateThemeChips()
+        updateEquipButtonState()
 
         val screenHeight = resources.displayMetrics.heightPixels
         val dropPct = dataManager.getDropPercentage(screenHeight)
@@ -111,29 +115,36 @@ class MainActivity : AppCompatActivity() {
             showPaywallDialog(BillingManager.PRODUCT_COSMETIC_PACK)
         }
 
-        // Kitty Breed Selection
+        // Kitty Breed Choosing (Live Preview)
         binding.chipGroupKittyTheme.setOnCheckedStateChangeListener { _, checkedIds ->
             if (checkedIds.isEmpty()) return@setOnCheckedStateChangeListener
-            val selectedTheme = when (checkedIds.first()) {
+            val chosenTheme = when (checkedIds.first()) {
                 R.id.chipThemeTabby -> ScrollDataManager.THEME_TABBY
                 R.id.chipThemeSaturn -> ScrollDataManager.THEME_SATURN
                 R.id.chipThemeRolex -> ScrollDataManager.THEME_ROLEX
                 else -> ScrollDataManager.THEME_GINGER
             }
-            if (!dataManager.isThemeUnlocked(selectedTheme)) {
-                updateThemeChips()
+            if (chosenTheme != previewedTheme) {
+                previewedTheme = chosenTheme
+                binding.previewCurtain.applyTheme(previewedTheme)
+                updateEquipButtonState()
+            }
+        }
+
+        // Equip or Unlock Action Button
+        binding.btnEquipOrUnlock.setOnClickListener {
+            val isUnlocked = dataManager.isThemeUnlocked(previewedTheme)
+            if (!isUnlocked) {
                 showPaywallDialog(BillingManager.PRODUCT_COSMETIC_PACK)
-                return@setOnCheckedStateChangeListener
+            } else {
+                if (dataManager.kittyTheme != previewedTheme) {
+                    dataManager.kittyTheme = previewedTheme
+                    val breedName = getBreedDisplayName(previewedTheme)
+                    Toast.makeText(this, "$breedName equipped as active companion!", Toast.LENGTH_SHORT).show()
+                    updateEquipButtonState()
+                    updateThemeChips()
+                }
             }
-            dataManager.kittyTheme = selectedTheme
-            binding.previewCurtain.applyTheme(selectedTheme)
-            val breedName = when (selectedTheme) {
-                ScrollDataManager.THEME_TABBY -> "Tabby 🐈‍⬛"
-                ScrollDataManager.THEME_SATURN -> "Saturn 🐱"
-                ScrollDataManager.THEME_ROLEX -> "Rolex 🕶️"
-                else -> "Ginger 🍊"
-            }
-            Toast.makeText(this, "$breedName selected!", Toast.LENGTH_SHORT).show()
         }
 
         // Guardian Child Protection Pipeline Buttons
@@ -329,21 +340,62 @@ class MainActivity : AppCompatActivity() {
         return false
     }
 
+    private fun getBreedDisplayName(theme: String): String {
+        return when (theme) {
+            ScrollDataManager.THEME_TABBY, ScrollDataManager.THEME_BLACK -> "Tabby 🐈‍⬛"
+            ScrollDataManager.THEME_SATURN -> "Saturn 🐱"
+            ScrollDataManager.THEME_ROLEX -> "Rolex 🕶️"
+            else -> "Ginger 🍊"
+        }
+    }
+
+    private fun updateEquipButtonState() {
+        val isEquipped = (previewedTheme == dataManager.kittyTheme)
+        val isUnlocked = dataManager.isThemeUnlocked(previewedTheme)
+        val breedName = getBreedDisplayName(previewedTheme)
+
+        when {
+            isEquipped -> {
+                binding.btnEquipOrUnlock.text = "✓ Currently Equipped ($breedName)"
+                binding.btnEquipOrUnlock.isEnabled = false
+                binding.btnEquipOrUnlock.setBackgroundColor(getColor(R.color.surface_variant))
+                binding.btnEquipOrUnlock.setTextColor(getColor(R.color.text_secondary))
+            }
+            isUnlocked -> {
+                binding.btnEquipOrUnlock.text = "Equip $breedName"
+                binding.btnEquipOrUnlock.isEnabled = true
+                binding.btnEquipOrUnlock.setBackgroundColor(getColor(R.color.secondary))
+                binding.btnEquipOrUnlock.setTextColor(getColor(R.color.on_secondary))
+            }
+            else -> {
+                binding.btnEquipOrUnlock.text = "✨ Unlock $breedName to Use ($2.50)"
+                binding.btnEquipOrUnlock.isEnabled = true
+                binding.btnEquipOrUnlock.setBackgroundColor(getColor(R.color.primary))
+                binding.btnEquipOrUnlock.setTextColor(getColor(R.color.on_primary))
+            }
+        }
+    }
+
     private fun updateThemeChips() {
         val isUnlocked = dataManager.isCosmeticPackUnlocked
         binding.btnUnlockCosmeticsBanner.visibility = if (isUnlocked) View.GONE else View.VISIBLE
 
         binding.chipThemeGinger.text = if (isUnlocked) "🍊 Ginger" else "🍊 Ginger (Free)"
         binding.chipThemeTabby.text = if (isUnlocked) "🐈‍⬛ Tabby" else "🔒 Tabby"
-        binding.chipThemeSaturn.text = if (isUnlocked) "🕶️ Saturn" else "🔒 Saturn"
-        binding.chipThemeRolex.text = if (isUnlocked) "🐱 Rolex" else "🔒 Rolex"
+        binding.chipThemeSaturn.text = if (isUnlocked) "🐱 Saturn" else "🔒 Saturn"
+        binding.chipThemeRolex.text = if (isUnlocked) "🕶️ Rolex" else "🔒 Rolex"
 
-        when (dataManager.kittyTheme) {
-            ScrollDataManager.THEME_TABBY, ScrollDataManager.THEME_BLACK -> binding.chipThemeTabby.isChecked = true
-            ScrollDataManager.THEME_SATURN -> binding.chipThemeSaturn.isChecked = true
-            ScrollDataManager.THEME_ROLEX -> binding.chipThemeRolex.isChecked = true
-            else -> binding.chipThemeGinger.isChecked = true
+        val targetChipId = when (previewedTheme) {
+            ScrollDataManager.THEME_TABBY, ScrollDataManager.THEME_BLACK -> R.id.chipThemeTabby
+            ScrollDataManager.THEME_SATURN -> R.id.chipThemeSaturn
+            ScrollDataManager.THEME_ROLEX -> R.id.chipThemeRolex
+            else -> R.id.chipThemeGinger
         }
+        if (binding.chipGroupKittyTheme.checkedChipId != targetChipId) {
+            binding.chipGroupKittyTheme.check(targetChipId)
+        }
+
+        updateEquipButtonState()
     }
 
     private fun updateGuardianChildModeUI() {

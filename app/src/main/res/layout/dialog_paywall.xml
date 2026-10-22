@@ -129,7 +129,7 @@
                         android:gravity="center"
                         android:paddingTop="6dp"
                         android:paddingBottom="6dp"
-                        android:text="🕶️ Saturn"
+                        android:text="🐱 Saturn"
                         android:textColor="@color/text_primary"
                         android:textSize="12sp" />
 
@@ -142,7 +142,7 @@
                         android:gravity="center"
                         android:paddingTop="6dp"
                         android:paddingBottom="6dp"
-                        android:text="🐱 Rolex"
+                        android:text="🕶️ Rolex"
                         android:textColor="@color/text_primary"
                         android:textSize="12sp" />
                 </LinearLayout>
@@ -150,7 +150,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="• Stealth Black Tabby with glowing green eyes\n• Saturn the Gangster Cat with shades and cigar\n• Rolex with golden luxury collar and paw-tience\n• Lifetime unlock forever across all your Android devices"
+                    android:text="• Stealth Black Tabby with glowing green eyes\n• Saturn the Pull-Up Cat with wiggling tail\n• Rolex the Gangster Cat with shades and cigar\n• Lifetime unlock forever across all your Android devices"
                     android:textColor="@color/text_secondary"
                     android:textSize="12sp"
                     android:lineSpacingExtra="3dp" />
