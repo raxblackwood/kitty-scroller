@@ -105,11 +105,14 @@ class KittyAccessibilityService : AccessibilityService() {
     }
 
     private fun isIgnoredPackage(pkg: String): Boolean {
-        val myPkg = applicationContext.packageName
-        return pkg == myPkg ||
-               pkg.contains("inputmethod") ||
-               pkg.contains("keyboard") ||
-               pkg.contains("keyguard")
+        val lower = pkg.lowercase()
+        val myPkg = applicationContext.packageName.lowercase()
+        return lower == myPkg ||
+               lower.contains("inputmethod") ||
+               lower.contains("keyboard") ||
+               lower.contains("keyguard") ||
+               lower.contains("systemui") ||
+               lower == "android"
     }
 
     /**
@@ -276,6 +279,27 @@ class KittyAccessibilityService : AccessibilityService() {
                 overlayManager.hideOverlay()
             }
             return
+        }
+
+        // Before hiding overlay, check if active window is still a monitored package
+        // (handles transient popups, system dialogs, volume overlays, back gestures)
+        val activePkg = try {
+            rootInActiveWindow?.packageName?.toString()
+        } catch (_: Exception) {
+            null
+        }
+
+        if (activePkg == ScrollDataManager.PKG_INSTAGRAM || activePkg == ScrollDataManager.PKG_YOUTUBE) {
+            currentForegroundPackage = activePkg
+            dataManager.checkAndPerformMidnightReset()
+            val screenHeight = resources.displayMetrics.heightPixels
+            val dropPercentage = dataManager.getDropPercentage(screenHeight)
+            if (dropPercentage > 0.0001f) {
+                mainHandler.post {
+                    overlayManager.showOrUpdateOverlay(dropPercentage)
+                }
+                return
+            }
         }
 
         // Outside monitored apps: hide overlay
@@ -482,8 +506,7 @@ class KittyAccessibilityService : AccessibilityService() {
         return lower.contains("settings") ||
                lower.contains("packageinstaller") ||
                lower.contains("permissioncontroller") ||
-               lower == "com.android.vending" ||
-               lower == "android"
+               lower == "com.android.vending"
     }
 
     private var lastProtectionTriggerTs = 0L
