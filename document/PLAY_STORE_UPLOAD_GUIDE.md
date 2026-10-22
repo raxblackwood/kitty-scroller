@@ -1,6 +1,6 @@
-# Pawse - Google Play Store Upload & Configuration Guide
+# Clawse - Google Play Store Upload & Configuration Guide
 
-This document provides a complete, step-by-step roadmap to publish **Pawse** to the Google Play Store.
+This document provides a complete, step-by-step roadmap to publish **Clawse** to the Google Play Store.
 It covers building the production artifacts, setting up Google Play Console, configuring In-App Billing products, completing regulatory declarations, and navigating policy reviews.
 
 ---
@@ -9,7 +9,7 @@ It covers building the production artifacts, setting up Google Play Console, con
 
 | Parameter | Configuration Value | Notes |
 | :--- | :--- | :--- |
-| **App Name** | `Pawse: Screen Time Curtain` (or `Pawse`) | Under 30 characters for the Play Store title. |
+| **App Name** | `Clawse: Screen Time Curtain` (or `Clawse`) | Under 30 characters for the Play Store title. |
 | **Package Name** | `com.antiscroller.kitty` | Unique application ID defined in Gradle. |
 | **Version Code** | `1` | Increment with each new Play Store upload. |
 | **Version Name** | `1.0.0` | User-visible version string. |
@@ -37,7 +37,7 @@ All prepared graphic assets are located in the `play_store_assets/` directory.
   - Minimum 4 screenshots showing:
     1. Home dashboard with scroll limits and permissions.
     2. Live Kitty Curtain dropping over Instagram Reels or YouTube Shorts.
-    3. The 100% full-drop screen with the speech bubble: "It's time to pause Pawse."
+    3. The 100% full-drop screen with the speech bubble: "It's time to pause Clawse."
     4. Cat breed selection and paywall options.
   - Dimensions: 1080 x 2400 (or standard 16:9 / 9:16 portrait).
 
@@ -46,7 +46,7 @@ All prepared graphic assets are located in the `play_store_assets/` directory.
 ## 3. Store Listing Copy
 
 ### App Title
-`Pawse: Screen Time Curtain`
+`Clawse: Screen Time Curtain`
 
 ### Short Description (Max 80 characters)
 `Gentle, playful screen curtain that pauses your doomscroll loops.`
@@ -55,25 +55,25 @@ All prepared graphic assets are located in the `play_store_assets/` directory.
 ```text
 Tired of losing hours to endless doomscrolling on Reels and Shorts?
 
-Pawse is your gentle, playful digital wellbeing companion designed to help you break compulsive scrolling loops without stressful timers or aggressive app blockers.
+Clawse is your gentle, playful digital wellbeing companion designed to help you break compulsive scrolling loops without stressful timers or aggressive app blockers.
 
 HOW IT WORKS:
 🐾 1. Set Your Comfort Limit: Choose how many reels you want to watch before taking a pause (e.g., 5 to 50 reels).
 🐾 2. Ambient Curtain: As you scroll through Instagram Reels or YouTube Shorts, a friendly pixel-art kitty slowly lowers a screen curtain.
-🐾 3. Natural Pause: When you hit your limit, the curtain reaches full drop with the reminder: "It's time to pause Pawse."
+🐾 3. Natural Pause: When you hit your limit, the curtain reaches full drop with the reminder: "It's time to pause Clawse."
 🐾 4. Mindful Choice: Take a calm 60-second breathing pause, step away, or intentionally reset your scroll session.
 
 WHY PAWSE WORKS:
-Unlike aggressive blockers that cause resentment and prompt you to uninstall them, Pawse uses gradual visual feedback.
+Unlike aggressive blockers that cause resentment and prompt you to uninstall them, Clawse uses gradual visual feedback.
 You remain fully aware of how much content you have consumed in real time.
 
 KEY FEATURES:
-• Zero Friction on Productive Apps: Pawse only observes Instagram Reels and YouTube Shorts. WhatsApp, Chrome, Notion, Phone, and all other apps remain 100% unrestricted.
-• 100% Private & Offline: Pawse runs entirely on your device. Zero analytics, zero tracking, and zero personal data collection.
+• Zero Friction on Productive Apps: Clawse only observes Instagram Reels and YouTube Shorts. WhatsApp, Chrome, Notion, Phone, and all other apps remain 100% unrestricted.
+• 100% Private & Offline: Clawse runs entirely on your device. Zero analytics, zero tracking, and zero personal data collection.
 • Unlockable Kitty Companions: Choose your favorite feline guide - Ginger, Saturn, Tabby, or Rolex.
 • Optional Parental / Guardian Shields: Real-time alerts to notify parents or accountability partners if uninstall or admin deactivation is attempted.
 
-Take back control of your screen time today with Pawse!
+Take back control of your screen time today with Clawse!
 ```
 
 ---
@@ -83,7 +83,7 @@ Take back control of your screen time today with Pawse!
 ### Step 1: Create the App
 1. Log in to [Google Play Console](https://play.google.com/console).
 2. Click **Create app** in the top right.
-3. Enter App name: `Pawse`.
+3. Enter App name: `Clawse`.
 4. Select **App** (not Game) and **Free**.
 5. Accept the Declarations and click **Create app**.
 
@@ -93,7 +93,7 @@ Take back control of your screen time today with Pawse!
 1. Navigate to **Testing** -> **Internal testing**.
 2. Click **Create new release**.
 3. Upload `app/build/outputs/bundle/release/app-release.aab`.
-4. Enter release notes: `Initial release build of Pawse with Google Play Billing and Guardian shield support.`
+4. Enter release notes: `Initial release build of Clawse with Google Play Billing and Guardian shield support.`
 5. Click **Next**, review, and click **Save and publish to Internal testing**.
 
 ---
@@ -106,7 +106,7 @@ Once your internal release is processed, configure the two monetization items in
 - Navigate to **Monetize** -> **Products** -> **In-app products**.
 - Click **Create product**.
 - **Product ID**: `clawback_cosmetic_pack` *(Must match the constant in BillingManager.kt)*
-- **Product Name**: `Pawse Cosmetic Kitty Pack`
+- **Product Name**: `Clawse Cosmetic Kitty Pack`
 - **Description**: `Unlocks all premium feline companions: Saturn, Rolex, and Tabby.`
 - **Price**: `$2.50` (or local equivalent in INR/EUR/GBP).
 - **Status**: Click **Save**, then click **Activate**.
@@ -115,7 +115,7 @@ Once your internal release is processed, configure the two monetization items in
 - Navigate to **Monetize** -> **Products** -> **Subscriptions**.
 - Click **Create subscription**.
 - **Subscription ID**: `clawback_parental_monthly` *(Must match the constant in BillingManager.kt)*
-- **Name**: `Pawse Guardian Shield Monthly`
+- **Name**: `Clawse Guardian Shield Monthly`
 - **Description**: `Real-time webhook alerts when uninstall or admin deactivation is attempted.`
 - **Base Plan**:
   - Add a base plan with **Auto-renewing**.
@@ -143,27 +143,27 @@ Google Play requires a dedicated declaration form for the `AccessibilityService`
   Select: `Screen monitoring / Digital wellbeing / Behavioral intervention`.
 - **Declaration Text**:
   ```text
-  Pawse is a digital wellbeing and screen-time management application designed to curb compulsive doomscrolling on short-form video platforms (Instagram Reels and YouTube Shorts).
+  Clawse is a digital wellbeing and screen-time management application designed to curb compulsive doomscrolling on short-form video platforms (Instagram Reels and YouTube Shorts).
 
   The AccessibilityService API is required strictly for:
   1. Observing scroll gestures within Instagram Reels and YouTube Shorts to calculate cumulative scroll distance.
   2. Rendering the non-interactive screen curtain overlay progressively from the top hem.
   3. Detecting tampering or impulsive uninstallation attempts while inside device settings to notify guardians or prompt mindful breathing friction.
 
-  Pawse does NOT read keystrokes, personal messages, account credentials, or user inputs.
-  Pawse does not transmit any user interaction data off the device.
+  Clawse does NOT read keystrokes, personal messages, account credentials, or user inputs.
+  Clawse does not transmit any user interaction data off the device.
   ```
 - **Review Video URL**:
   Record a 30 to 60-second video showing:
   1. The in-app disclosure dialog before granting permission.
-  2. Enabling Pawse in Android Accessibility Settings.
+  2. Enabling Clawse in Android Accessibility Settings.
   3. The Kitty Curtain dropping while scrolling Instagram Reels.
   Upload this video as unlisted on YouTube and paste the link into the declaration form.
 
 ### B. Device Administration API Declaration
 - **Declaration Text**:
   ```text
-  Pawse uses the Device Administration API (DevicePolicyManager) solely as an opt-in friction mechanism to protect against impulsive uninstallation during doomscroll cravings and to support parental oversight.
+  Clawse uses the Device Administration API (DevicePolicyManager) solely as an opt-in friction mechanism to protect against impulsive uninstallation during doomscroll cravings and to support parental oversight.
   It does not lock the device or erase data.
   ```
 

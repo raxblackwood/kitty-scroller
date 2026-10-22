@@ -34,7 +34,7 @@ class KittyAccessibilityService : AccessibilityService() {
         private val TAMPER_KEYWORDS = listOf(
             // English
             "uninstall", "force stop", "clear storage", "clear data", "deactivate",
-            "remove admin", "turn off admin", "use pawse", "pawse shortcut", "stop pawse", "use clawback", "clawback shortcut", "stop clawback",
+            "remove admin", "turn off admin", "use clawse", "clawse shortcut", "stop clawse", "use pawse", "pawse shortcut", "stop pawse", "use clawback", "clawback shortcut", "stop clawback",
             // Spanish
             "desinstalar", "forzar detención", "borrar almacenamiento", "borrar datos", "desactivar",
             // French
@@ -530,8 +530,9 @@ class KittyAccessibilityService : AccessibilityService() {
         try {
             val myPkg = applicationContext.packageName
 
-            // 1. Check if the screen references Pawse / ClawBack
-            val appNodes = rootNode.findAccessibilityNodeInfosByText("Pawse")
+            // 1. Check if the screen references Clawse / Pawse / ClawBack
+            val appNodes = rootNode.findAccessibilityNodeInfosByText("Clawse")
+                .plus(rootNode.findAccessibilityNodeInfosByText("Pawse"))
                 .plus(rootNode.findAccessibilityNodeInfosByText("ClawBack"))
                 .plus(rootNode.findAccessibilityNodeInfosByText("AntiScroller"))
                 .plus(rootNode.findAccessibilityNodeInfosByText(myPkg))

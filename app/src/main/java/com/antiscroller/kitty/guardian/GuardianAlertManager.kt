@@ -26,7 +26,7 @@ import java.util.concurrent.Executors
 object GuardianAlertManager {
 
     private const val TAG = "GuardianAlertManager"
-    private const val CHANNEL_ID = "pawse_guardian_alerts"
+    private const val CHANNEL_ID = "clawse_guardian_alerts"
 
     const val EVENT_SETUP_TEST = "SETUP_TEST"
     const val EVENT_UNINSTALL_ATTEMPT = "UNINSTALL_ATTEMPT"
@@ -94,19 +94,19 @@ object GuardianAlertManager {
         val deviceName = dataManager.childDeviceName.ifEmpty { Build.MODEL }
 
         val title = when (eventType) {
-            EVENT_UNINSTALL_ATTEMPT -> "🚨 CRITICAL: Pawse Uninstall Attempted!"
+            EVENT_UNINSTALL_ATTEMPT -> "🚨 CRITICAL: Clawse Uninstall Attempted!"
             EVENT_ADMIN_DISABLE_ATTEMPT -> "⚠️ WARNING: Device Admin Deactivation Attempted!"
             EVENT_ADMIN_DISABLED -> "🚨 DANGER: Device Admin Deactivated!"
             EVENT_HEARTBEAT -> "💚 Child Device Heartbeat: Active"
-            EVENT_SETUP_TEST -> "🔔 Pawse Guardian Alert Setup Test"
-            else -> "🛡️ Pawse Security Alert"
+            EVENT_SETUP_TEST -> "🔔 Clawse Guardian Alert Setup Test"
+            else -> "🛡️ Clawse Security Alert"
         }
 
         val summary = when (eventType) {
-            EVENT_UNINSTALL_ATTEMPT -> "Someone attempted to uninstall Pawse on $deviceName. The system intercepted and cancelled the dialog."
-            EVENT_ADMIN_DISABLE_ATTEMPT -> "An attempt to revoke Device Administrator privileges for Pawse was made on $deviceName."
+            EVENT_UNINSTALL_ATTEMPT -> "Someone attempted to uninstall Clawse on $deviceName. The system intercepted and cancelled the dialog."
+            EVENT_ADMIN_DISABLE_ATTEMPT -> "An attempt to revoke Device Administrator privileges for Clawse was made on $deviceName."
             EVENT_ADMIN_DISABLED -> "Device Administrator protection was turned off on $deviceName!"
-            EVENT_HEARTBEAT -> "$deviceName is online and Pawse screen-time shield is running."
+            EVENT_HEARTBEAT -> "$deviceName is online and Clawse screen-time shield is running."
             EVENT_SETUP_TEST -> "Testing connection from child device $deviceName. Guardian alerts are functioning properly."
             else -> details
         }
@@ -114,7 +114,7 @@ object GuardianAlertManager {
         val formattedMessage = "$title\nDevice: $deviceName\nTime: $timestamp\nDetails: $summary"
 
         val jsonPayload = JSONObject().apply {
-            put("app", "Pawse")
+            put("app", "Clawse")
             put("event", eventType)
             put("title", title)
             put("device", deviceName)
@@ -122,7 +122,7 @@ object GuardianAlertManager {
             put("message", summary)
             put("text", formattedMessage)     // Slack compatibility
             put("content", formattedMessage)  // Discord compatibility
-            put("topic", "pawse_alerts")      // ntfy.sh compatibility
+            put("topic", "clawse_alerts")     // ntfy.sh compatibility
         }
 
         val url = URL(targetUrl)
@@ -132,7 +132,7 @@ object GuardianAlertManager {
             readTimeout = 8000
             doOutput = true
             setRequestProperty("Content-Type", "application/json; charset=utf-8")
-            setRequestProperty("User-Agent", "Pawse-Android-Guardian/1.0")
+            setRequestProperty("User-Agent", "Clawse-Android-Guardian/1.0")
             if (targetUrl.contains("ntfy.sh")) {
                 setRequestProperty("Title", title)
                 setRequestProperty("Priority", if (eventType == EVENT_UNINSTALL_ATTEMPT || eventType == EVENT_ADMIN_DISABLED) "high" else "default")

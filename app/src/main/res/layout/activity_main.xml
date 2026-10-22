@@ -42,7 +42,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Pawse"
+                        android:text="Clawse"
                         android:textColor="@color/text_primary"
                         android:textSize="22sp"
                         android:textStyle="bold" />
@@ -496,7 +496,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="6dp"
-                        android:text="Alerts the guardian's phone in real-time if a child attempts to uninstall Pawse, deactivate Device Admin, or clear app storage."
+                        android:text="Alerts the guardian's phone in real-time if a child attempts to uninstall Clawse, deactivate Device Admin, or clear app storage."
                         android:textColor="@color/text_secondary"
                         android:textSize="13sp"
                         android:lineSpacingExtra="2dp" />
@@ -695,7 +695,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="6dp"
-                        android:text="For zero-bypass discipline: makes Pawse 100% un-uninstallable even in Safe Mode using Android\'s enterprise Device Owner policy."
+                        android:text="For zero-bypass discipline: makes Clawse 100% un-uninstallable even in Safe Mode using Android\'s enterprise Device Owner policy."
                         android:textColor="@color/text_secondary"
                         android:textSize="13sp"
                         android:lineSpacingExtra="2dp" />
