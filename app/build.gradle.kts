@@ -8,7 +8,7 @@ android {
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.antiscroller.kitty"
+        applicationId = "com.clawse.app"
         minSdk = 26
         targetSdk = 34
         versionCode = 1

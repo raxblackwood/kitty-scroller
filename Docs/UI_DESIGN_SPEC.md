@@ -335,7 +335,7 @@ ClawBack deploys a 3-tier defense system against impulsive uninstallation and se
 ### 7.3 Layer 3: Hardcore Device Owner Mode (OS-Level Lock)
 - Supports enterprise Device Owner provisioning via Android `DevicePolicyManager`.
 - Provisioning command:
-  `adb shell dpm set-device-owner com.antiscroller.kitty/.admin.KittyAdminReceiver`
+  `adb shell dpm set-device-owner com.clawse.app/com.antiscroller.kitty.admin.KittyAdminReceiver`
 - When provisioned as Device Owner:
   - ClawBack activates `devicePolicyManager.setUninstallBlocked(adminComponent, packageName, true)`.
   - Android operating system itself greys out and disables the "Uninstall" button across all system settings, launchers, and package installers.

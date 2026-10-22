@@ -281,7 +281,7 @@ class MainActivity : AppCompatActivity() {
 
         // Hardcore Device Owner Mode ADB command copy
         binding.btnDeviceOwnerAdb.setOnClickListener {
-            val adbCmd = "adb shell dpm set-device-owner com.antiscroller.kitty/.admin.KittyAdminReceiver"
+            val adbCmd = "adb shell dpm set-device-owner $packageName/com.antiscroller.kitty.admin.KittyAdminReceiver"
             val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
             val clip = ClipData.newPlainText("Clawse ADB Command", adbCmd)
             clipboard.setPrimaryClip(clip)

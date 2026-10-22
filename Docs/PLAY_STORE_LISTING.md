@@ -1,6 +1,6 @@
-﻿# Google Play Store Listing & Submission Guide
-**App Name:** ClawBack: Kitty Screen Curtain  
-**Package ID:** `com.antiscroller.kitty`  
+# Google Play Store Listing & Submission Guide
+**App Name:** Clawse  
+**Package ID:** `com.clawse.app`  
 **Version:** 1.0.0 (Version Code: 1)  
 
 ---

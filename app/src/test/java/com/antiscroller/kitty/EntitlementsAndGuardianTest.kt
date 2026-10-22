@@ -87,7 +87,7 @@ class EntitlementsAndGuardianTest {
 
     @Test
     fun testIgnoredPackagesContract() {
-        fun isIgnoredPackage(pkg: String, myPkg: String = "com.antiscroller.kitty"): Boolean {
+        fun isIgnoredPackage(pkg: String, myPkg: String = "com.clawse.app"): Boolean {
             val lower = pkg.lowercase()
             return lower == myPkg.lowercase() ||
                    lower.contains("inputmethod") ||
@@ -103,7 +103,7 @@ class EntitlementsAndGuardianTest {
         assertTrue("android framework must be ignored", isIgnoredPackage("android"))
         assertTrue("Keyboards must be ignored", isIgnoredPackage("com.google.android.inputmethod.latin"))
         assertTrue("Keyguard must be ignored", isIgnoredPackage("com.android.keyguard"))
-        assertTrue("Our own app must be ignored", isIgnoredPackage("com.antiscroller.kitty"))
+        assertTrue("Our own app must be ignored", isIgnoredPackage("com.clawse.app"))
 
         // Real user applications and launchers must NOT be ignored
         assertFalse("Launcher must NOT be ignored", isIgnoredPackage("com.nothing.launcher"))
