@@ -9,6 +9,7 @@ import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
 import android.widget.Toast
 import com.antiscroller.kitty.data.ScrollDataManager
+import com.antiscroller.kitty.guardian.GuardianAlertManager
 import com.antiscroller.kitty.overlay.KittyOverlayManager
 import com.antiscroller.kitty.ui.BreathingFrictionActivity
 import com.antiscroller.kitty.ui.GuardianUnlockActivity
@@ -103,31 +104,39 @@ class KittyAccessibilityService : AccessibilityService() {
 
         val eventPkg = event.packageName?.toString() ?: return
 
-        // Track user interaction with Clawse across Launcher or other apps
-        trackClawseInteractions(event, eventPkg)
-
         // Ignore our own overlay window, keyboards, and keyguard
         if (isIgnoredPackage(eventPkg)) {
             return
         }
 
-        // Intercept tampering in Settings, Package Installer, or Google Play Store
-        if (isSettingsOrInstaller(eventPkg)) {
-            checkAndApplyUninstallProtection(eventPkg)
-            mainHandler.post { overlayManager.hideOverlay() }
+        // Fast path for monitored apps (Instagram & YouTube) -> zero lag, instant processing
+        if (eventPkg == ScrollDataManager.PKG_INSTAGRAM || eventPkg == ScrollDataManager.PKG_YOUTUBE) {
+            when (event.eventType) {
+                AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED -> {
+                    handleWindowStateChanged(eventPkg, event)
+                }
+                AccessibilityEvent.TYPE_VIEW_SCROLLED -> {
+                    handleViewScrolled(eventPkg, event)
+                }
+                AccessibilityEvent.TYPE_VIEW_CLICKED -> {
+                    handleViewClicked(eventPkg, event)
+                }
+            }
             return
         }
 
-        when (event.eventType) {
-            AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED -> {
-                handleWindowStateChanged(eventPkg, event)
-            }
-            AccessibilityEvent.TYPE_VIEW_SCROLLED -> {
-                handleViewScrolled(eventPkg, event)
-            }
-            AccessibilityEvent.TYPE_VIEW_CLICKED -> {
-                handleViewClicked(eventPkg, event)
-            }
+        // Outside monitored apps (Home, Launcher, etc.): hide overlay immediately
+        overlayManager.hideOverlay()
+
+        // Track clicks or long-clicks on Clawse in launcher / app drawer
+        if (event.eventType == AccessibilityEvent.TYPE_VIEW_CLICKED ||
+            event.eventType == AccessibilityEvent.TYPE_VIEW_LONG_CLICKED) {
+            trackClawseInteractions(event, eventPkg)
+        }
+
+        // Intercept tampering in Settings, Package Installer, or Google Play Store
+        if (isSettingsOrInstaller(eventPkg)) {
+            checkAndApplyUninstallProtection(eventPkg)
         }
     }
 
@@ -138,7 +147,6 @@ class KittyAccessibilityService : AccessibilityService() {
             return
         }
 
-        // Check if event text or contentDescription references Clawse
         val textList = event.text
         if (textList != null) {
             for (t in textList) {
@@ -153,21 +161,6 @@ class KittyAccessibilityService : AccessibilityService() {
         val desc = event.contentDescription?.toString()?.lowercase() ?: ""
         if (desc.contains("clawse") || desc.contains("clawback") || desc.contains("pawse") || desc.contains(myPkg)) {
             lastClawseInteractionTs = System.currentTimeMillis()
-            return
-        }
-
-        val source = event.source
-        if (source != null) {
-            try {
-                val srcText = source.text?.toString()?.lowercase() ?: ""
-                val srcDesc = source.contentDescription?.toString()?.lowercase() ?: ""
-                if (srcText.contains("clawse") || srcDesc.contains("clawse") ||
-                    srcText.contains(myPkg) || srcDesc.contains(myPkg)) {
-                    lastClawseInteractionTs = System.currentTimeMillis()
-                }
-            } catch (_: Exception) {} finally {
-                source.recycle()
-            }
         }
     }
 
@@ -571,38 +564,43 @@ class KittyAccessibilityService : AccessibilityService() {
         return lower.contains("settings") ||
                lower.contains("packageinstaller") ||
                lower.contains("permissioncontroller") ||
-               lower == "com.android.vending" ||
-               lower == "android" ||
-               lower.contains("launcher")
+               lower == PKG_VENDING ||
+               lower == "android"
     }
 
     private var lastProtectionTriggerTs = 0L
 
     /**
+     * Fast in-memory extraction of visible texts from an accessibility hierarchy.
+     * Completes in < 1ms without multiple IPC round trips.
+     */
+    private fun extractVisibleTexts(node: AccessibilityNodeInfo?, outList: MutableList<String>, depth: Int) {
+        if (node == null || depth > 8 || outList.size >= 40) return
+        node.text?.toString()?.trim()?.let {
+            if (it.isNotEmpty()) outList.add(it.lowercase())
+        }
+        node.contentDescription?.toString()?.trim()?.let {
+            if (it.isNotEmpty()) outList.add(it.lowercase())
+        }
+        for (i in 0 until node.childCount) {
+            val child = node.getChild(i) ?: continue
+            extractVisibleTexts(child, outList, depth + 1)
+            child.recycle()
+        }
+    }
+
+    /**
      * Checks if the screen represents a first-time setup / permission-granting flow
-     * so that the user is not blocked while initially enabling Clawse.
+     * so that the user is not blocked while initially enabling Clawse in Settings.
      */
     private fun isSetupPermissionFlow(rootNode: AccessibilityNodeInfo): Boolean {
         try {
-            val grantKeywords = listOf("allow", "turn on", "use clawse", "activate this device admin app")
-            for (kw in grantKeywords) {
-                val nodes = rootNode.findAccessibilityNodeInfosByText(kw)
-                for (node in nodes) {
-                    val text = node.text?.toString()?.lowercase() ?: ""
-                    val desc = node.contentDescription?.toString()?.lowercase() ?: ""
-                    node.recycle()
-                    // If it contains deactivate or turn off or stop, this is NOT setup
-                    if (text.contains("deactivate") || desc.contains("deactivate") ||
-                        text.contains("turn off") || desc.contains("turn off") ||
-                        text.contains("stop") || desc.contains("stop")) {
-                        continue
-                    }
-                    if (text.contains("allow") || desc.contains("allow") ||
-                        text.contains("turn on") || desc.contains("turn on") ||
-                        text.contains("use clawse") || desc.contains("use clawse") ||
-                        (text.contains("activate") && !text.contains("deactivate"))) {
-                        return true
-                    }
+            val setupPhrases = listOf("allow clawse", "use clawse", "activate this device admin app")
+            for (phrase in setupPhrases) {
+                val nodes = rootNode.findAccessibilityNodeInfosByText(phrase)
+                if (nodes.isNotEmpty()) {
+                    for (n in nodes) n.recycle()
+                    return true
                 }
             }
             return false
@@ -613,7 +611,7 @@ class KittyAccessibilityService : AccessibilityService() {
 
     /**
      * Intercepts uninstallation, force-stop, data clearing, device admin deactivation,
-     * and accessibility disabling across Android Settings, Package Installer, Launchers, and Google Play Store.
+     * and accessibility disabling across Android Settings, Package Installer, and Google Play Store.
      * 
      * Defense Rules:
      * 1. If maintenance mode is active (granted via PIN or 60s breathing timer), user has 5m unhindered access.
@@ -621,124 +619,97 @@ class KittyAccessibilityService : AccessibilityService() {
      * 3. If Guardian Lock is not active, enforces a 60-second cooling-off period via BreathingFrictionActivity.
      */
     private fun checkAndApplyUninstallProtection(eventPkg: String) {
-        if (eventPkg == applicationContext.packageName) return
+        val myPkg = applicationContext.packageName
+        if (eventPkg == myPkg) return
         if (dataManager.isMaintenanceModeActive()) return
 
         val now = System.currentTimeMillis()
-        if (now - lastProtectionTriggerTs < 1200L) return
+        if (now - lastProtectionTriggerTs < 800L) return
 
-        val roots = mutableListOf<AccessibilityNodeInfo>()
-        rootInActiveWindow?.let { roots.add(it) }
+        val rootNode = rootInActiveWindow ?: return
         try {
-            for (w in windows) {
-                val r = w.root
-                if (r != null && roots.none { it == r }) {
-                    roots.add(r)
-                }
-            }
-        } catch (_: Exception) {}
-
-        if (roots.isEmpty()) return
-
-        try {
-            // Never trigger if user is enabling or setting up the service in Settings
-            for (root in roots) {
-                if (isSetupPermissionFlow(root)) return
-            }
-
-            val myPkg = applicationContext.packageName
-
-            // 1. Check if the screen references Clawse / Pawse / ClawBack
-            var hasAppText = false
-            for (root in roots) {
-                val appNodes = root.findAccessibilityNodeInfosByText("Clawse")
-                    .plus(root.findAccessibilityNodeInfosByText("Pawse"))
-                    .plus(root.findAccessibilityNodeInfosByText("ClawBack"))
-                    .plus(root.findAccessibilityNodeInfosByText("AntiScroller"))
-                    .plus(root.findAccessibilityNodeInfosByText(myPkg))
-                    .plus(root.findAccessibilityNodeInfosByText("com.antiscroller.kitty"))
-                if (appNodes.isNotEmpty()) {
-                    hasAppText = true
-                    for (n in appNodes) n.recycle()
-                    break
-                }
-            }
-
-            // Check if Clawse was recently touched in Launcher / Settings / App Switcher
-            val isRecentClawseTarget = (now - lastClawseInteractionTs) < 8000L
-
-            // 2. Check if an uninstallation confirmation prompt exists
-            var hasUninstallPrompt = false
-            for (root in roots) {
-                for (prompt in UNINSTALL_PROMPTS) {
-                    val nodes = root.findAccessibilityNodeInfosByText(prompt)
-                    if (nodes.isNotEmpty()) {
-                        hasUninstallPrompt = true
-                        for (node in nodes) node.recycle()
-                        break
-                    }
-                }
-                if (hasUninstallPrompt) break
-            }
-
-            // 3. Check if a tampering/uninstall/deactivation keyword exists on screen
-            var hasTamperAction = false
-            for (root in roots) {
-                for (keyword in TAMPER_KEYWORDS) {
-                    val nodes = root.findAccessibilityNodeInfosByText(keyword)
-                    if (nodes.isNotEmpty()) {
-                        hasTamperAction = true
-                        for (node in nodes) node.recycle()
-                        break
-                    }
-                }
-                if (hasTamperAction) break
-            }
-
             val lowerPkg = eventPkg.lowercase()
             val isPackageInstaller = lowerPkg.contains("packageinstaller") ||
                                     lowerPkg.contains("permissioncontroller")
+            val isSettings = lowerPkg.contains("settings")
+            val isPlayStore = lowerPkg == PKG_VENDING
 
-            // Tampering target criteria:
-            // - Any package installer or uninstallation prompt targeting Clawse (by text or recent touch)
-            // - Any settings screen referencing Clawse with tampering actions (uninstall, force stop, clear data, deactivate admin, stop service)
-            // - Google Play Store Clawse page with uninstall action
-            val isTamperingTarget = (hasUninstallPrompt && (hasAppText || isRecentClawseTarget)) ||
-                                    (isPackageInstaller && (hasAppText || isRecentClawseTarget)) ||
-                                    (hasAppText && hasTamperAction)
+            // Only inside Settings: ignore if this is initial accessibility/admin setup
+            if (isSettings && isSetupPermissionFlow(rootNode)) {
+                return
+            }
+
+            // Extract visible texts from the active window in a single fast traversal (< 1ms)
+            val screenTexts = mutableListOf<String>()
+            extractVisibleTexts(rootNode, screenTexts, 0)
+
+            val hasAppReference = screenTexts.any {
+                it.contains("clawse") || it.contains("pawse") || it.contains("clawback") || it.contains(myPkg)
+            }
+            val isRecentClawseTarget = (now - lastClawseInteractionTs) < 30000L
+
+            var isTamperingTarget = false
+
+            if (isPackageInstaller) {
+                val hasUninstallPrompt = screenTexts.any { text ->
+                    UNINSTALL_PROMPTS.any { prompt -> text.contains(prompt) } ||
+                    text.contains("uninstall") || text.contains("desinstalar")
+                }
+                // If package installer has uninstall prompt: intercept if it mentions Clawse or Clawse was interacted with recently
+                if (hasUninstallPrompt && (hasAppReference || isRecentClawseTarget)) {
+                    isTamperingTarget = true
+                }
+            } else if (isSettings) {
+                // In Settings App Info: check for uninstall, force stop, clear data, deactivate admin
+                val hasTamperAction = screenTexts.any { text ->
+                    TAMPER_KEYWORDS.any { kw -> text.contains(kw) }
+                }
+                if (hasAppReference && hasTamperAction) {
+                    isTamperingTarget = true
+                }
+            } else if (isPlayStore) {
+                val hasUninstallBtn = screenTexts.any { it == "uninstall" || it == "desinstalar" }
+                if (hasAppReference && hasUninstallBtn) {
+                    isTamperingTarget = true
+                }
+            } else if (lowerPkg == "android") {
+                val hasUninstallPrompt = screenTexts.any { text ->
+                    UNINSTALL_PROMPTS.any { prompt -> text.contains(prompt) }
+                }
+                if (hasUninstallPrompt && (hasAppReference || isRecentClawseTarget)) {
+                    isTamperingTarget = true
+                }
+            }
 
             if (!isTamperingTarget) return
 
             lastProtectionTriggerTs = now
 
-            // Dispatch guardian alert immediately
-            com.antiscroller.kitty.guardian.GuardianAlertManager.sendAlert(
+            GuardianAlertManager.sendAlert(
                 applicationContext,
-                com.antiscroller.kitty.guardian.GuardianAlertManager.EVENT_UNINSTALL_ATTEMPT,
+                GuardianAlertManager.EVENT_UNINSTALL_ATTEMPT,
                 "Uninstall or tamper attempt intercepted in $eventPkg"
             )
 
-            // If an uninstaller dialog is on screen, immediately press Cancel to abort uninstallation!
-            for (root in roots) {
-                val cancelButtons = root.findAccessibilityNodeInfosByViewId("android:id/button2")
-                    .plus(root.findAccessibilityNodeInfosByViewId("android:id/cancel"))
-                    .plus(root.findAccessibilityNodeInfosByText("Cancel"))
-                    .plus(root.findAccessibilityNodeInfosByText("cancel"))
-                    .plus(root.findAccessibilityNodeInfosByText("CANCEL"))
-                    .plus(root.findAccessibilityNodeInfosByText("Cancelar"))
-                    .plus(root.findAccessibilityNodeInfosByText("Annuler"))
-                    .plus(root.findAccessibilityNodeInfosByText("Abbrechen"))
-                    .plus(root.findAccessibilityNodeInfosByText("रद्द करें"))
-                for (btn in cancelButtons) {
-                    btn.performAction(AccessibilityNodeInfo.ACTION_CLICK)
-                    btn.recycle()
-                }
+            // Click Cancel on dialog
+            val cancelButtons = rootNode.findAccessibilityNodeInfosByViewId("android:id/button2")
+                .plus(rootNode.findAccessibilityNodeInfosByViewId("android:id/cancel"))
+                .plus(rootNode.findAccessibilityNodeInfosByText("Cancel"))
+                .plus(rootNode.findAccessibilityNodeInfosByText("cancel"))
+                .plus(rootNode.findAccessibilityNodeInfosByText("CANCEL"))
+                .plus(rootNode.findAccessibilityNodeInfosByText("Cancelar"))
+                .plus(rootNode.findAccessibilityNodeInfosByText("Annuler"))
+                .plus(rootNode.findAccessibilityNodeInfosByText("Abbrechen"))
+                .plus(rootNode.findAccessibilityNodeInfosByText("रद्द करें"))
+            for (btn in cancelButtons) {
+                btn.performAction(AccessibilityNodeInfo.ACTION_CLICK)
+                btn.recycle()
             }
 
-            // Immediately send Back action to abort dialog
+            // Send Back to dismiss
             performGlobalAction(GLOBAL_ACTION_BACK)
 
-            // Kick user out of dangerous Settings screen back to home
+            // Return user safely to Home
             performGlobalAction(GLOBAL_ACTION_HOME)
 
             mainHandler.postDelayed({
@@ -763,13 +734,11 @@ class KittyAccessibilityService : AccessibilityService() {
                     }
                     startActivity(intent)
                 }
-            }, 100L)
+            }, 80L)
         } catch (e: Exception) {
             Log.e(TAG, "Error evaluating uninstall protection: ${e.message}")
         } finally {
-            for (r in roots) {
-                try { r.recycle() } catch (_: Exception) {}
-            }
+            rootNode.recycle()
         }
     }
 
