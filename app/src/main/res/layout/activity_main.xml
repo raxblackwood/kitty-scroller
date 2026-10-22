@@ -660,6 +660,17 @@
                             android:textColor="@color/on_secondary"
                             app:cornerRadius="8dp" />
                     </LinearLayout>
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnGuardianResetToday"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="10dp"
+                        android:visibility="gone"
+                        android:text="🔄 Reset Today\'s Scrolls (Guardian Override)"
+                        android:textColor="@color/accent_red"
+                        android:backgroundTint="@color/surface_variant"
+                        app:cornerRadius="8dp" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
@@ -765,26 +776,19 @@
                         android:textColor="@color/text_secondary"
                         android:textSize="13sp" />
 
-                    <!-- Preset Suggestion & Custom Input -->
+                    <!-- Gentle recommendation tip -->
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:text="💡 We recommend not going above 25 reels per day."
+                        android:textColor="@color/text_secondary"
+                        android:textSize="13sp" />
+
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="12dp"
-                        android:gravity="center_vertical"
-                        android:orientation="horizontal">
-
-                        <com.google.android.material.chip.Chip
-                            android:id="@+id/chip50"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="⭐ 50 Reels (Recommended)"
-                            style="@style/Widget.Material3.Chip.Filter" />
-                    </LinearLayout>
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="10dp"
                         android:gravity="center_vertical"
                         android:orientation="horizontal">
 
@@ -860,16 +864,6 @@
                         android:checked="true"
                         android:text="YouTube (Shorts)"
                         android:textColor="@color/text_secondary" />
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btnResetToday"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="16dp"
-                        android:text="Reset Today\'s Scrolls to 0"
-                        android:textColor="@color/accent_red"
-                        android:backgroundTint="@color/surface_variant"
-                        app:cornerRadius="8dp" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 

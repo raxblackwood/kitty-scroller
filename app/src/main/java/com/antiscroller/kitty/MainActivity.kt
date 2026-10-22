@@ -98,7 +98,6 @@ class MainActivity : AppCompatActivity() {
         val dropPct = dataManager.getDropPercentage(screenHeight)
         binding.previewCurtain.setDropPercentage(if (dropPct > 0) dropPct else 0.35f, animate = false)
 
-        binding.chip50.isChecked = (dataManager.maxDailyScrolls == 50)
         binding.etCustomLimit.setText(dataManager.maxDailyScrolls.toString())
         binding.tvCurrentLimitLabel.text = "Active Cap: ${dataManager.maxDailyScrolls} Reels / day"
 
@@ -221,11 +220,6 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        // Recommended 50 chip
-        binding.chip50.setOnClickListener {
-            attemptChangeDailyLimit(50)
-        }
-
         // Custom Limit Set Button
         binding.btnSetCustomLimit.setOnClickListener {
             val text = binding.etCustomLimit.text?.toString()?.trim() ?: ""
@@ -253,18 +247,15 @@ class MainActivity : AppCompatActivity() {
             dataManager.isYouTubeMonitored = isChecked
         }
 
-        // Reset today's scrolls
-        binding.btnResetToday.setOnClickListener {
-            if (checkGuardianLocked()) return@setOnClickListener
-
-            dataManager.resetDailyCount()
-            updateDashboard()
-            Toast.makeText(this, "Today's scroll meter reset to 0!", Toast.LENGTH_SHORT).show()
-        }
-
         // Guardian PIN Controls
         binding.btnSetGuardianPin.setOnClickListener {
             showSetPinDialog()
+        }
+
+        binding.btnGuardianResetToday.setOnClickListener {
+            dataManager.resetDailyCount()
+            updateDashboard()
+            Toast.makeText(this, "Today's scroll counter reset by Guardian.", Toast.LENGTH_SHORT).show()
         }
 
         binding.btnUnlockGuardian.setOnClickListener {
@@ -509,6 +500,9 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun updateGuardianUI() {
+        val isUnlocked = dataManager.isMaintenanceModeActive()
+        binding.btnGuardianResetToday.visibility = if (isUnlocked) View.VISIBLE else View.GONE
+
         if (!dataManager.isGuardianLockEnabled) {
             binding.tvGuardianStatus.text = "Status: Inactive (Tap to set Parent/Partner PIN)"
             binding.tvGuardianStatus.setTextColor(getColor(R.color.text_secondary))
@@ -540,13 +534,11 @@ class MainActivity : AppCompatActivity() {
 
     private fun setSettingsLocked(locked: Boolean) {
         val alpha = if (locked) 0.55f else 1.0f
-        binding.chip50.alpha = alpha
         binding.tilCustomLimit.alpha = alpha
         binding.btnSetCustomLimit.alpha = alpha
         binding.btnSetCustomLimit.isEnabled = !locked
         binding.switchInstagram.alpha = alpha
         binding.switchYouTube.alpha = alpha
-        binding.btnResetToday.alpha = alpha
     }
 
     private fun showSetPinDialog() {
@@ -620,7 +612,6 @@ class MainActivity : AppCompatActivity() {
         binding.tvDropPercentage.text = "${(pct * 100).toInt()}% covered"
         binding.tvCurrentLimitLabel.text = "Active Cap: $max Reels / day"
 
-        binding.chip50.isChecked = (max == 50)
         val currentInput = binding.etCustomLimit.text?.toString()?.trim()
         if (currentInput.isNullOrEmpty() || currentInput.toIntOrNull() != max) {
             binding.etCustomLimit.setText(max.toString())

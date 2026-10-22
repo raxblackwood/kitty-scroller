@@ -135,6 +135,13 @@ class KittyCurtainView @JvmOverloads constructor(
     private var tailAngle: Float = 0f
     private var tailAnimator: ValueAnimator? = null
 
+    // Body swaying animation for Ginger & Tabby (gradient starting midway down the hands)
+    private var bodySwayOffset: Float = 0f
+    private var swayAnimator: ValueAnimator? = null
+    private val meshCols = 4
+    private val meshRows = 12
+    private val bodyMeshVerts = FloatArray((meshCols + 1) * (meshRows + 1) * 2)
+
     // Animated 8-frame sprite animation loops for Saturn & Rolex
     private var spriteFrameIndex: Int = 0
     private var spriteAnimator: ValueAnimator? = null
@@ -142,6 +149,9 @@ class KittyCurtainView @JvmOverloads constructor(
     private var saturnFullBitmap: Bitmap? = null
     private val rolexBitmaps = mutableListOf<Bitmap>()
     private var rolexFullBitmap: Bitmap? = null
+
+    // Loaf bitmap for full curtain lock (custom per-breed pixel-art cat loaf)
+    private var loafBitmap: Bitmap? = null
 
     // Pixel-art sprite bitmaps for Ginger & Tabby
     private var bodyBitmap: Bitmap? = null
@@ -208,6 +218,7 @@ class KittyCurtainView @JvmOverloads constructor(
         }
 
         val needsBitmapReload = (currentBreed != newBreed) ||
+            loafBitmap == null ||
             (newBreed == CatBreed.SATURN && saturnBitmaps.isEmpty()) ||
             (newBreed == CatBreed.ROLEX && rolexBitmaps.isEmpty()) ||
             (newBreed != CatBreed.SATURN && newBreed != CatBreed.ROLEX && bodyBitmap == null)
@@ -281,6 +292,15 @@ class KittyCurtainView @JvmOverloads constructor(
             bodyBitmap = BitmapFactory.decodeResource(resources, bodyRes, options)
             tailBitmap = BitmapFactory.decodeResource(resources, tailRes, options)
         }
+
+        // Load custom per-breed pixel-art loaf icon for full lock
+        val loafRes = when (currentBreed) {
+            CatBreed.GINGER -> R.drawable.kitty_ginger_loaf
+            CatBreed.TABBY -> R.drawable.kitty_tabby_loaf
+            CatBreed.SATURN -> R.drawable.kitty_saturn_loaf
+            CatBreed.ROLEX -> R.drawable.kitty_rolex_loaf
+        }
+        loafBitmap = BitmapFactory.decodeResource(resources, loafRes, options)
     }
 
     private fun startAnimations() {
@@ -300,7 +320,23 @@ class KittyCurtainView @JvmOverloads constructor(
             start()
         }
 
-        // 2. Fluid 8-frame cartoon animation loop for Saturn & Rolex (~120ms per frame)
+        // 2. Slow, gentle body swaying/blowing in the breeze for Ginger & Tabby
+        swayAnimator?.cancel()
+        swayAnimator = ValueAnimator.ofFloat(-9f, 9f).apply {
+            duration = 2400
+            repeatMode = ValueAnimator.REVERSE
+            repeatCount = ValueAnimator.INFINITE
+            interpolator = AccelerateDecelerateInterpolator()
+            addUpdateListener {
+                bodySwayOffset = it.animatedValue as Float
+                if (currentBreed != CatBreed.SATURN && currentBreed != CatBreed.ROLEX) {
+                    invalidate()
+                }
+            }
+            start()
+        }
+
+        // 3. Fluid 8-frame cartoon animation loop for Saturn & Rolex (~120ms per frame)
         spriteAnimator?.cancel()
         spriteAnimator = ValueAnimator.ofInt(0, 7).apply {
             duration = 960
@@ -398,10 +434,16 @@ class KittyCurtainView @JvmOverloads constructor(
             else -> (72f / 1162f)
         }
 
-        // Curtain bottom edge moves down proportionally with progress
-        val curtainBottom = progress * totalH
-        val stickTop = curtainBottom
+        // The cat slides down smoothly from above the ceiling:
+        // At progress = 0: cat is hidden above ceiling with its tail right at the top edge (catBottom = 0).
+        // As scroll begins: tail emerges first, followed by legs, body, head, and paws.
+        // Once stick reaches y=0, the screen-wide wooden pole and curtain unroll behind it.
+        val startStickTop = -catH * (1f - stickTopRatio)
+        val stickTop = startStickTop + progress * (totalH - startStickTop)
         val stickBottom = stickTop + (catH * (stickBotRatio - stickTopRatio))
+
+        canvas.save()
+        canvas.clipRect(0f, 0f, totalW, totalH)
 
         // 1. Draw solid curtain fabric from ceiling straight down to top edge of the stick
         if (stickTop > 0f) {
@@ -413,6 +455,8 @@ class KittyCurtainView @JvmOverloads constructor(
         // 3. Draw Hanging Cat sprite (stick stays rock-solid, animated paws/body/tail)
         val catTop = stickTop - (catH * stickTopRatio)
         drawHangingSpriteCat(canvas, centerX, catTop, catW, catH)
+
+        canvas.restore()
     }
 
     private fun drawCurtainBody(canvas: Canvas, w: Float, bottomY: Float) {
@@ -474,20 +518,46 @@ class KittyCurtainView @JvmOverloads constructor(
                 val bodyBmp = bodyBitmap ?: return
                 val tailBmp = tailBitmap ?: return
 
-                // 1. Lively wagging tail behind the body
-                canvas.save()
                 val isTabby = currentBreed == CatBreed.TABBY
                 val tailPivotXRatio = if (isTabby) 0.5207f else 0.5334f
                 val tailPivotYRatio = 0.6885f
-                val tailPivotX = catRect.left + catW * tailPivotXRatio
-                val tailPivotY = catRect.top + catH * tailPivotYRatio
 
+                // Hip displacement at y = 0.6885f (follows body sway gradient)
+                val hipSwayFactor = Math.pow(((tailPivotYRatio - 0.086f) / (1f - 0.086f)).coerceIn(0f, 1f).toDouble(), 1.2).toFloat()
+                val hipDx = bodySwayOffset * hipSwayFactor
+
+                // 1. Lively wagging tail behind the body, swaying seamlessly with the hips
+                canvas.save()
+                val tailPivotX = catRect.left + catW * tailPivotXRatio + hipDx
+                val tailPivotY = catRect.top + catH * tailPivotYRatio
                 canvas.rotate(tailAngle, tailPivotX, tailPivotY)
+
+                catRect.offset(hipDx, 0f)
                 canvas.drawBitmap(tailBmp, null, catRect, catPaint)
+                catRect.offset(-hipDx, 0f)
                 canvas.restore()
 
-                // 2. Body sits firmly on the stick (no wiggling of the stick)
-                canvas.drawBitmap(bodyBmp, null, catRect, catPaint)
+                // 2. Body gentle sway: gradient displacement starts midway down the hands (yRatio > 0.086f).
+                // The pole and paws gripping the pole stay 100% rock-solid and stationary (displacement = 0).
+                var vertIdx = 0
+                for (r in 0..meshRows) {
+                    val yRatio = r.toFloat() / meshRows
+                    val origY = catRect.top + catH * yRatio
+                    val swayFactor = if (yRatio <= 0.086f) {
+                        0f
+                    } else {
+                        Math.pow(((yRatio - 0.086f) / (1f - 0.086f)).toDouble(), 1.2).toFloat()
+                    }
+                    val dx = bodySwayOffset * swayFactor
+
+                    for (c in 0..meshCols) {
+                        val xRatio = c.toFloat() / meshCols
+                        val origX = catRect.left + catW * xRatio
+                        bodyMeshVerts[vertIdx++] = origX + dx
+                        bodyMeshVerts[vertIdx++] = origY
+                    }
+                }
+                canvas.drawBitmapMesh(bodyBmp, meshCols, meshRows, bodyMeshVerts, 0, null, 0, catPaint)
             }
         }
     }
@@ -520,54 +590,20 @@ class KittyCurtainView @JvmOverloads constructor(
             return
         }
 
-        val catY = totalH * 0.45f
-        val loafRect = RectF(centerX - 180f, catY - 100f, centerX + 180f, catY + 110f)
-        canvas.drawRoundRect(loafRect, 90f, 90f, furPaint)
-
-        val sleepEyePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = if (currentBreed == CatBreed.TABBY) Color.parseColor("#FFD600") else Color.parseColor("#4E342E")
-            style = Paint.Style.STROKE
-            strokeWidth = 6f
-            strokeCap = Paint.Cap.ROUND
+        // For Ginger & Tabby: draw the custom pixel-art sleeping loaf cat!
+        val bmp = loafBitmap
+        if (bmp != null) {
+            val bmpW = (totalW * 0.46f).coerceIn(240f, 360f)
+            val bmpH = bmpW * (bmp.height.toFloat() / bmp.width.toFloat())
+            val dstRect = RectF(
+                centerX - (bmpW / 2f),
+                (totalH * 0.45f) - (bmpH / 2f),
+                centerX + (bmpW / 2f),
+                (totalH * 0.45f) + (bmpH / 2f)
+            )
+            canvas.drawBitmap(bmp, null, dstRect, catPaint)
+            return
         }
-        val leftEye = Path().apply {
-            moveTo(centerX - 70f, catY - 10f)
-            quadTo(centerX - 50f, catY - 30f, centerX - 30f, catY - 10f)
-        }
-        val rightEye = Path().apply {
-            moveTo(centerX + 30f, catY - 10f)
-            quadTo(centerX + 50f, catY - 30f, centerX + 70f, catY - 10f)
-        }
-        canvas.drawPath(leftEye, sleepEyePaint)
-        canvas.drawPath(rightEye, sleepEyePaint)
-
-        val nosePath = Path().apply {
-            moveTo(centerX, catY + 5f)
-            lineTo(centerX - 9f, catY - 4f)
-            lineTo(centerX + 9f, catY - 4f)
-            close()
-        }
-        canvas.drawPath(nosePath, nosePaint)
-
-        val smilePath = Path().apply {
-            moveTo(centerX, catY + 5f)
-            lineTo(centerX, catY + 16f)
-            quadTo(centerX - 15f, catY + 26f, centerX - 24f, catY + 16f)
-            moveTo(centerX, catY + 16f)
-            quadTo(centerX + 15f, catY + 26f, centerX + 24f, catY + 16f)
-        }
-        canvas.drawPath(smilePath, sleepEyePaint)
-
-        val zPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = if (currentBreed == CatBreed.TABBY) Color.parseColor("#FFD600") else Color.parseColor("#FF6E40")
-            textSize = 42f
-            typeface = Typeface.DEFAULT_BOLD
-        }
-        canvas.drawText("Z", centerX + 100f, catY - 50f, zPaint)
-        zPaint.textSize = 32f
-        canvas.drawText("z", centerX + 130f, catY - 80f, zPaint)
-        zPaint.textSize = 24f
-        canvas.drawText("z", centerX + 155f, catY - 105f, zPaint)
     }
 
     private fun drawSpeechBubble(canvas: Canvas, hemY: Float, centerX: Float, progress: Float) {

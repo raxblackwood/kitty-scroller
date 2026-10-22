@@ -34,7 +34,7 @@ class KittyAccessibilityService : AccessibilityService() {
         private val TAMPER_KEYWORDS = listOf(
             // English
             "uninstall", "force stop", "clear storage", "clear data", "deactivate",
-            "remove admin", "turn off admin", "use clawse", "clawse shortcut", "stop clawse", "use pawse", "pawse shortcut", "stop pawse", "use clawback", "clawback shortcut", "stop clawback",
+            "remove admin", "turn off admin", "stop clawse", "stop pawse", "stop clawback",
             // Spanish
             "desinstalar", "forzar detención", "borrar almacenamiento", "borrar datos", "desactivar",
             // French
@@ -521,6 +521,7 @@ class KittyAccessibilityService : AccessibilityService() {
      * 3. If Guardian Lock is not active, enforces a 60-second cooling-off period via BreathingFrictionActivity.
      */
     private fun checkAndApplyUninstallProtection(eventPkg: String) {
+        if (eventPkg == applicationContext.packageName) return
         if (dataManager.isMaintenanceModeActive()) return
 
         val now = System.currentTimeMillis()
@@ -528,6 +529,16 @@ class KittyAccessibilityService : AccessibilityService() {
 
         val rootNode = rootInActiveWindow ?: return
         try {
+            // Never trigger if user is enabling or setting up the service in Settings
+            val turnOnNodes = rootNode.findAccessibilityNodeInfosByText("Turn on")
+            val allowNodes = rootNode.findAccessibilityNodeInfosByText("Allow")
+            val useClawseNodes = rootNode.findAccessibilityNodeInfosByText("Use Clawse")
+            val isEnablingFlow = turnOnNodes.isNotEmpty() || allowNodes.isNotEmpty() || useClawseNodes.isNotEmpty()
+            for (n in turnOnNodes) n.recycle()
+            for (n in allowNodes) n.recycle()
+            for (n in useClawseNodes) n.recycle()
+            if (isEnablingFlow) return
+
             val myPkg = applicationContext.packageName
 
             // 1. Check if the screen references Clawse / Pawse / ClawBack

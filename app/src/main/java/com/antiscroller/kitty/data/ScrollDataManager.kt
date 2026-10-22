@@ -67,7 +67,7 @@ class ScrollDataManager(context: Context) {
         const val THEME_ORANGE = "orange"
         const val THEME_BLACK = "black"
 
-        const val DEFAULT_MAX_SCROLLS = 50
+        const val DEFAULT_MAX_SCROLLS = 25
         const val PKG_INSTAGRAM = "com.instagram.android"
         const val PKG_YOUTUBE = "com.google.android.youtube"
 
