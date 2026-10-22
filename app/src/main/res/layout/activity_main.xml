@@ -202,7 +202,7 @@
                             android:paddingEnd="8dp"
                             android:paddingTop="0dp"
                             android:paddingBottom="0dp"
-                            android:text="✨ Unlock Breeds ($2.50)"
+                            android:text="✨ Unlock Breeds"
                             android:textSize="11sp"
                             android:textColor="@color/primary"
                             style="@style/Widget.Material3.Button.TextButton" />
@@ -497,7 +497,7 @@
                             android:paddingEnd="6dp"
                             android:paddingTop="2dp"
                             android:paddingBottom="2dp"
-                            android:text="$0.50/mo"
+                            android:text="PREMIUM"
                             android:textColor="@color/secondary"
                             android:textSize="11sp"
                             android:textStyle="bold" />

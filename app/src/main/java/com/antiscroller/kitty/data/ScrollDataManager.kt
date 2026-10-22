@@ -49,6 +49,7 @@ class ScrollDataManager(context: Context) {
         private const val KEY_KITTY_THEME = "kitty_theme"
         private const val KEY_GUARDIAN_PIN = "guardian_pin"
         private const val KEY_MAINTENANCE_EXPIRES = "maintenance_expires_ts"
+        private const val KEY_INITIAL_SETUP_DONE = "initial_setup_done"
 
         // Anti-Impulse Cooling-Off Keys
         private const val KEY_PENDING_MAX_SCROLLS = "pending_max_scrolls"
@@ -228,6 +229,10 @@ class ScrollDataManager(context: Context) {
         set(value) {
             prefs.edit().putString(KEY_KITTY_THEME, value).apply()
         }
+
+    var isInitialSetupDone: Boolean
+        get() = prefs.getBoolean(KEY_INITIAL_SETUP_DONE, false)
+        set(value) = prefs.edit().putBoolean(KEY_INITIAL_SETUP_DONE, value).apply()
 
     // ==========================================
     // COSMETIC PACK & PARENTAL CONTROL BILLING

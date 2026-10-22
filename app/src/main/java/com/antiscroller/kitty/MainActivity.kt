@@ -81,6 +81,10 @@ class MainActivity : AppCompatActivity() {
         updateGuardianChildModeUI()
         updateGuardianUI()
         updateDeviceOwnerUI()
+
+        if (!dataManager.isInitialSetupDone) {
+            showInitialSetupDialog()
+        }
     }
 
     override fun onDestroy() {
@@ -439,7 +443,7 @@ class MainActivity : AppCompatActivity() {
                 binding.btnEquipOrUnlock.setTextColor(getColor(R.color.on_secondary))
             }
             else -> {
-                binding.btnEquipOrUnlock.text = "✨ Unlock $breedName to Use ($2.50)"
+                binding.btnEquipOrUnlock.text = "✨ Unlock $breedName to Use"
                 binding.btnEquipOrUnlock.isEnabled = true
                 binding.btnEquipOrUnlock.setBackgroundColor(getColor(R.color.primary))
                 binding.btnEquipOrUnlock.setTextColor(getColor(R.color.on_primary))
@@ -471,7 +475,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun updateGuardianChildModeUI() {
         val isSubscribed = dataManager.isParentalSubscribed
-        binding.tvGuardianSubBadge.text = if (isSubscribed) "SUBSCRIBED" else "$0.50/mo"
+        binding.tvGuardianSubBadge.text = if (isSubscribed) "ACTIVE" else "PREMIUM"
 
         binding.switchChildMode.setOnCheckedChangeListener(null)
         binding.switchChildMode.isChecked = dataManager.isChildModeEnabled
@@ -764,6 +768,51 @@ class MainActivity : AppCompatActivity() {
             }
             .setNegativeButton("Keep Today's Cap ($currentLimit)", null)
             .show()
+    }
+
+    private fun showInitialSetupDialog() {
+        val dialogView = layoutInflater.inflate(R.layout.dialog_initial_setup, null)
+        val chipGroup = dialogView.findViewById<com.google.android.material.chip.ChipGroup>(R.id.chipGroupSetupLimit)
+        val etLimit = dialogView.findViewById<com.google.android.material.textfield.TextInputEditText>(R.id.etSetupLimit)
+        val switchInsta = dialogView.findViewById<com.google.android.material.switchmaterial.SwitchMaterial>(R.id.switchSetupInstagram)
+        val switchYt = dialogView.findViewById<com.google.android.material.switchmaterial.SwitchMaterial>(R.id.switchSetupYouTube)
+        val btnLock = dialogView.findViewById<com.google.android.material.button.MaterialButton>(R.id.btnLockInSetup)
+
+        // Pre-fill with current settings
+        etLimit.setText(dataManager.maxDailyScrolls.toString())
+        switchInsta.isChecked = dataManager.isInstagramMonitored
+        switchYt.isChecked = dataManager.isYouTubeMonitored
+
+        chipGroup.setOnCheckedStateChangeListener { _, checkedIds ->
+            if (checkedIds.isEmpty()) return@setOnCheckedStateChangeListener
+            when (checkedIds.first()) {
+                R.id.chipLimit15 -> etLimit.setText("15")
+                R.id.chipLimit25 -> etLimit.setText("25")
+                R.id.chipLimit50 -> etLimit.setText("50")
+            }
+        }
+
+        val dialog = MaterialAlertDialogBuilder(this)
+            .setView(dialogView)
+            .setCancelable(false)
+            .create()
+
+        btnLock.setOnClickListener {
+            val inputStr = etLimit.text?.toString()?.trim() ?: "25"
+            val parsedLimit = inputStr.toIntOrNull() ?: 25
+            val finalLimit = parsedLimit.coerceIn(5, 500)
+
+            dataManager.maxDailyScrolls = finalLimit
+            dataManager.isInstagramMonitored = switchInsta.isChecked
+            dataManager.isYouTubeMonitored = switchYt.isChecked
+            dataManager.isInitialSetupDone = true
+
+            updateDashboard()
+            Toast.makeText(this, "Daily focus boundary locked in ($finalLimit reels)!", Toast.LENGTH_LONG).show()
+            dialog.dismiss()
+        }
+
+        dialog.show()
     }
 
     private fun checkPermissions() {
