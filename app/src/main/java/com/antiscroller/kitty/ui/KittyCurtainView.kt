@@ -89,25 +89,6 @@ class KittyCurtainView @JvmOverloads constructor(
         SATURN(
             key = "saturn",
             displayName = "Saturn",
-            furColor = Color.parseColor("#E0D3C1"),
-            furDarkColor = Color.parseColor("#4A2E1B"),
-            innerEarColor = Color.parseColor("#8A5040"),
-            pawColor = Color.parseColor("#3D2415"),
-            pawPadColor = Color.parseColor("#2D1B10"),
-            curtainBodyColor = Color.parseColor("#222026"),
-            curtainStripeColor = Color.parseColor("#33FFD700"),
-            eyeColor = Color.parseColor("#FFB300"),
-            eyeHighlightColor = Color.WHITE,
-            noseColor = Color.parseColor("#22150E"),
-            strokeColor = Color.parseColor("#150E0A"),
-            speechBubbleBg = Color.parseColor("#18161C"),
-            speechTextColor = Color.parseColor("#FFD700"),
-            poleWoodColor = Color.parseColor("#76513A"),
-            poleOutlineColor = Color.parseColor("#140C08")
-        ),
-        ROLEX(
-            key = "rolex",
-            displayName = "Rolex",
             furColor = Color.parseColor("#C8B8A6"),
             furDarkColor = Color.parseColor("#263238"),
             innerEarColor = Color.parseColor("#37474F"),
@@ -123,6 +104,25 @@ class KittyCurtainView @JvmOverloads constructor(
             speechTextColor = Color.parseColor("#B0BEC5"),
             poleWoodColor = Color.parseColor("#4A382A"),
             poleOutlineColor = Color.parseColor("#14100D")
+        ),
+        ROLEX(
+            key = "rolex",
+            displayName = "Rolex",
+            furColor = Color.parseColor("#E0D3C1"),
+            furDarkColor = Color.parseColor("#4A2E1B"),
+            innerEarColor = Color.parseColor("#8A5040"),
+            pawColor = Color.parseColor("#3D2415"),
+            pawPadColor = Color.parseColor("#2D1B10"),
+            curtainBodyColor = Color.parseColor("#222026"),
+            curtainStripeColor = Color.parseColor("#33FFD700"),
+            eyeColor = Color.parseColor("#FFB300"),
+            eyeHighlightColor = Color.WHITE,
+            noseColor = Color.parseColor("#22150E"),
+            strokeColor = Color.parseColor("#150E0A"),
+            speechBubbleBg = Color.parseColor("#18161C"),
+            speechTextColor = Color.parseColor("#FFD700"),
+            poleWoodColor = Color.parseColor("#76513A"),
+            poleOutlineColor = Color.parseColor("#140C08")
         )
     }
 
@@ -135,14 +135,13 @@ class KittyCurtainView @JvmOverloads constructor(
     private var tailAngle: Float = 0f
     private var tailAnimator: ValueAnimator? = null
 
-    // Saturn 8-frame cartoon animation loop
-    private var saturnFrameIndex: Int = 0
-    private var saturnAnimator: ValueAnimator? = null
+    // Animated 8-frame sprite animation loops for Saturn & Rolex
+    private var spriteFrameIndex: Int = 0
+    private var spriteAnimator: ValueAnimator? = null
     private val saturnBitmaps = mutableListOf<Bitmap>()
     private var saturnFullBitmap: Bitmap? = null
-
-    // Rolex sprite bitmap
-    private var rolexBitmap: Bitmap? = null
+    private val rolexBitmaps = mutableListOf<Bitmap>()
+    private var rolexFullBitmap: Bitmap? = null
 
     // Pixel-art sprite bitmaps for Ginger & Tabby
     private var bodyBitmap: Bitmap? = null
@@ -210,7 +209,7 @@ class KittyCurtainView @JvmOverloads constructor(
 
         val needsBitmapReload = (currentBreed != newBreed) ||
             (newBreed == CatBreed.SATURN && saturnBitmaps.isEmpty()) ||
-            (newBreed == CatBreed.ROLEX && rolexBitmap == null) ||
+            (newBreed == CatBreed.ROLEX && rolexBitmaps.isEmpty()) ||
             (newBreed != CatBreed.SATURN && newBreed != CatBreed.ROLEX && bodyBitmap == null)
 
         currentBreed = newBreed
@@ -256,9 +255,24 @@ class KittyCurtainView @JvmOverloads constructor(
                 val bmp = BitmapFactory.decodeResource(resources, resId, options)
                 if (bmp != null) saturnBitmaps.add(bmp)
             }
-            saturnFullBitmap = BitmapFactory.decodeResource(resources, R.drawable.kitty_saturn_full, options)
+            saturnFullBitmap = BitmapFactory.decodeResource(resources, R.drawable.kitty_saturn, options)
         } else if (currentBreed == CatBreed.ROLEX) {
-            rolexBitmap = BitmapFactory.decodeResource(resources, R.drawable.kitty_rolex, options)
+            rolexBitmaps.clear()
+            val rolexResIds = intArrayOf(
+                R.drawable.kitty_rolex_0,
+                R.drawable.kitty_rolex_1,
+                R.drawable.kitty_rolex_2,
+                R.drawable.kitty_rolex_3,
+                R.drawable.kitty_rolex_4,
+                R.drawable.kitty_rolex_5,
+                R.drawable.kitty_rolex_6,
+                R.drawable.kitty_rolex_7
+            )
+            for (resId in rolexResIds) {
+                val bmp = BitmapFactory.decodeResource(resources, resId, options)
+                if (bmp != null) rolexBitmaps.add(bmp)
+            }
+            rolexFullBitmap = BitmapFactory.decodeResource(resources, R.drawable.kitty_rolex_full, options)
         } else {
             val isTabby = currentBreed == CatBreed.TABBY
             val bodyRes = if (isTabby) R.drawable.kitty_black_body else R.drawable.kitty_orange_body
@@ -286,18 +300,18 @@ class KittyCurtainView @JvmOverloads constructor(
             start()
         }
 
-        // 2. Fluid 8-frame cartoon animation loop for Saturn (~130ms per frame)
-        saturnAnimator?.cancel()
-        saturnAnimator = ValueAnimator.ofInt(0, 7).apply {
-            duration = 1040
+        // 2. Fluid 8-frame cartoon animation loop for Saturn & Rolex (~120ms per frame)
+        spriteAnimator?.cancel()
+        spriteAnimator = ValueAnimator.ofInt(0, 7).apply {
+            duration = 960
             repeatCount = ValueAnimator.INFINITE
             repeatMode = ValueAnimator.RESTART
             interpolator = LinearInterpolator()
             addUpdateListener {
                 val newIndex = it.animatedValue as Int
-                if (newIndex != saturnFrameIndex) {
-                    saturnFrameIndex = newIndex
-                    if (currentBreed == CatBreed.SATURN) {
+                if (newIndex != spriteFrameIndex) {
+                    spriteFrameIndex = newIndex
+                    if (currentBreed == CatBreed.SATURN || currentBreed == CatBreed.ROLEX) {
                         invalidate()
                     }
                 }
@@ -361,26 +375,26 @@ class KittyCurtainView @JvmOverloads constructor(
         // Cat display sizing
         val isSaturn = currentBreed == CatBreed.SATURN
         val isRolex = currentBreed == CatBreed.ROLEX
-        val catW = if (isRolex) (totalW * 0.28f).coerceIn(240f, 320f) else (totalW * 0.22f).coerceIn(210f, 270f)
-        // Aspect ratio: Rolex is 588x587 (~1.0), Saturn is 280x475 (~0.589), Ginger/Tabby is 628x1162 (~0.540)
+        val catW = if (isSaturn) (totalW * 0.28f).coerceIn(240f, 320f) else (totalW * 0.22f).coerceIn(210f, 270f)
+        // Aspect ratio: Saturn is 588x587 (~1.0), Rolex is 280x475 (~0.589), Ginger/Tabby is 628x1162 (~0.540)
         val catH = when {
-            isRolex -> catW * (587f / 588f)
-            isSaturn -> (catW / 0.589f)
+            isSaturn -> catW * (587f / 588f)
+            isRolex -> (catW / 0.589f)
             else -> (catW / 0.540f)
         }
 
         // Stick offsets within the sprite coordinate space:
-        // Rolex: stick y=18..56 in 587 height space
-        // Saturn: stick y=30..46 in 475 height space
+        // Saturn (pull-up): stick y=18..56 in 587 height space
+        // Rolex (gangster): stick y=30..46 in 475 height space
         // Ginger/Tabby: stick y=30..72 in 1162 height space
         val stickTopRatio = when {
-            isRolex -> (18f / 587f)
-            isSaturn -> (30f / 475f)
+            isSaturn -> (18f / 587f)
+            isRolex -> (30f / 475f)
             else -> (30f / 1162f)
         }
         val stickBotRatio = when {
-            isRolex -> (56f / 587f)
-            isSaturn -> (46f / 475f)
+            isSaturn -> (56f / 587f)
+            isRolex -> (46f / 475f)
             else -> (72f / 1162f)
         }
 
@@ -438,14 +452,19 @@ class KittyCurtainView @JvmOverloads constructor(
         catRect.set(catLeft, catTop, catLeft + catW, catTop + catH)
 
         when (currentBreed) {
-            CatBreed.ROLEX -> {
-                val bmp = rolexBitmap ?: return
-                canvas.drawBitmap(bmp, null, catRect, catPaint)
-            }
             CatBreed.SATURN -> {
                 val frame = if (saturnBitmaps.isNotEmpty()) {
-                    val idx = saturnFrameIndex.coerceIn(0, saturnBitmaps.size - 1)
+                    val idx = spriteFrameIndex.coerceIn(0, saturnBitmaps.size - 1)
                     saturnBitmaps[idx]
+                } else null
+                if (frame != null) {
+                    canvas.drawBitmap(frame, null, catRect, catPaint)
+                }
+            }
+            CatBreed.ROLEX -> {
+                val frame = if (rolexBitmaps.isNotEmpty()) {
+                    val idx = spriteFrameIndex.coerceIn(0, rolexBitmaps.size - 1)
+                    rolexBitmaps[idx]
                 } else null
                 if (frame != null) {
                     canvas.drawBitmap(frame, null, catRect, catPaint)
@@ -474,8 +493,8 @@ class KittyCurtainView @JvmOverloads constructor(
     }
 
     private fun drawFullSleepyCat(canvas: Canvas, totalH: Float, centerX: Float, totalW: Float) {
-        if (currentBreed == CatBreed.SATURN && saturnFullBitmap != null) {
-            val bmp = saturnFullBitmap!!
+        if (currentBreed == CatBreed.ROLEX && rolexFullBitmap != null) {
+            val bmp = rolexFullBitmap!!
             val bmpW = (totalW * 0.48f).coerceIn(240f, 320f)
             val bmpH = bmpW * (bmp.height.toFloat() / bmp.width.toFloat())
             val dstRect = RectF(
@@ -487,8 +506,8 @@ class KittyCurtainView @JvmOverloads constructor(
             canvas.drawBitmap(bmp, null, dstRect, catPaint)
             return
         }
-        if (currentBreed == CatBreed.ROLEX && rolexBitmap != null) {
-            val bmp = rolexBitmap!!
+        if (currentBreed == CatBreed.SATURN && saturnFullBitmap != null) {
+            val bmp = saturnFullBitmap!!
             val bmpW = (totalW * 0.44f).coerceIn(240f, 320f)
             val bmpH = bmpW * (bmp.height.toFloat() / bmp.width.toFloat())
             val dstRect = RectF(

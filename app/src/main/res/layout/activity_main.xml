@@ -235,14 +235,14 @@
                             android:id="@+id/chipThemeSaturn"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="🕶️ Saturn"
+                            android:text="🐱 Saturn"
                             style="@style/Widget.Material3.Chip.Filter" />
 
                         <com.google.android.material.chip.Chip
                             android:id="@+id/chipThemeRolex"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="🐱 Rolex"
+                            android:text="🕶️ Rolex"
                             style="@style/Widget.Material3.Chip.Filter" />
                     </com.google.android.material.chip.ChipGroup>
 

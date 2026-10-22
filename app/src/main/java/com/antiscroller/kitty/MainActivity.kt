@@ -129,8 +129,8 @@ class MainActivity : AppCompatActivity() {
             binding.previewCurtain.applyTheme(selectedTheme)
             val breedName = when (selectedTheme) {
                 ScrollDataManager.THEME_TABBY -> "Tabby 🐈‍⬛"
-                ScrollDataManager.THEME_SATURN -> "Saturn 🕶️"
-                ScrollDataManager.THEME_ROLEX -> "Rolex 🐱"
+                ScrollDataManager.THEME_SATURN -> "Saturn 🐱"
+                ScrollDataManager.THEME_ROLEX -> "Rolex 🕶️"
                 else -> "Ginger 🍊"
             }
             Toast.makeText(this, "$breedName selected!", Toast.LENGTH_SHORT).show()
