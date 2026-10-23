@@ -9,6 +9,8 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.res.ColorStateList
+import android.graphics.RenderEffect
+import android.graphics.Shader
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -61,6 +63,7 @@ class MainActivity : AppCompatActivity() {
     private var initialSetupDialog: androidx.appcompat.app.AlertDialog? = null
     private var permissionSetupDialog: androidx.appcompat.app.AlertDialog? = null
     private var appOpsListener: AppOpsManager.OnOpChangedListener? = null
+    private var activeBlurCount = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -153,6 +156,10 @@ class MainActivity : AppCompatActivity() {
                 Log.w("MainActivity", "Failed to unregister AppOps watcher", e)
             }
         }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            binding.root.setRenderEffect(null)
+        }
+        activeBlurCount = 0
         super.onDestroy()
         initialSetupDialog?.dismiss()
         initialSetupDialog = null
@@ -843,7 +850,9 @@ class MainActivity : AppCompatActivity() {
             .setCancelable(false)
             .create()
 
-        applyGlassBlur(dialog)
+        applyGlassBlur(dialog) {
+            initialSetupDialog = null
+        }
         initialSetupDialog = dialog
 
         btnLock.setOnClickListener {
@@ -943,26 +952,21 @@ class MainActivity : AppCompatActivity() {
             .setCancelable(true)
             .create()
 
-        applyGlassBlur(dialog)
+        applyGlassBlur(dialog) {
+            permissionSetupDialog = null
+            activeSetupDialogUpdate = null
+            checkPermissions()
+        }
         permissionSetupDialog = dialog
         activeSetupDialogUpdate = { updatePermButtons() }
 
         val dismissAction = {
             dialog.dismiss()
-            permissionSetupDialog = null
-            activeSetupDialogUpdate = null
-            checkPermissions()
         }
 
         btnClose.setOnClickListener { dismissAction() }
         btnSkip.setOnClickListener { dismissAction() }
         btnDone.setOnClickListener { dismissAction() }
-
-        dialog.setOnDismissListener {
-            permissionSetupDialog = null
-            activeSetupDialogUpdate = null
-            checkPermissions()
-        }
 
         dialog.show()
     }
@@ -1034,14 +1038,31 @@ class MainActivity : AppCompatActivity() {
         dialog.show()
     }
 
-    private fun applyGlassBlur(dialog: android.app.Dialog) {
+    private fun applyGlassBlur(dialog: android.app.Dialog, onDismissExtra: (() -> Unit)? = null) {
         dialog.window?.apply {
             setBackgroundDrawableResource(android.R.color.transparent)
-            setDimAmount(0.50f)
+            setDimAmount(0.40f)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 addFlags(WindowManager.LayoutParams.FLAG_BLUR_BEHIND)
                 attributes = attributes?.apply {
                     blurBehindRadius = 60
+                }
+            }
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            activeBlurCount++
+            // Real, hardware GPU Gaussian blur directly on the activity dashboard behind the modal
+            val blur = RenderEffect.createBlurEffect(50f, 50f, Shader.TileMode.CLAMP)
+            binding.root.setRenderEffect(blur)
+        }
+
+        dialog.setOnDismissListener {
+            onDismissExtra?.invoke()
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                activeBlurCount = (activeBlurCount - 1).coerceAtLeast(0)
+                if (activeBlurCount == 0) {
+                    binding.root.setRenderEffect(null)
                 }
             }
         }
