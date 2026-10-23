@@ -825,25 +825,15 @@ class MainActivity : AppCompatActivity() {
         if (dataManager.isInitialSetupDone) return
 
         val dialogView = layoutInflater.inflate(R.layout.dialog_initial_setup, null)
-        val chipGroup = dialogView.findViewById<com.google.android.material.chip.ChipGroup>(R.id.chipGroupSetupLimit)
         val etLimit = dialogView.findViewById<com.google.android.material.textfield.TextInputEditText>(R.id.etSetupLimit)
         val switchInsta = dialogView.findViewById<com.google.android.material.switchmaterial.SwitchMaterial>(R.id.switchSetupInstagram)
         val switchYt = dialogView.findViewById<com.google.android.material.switchmaterial.SwitchMaterial>(R.id.switchSetupYouTube)
         val btnLock = dialogView.findViewById<com.google.android.material.button.MaterialButton>(R.id.btnLockInSetup)
 
-        // Pre-fill with current settings
-        etLimit.setText(dataManager.maxDailyScrolls.toString())
+        // Empty text so the translucent "Example: 25" placeholder shows cleanly
+        etLimit.setText("")
         switchInsta.isChecked = dataManager.isInstagramMonitored
         switchYt.isChecked = dataManager.isYouTubeMonitored
-
-        chipGroup.setOnCheckedStateChangeListener { _, checkedIds ->
-            if (checkedIds.isEmpty()) return@setOnCheckedStateChangeListener
-            when (checkedIds.first()) {
-                R.id.chipLimit15 -> etLimit.setText("15")
-                R.id.chipLimit25 -> etLimit.setText("25")
-                R.id.chipLimit50 -> etLimit.setText("50")
-            }
-        }
 
         val dialog = MaterialAlertDialogBuilder(this)
             .setView(dialogView)
@@ -856,7 +846,7 @@ class MainActivity : AppCompatActivity() {
         initialSetupDialog = dialog
 
         btnLock.setOnClickListener {
-            val inputStr = etLimit.text?.toString()?.trim() ?: "25"
+            val inputStr = etLimit.text?.toString()?.trim() ?: ""
             val parsedLimit = inputStr.toIntOrNull() ?: 25
             val finalLimit = parsedLimit.coerceIn(5, 500)
 
@@ -1000,21 +990,12 @@ class MainActivity : AppCompatActivity() {
 
     private fun showChangeLimitDialog() {
         val dialogView = layoutInflater.inflate(R.layout.dialog_change_limit, null)
-        val chipGroup = dialogView.findViewById<com.google.android.material.chip.ChipGroup>(R.id.chipGroupChangeLimit)
         val etLimit = dialogView.findViewById<com.google.android.material.textfield.TextInputEditText>(R.id.etChangeLimit)
         val btnSave = dialogView.findViewById<com.google.android.material.button.MaterialButton>(R.id.btnSaveChangeLimit)
         val btnCancel = dialogView.findViewById<com.google.android.material.button.MaterialButton>(R.id.btnCancelChangeLimit)
 
-        etLimit.setText(dataManager.maxDailyScrolls.toString())
-
-        chipGroup.setOnCheckedStateChangeListener { _, checkedIds ->
-            if (checkedIds.isEmpty()) return@setOnCheckedStateChangeListener
-            when (checkedIds.first()) {
-                R.id.chipChange15 -> etLimit.setText("15")
-                R.id.chipChange25 -> etLimit.setText("25")
-                R.id.chipChange50 -> etLimit.setText("50")
-            }
-        }
+        // Empty text so the translucent "Example: 25" placeholder shows cleanly
+        etLimit.setText("")
 
         val dialog = MaterialAlertDialogBuilder(this)
             .setView(dialogView)
