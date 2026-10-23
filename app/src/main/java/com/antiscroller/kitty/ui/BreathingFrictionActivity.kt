@@ -57,6 +57,12 @@ class BreathingFrictionActivity : AppCompatActivity() {
             // Only clickable after 60s countdown completes
             dataManager.unlockMaintenance(minutes = 5)
             Toast.makeText(this, "Settings unlocked for 5 minutes.", Toast.LENGTH_SHORT).show()
+            if (!dataManager.isInitialSetupDone) {
+                val setupIntent = Intent(this, com.antiscroller.kitty.MainActivity::class.java).apply {
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+                }
+                startActivity(setupIntent)
+            }
             finish()
         }
     }

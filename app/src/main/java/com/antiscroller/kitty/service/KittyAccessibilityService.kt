@@ -668,8 +668,16 @@ class KittyAccessibilityService : AccessibilityService() {
                     isTamperingTarget = true
                 }
             } else if (isPlayStore) {
-                val hasUninstallBtn = screenTexts.any { it == "uninstall" || it == "desinstalar" }
-                if (hasAppReference && hasUninstallBtn) {
+                // In Google Play Store: do NOT intercept the store details page where [Open] and [Uninstall] are shown side-by-side.
+                // Only intercept when the user actually taps [Uninstall] and Play Store shows the confirmation dialog.
+                val hasUninstallConfirmation = screenTexts.any { text ->
+                    UNINSTALL_PROMPTS.any { prompt -> text.contains(prompt) } ||
+                    text.contains("uninstall this app") ||
+                    text.contains("uninstall clawse") ||
+                    text.contains("desinstalar esta app") ||
+                    text.contains("desinstalar clawse")
+                }
+                if (hasUninstallConfirmation && (hasAppReference || isRecentClawseTarget)) {
                     isTamperingTarget = true
                 }
             } else if (lowerPkg == "android") {
