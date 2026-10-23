@@ -125,9 +125,6 @@ class KittyAccessibilityService : AccessibilityService() {
             return
         }
 
-        // Outside monitored apps (Home, Launcher, etc.): hide overlay immediately
-        overlayManager.hideOverlay()
-
         // Track clicks or long-clicks on Clawse in launcher / app drawer
         if (event.eventType == AccessibilityEvent.TYPE_VIEW_CLICKED ||
             event.eventType == AccessibilityEvent.TYPE_VIEW_LONG_CLICKED) {
@@ -137,6 +134,25 @@ class KittyAccessibilityService : AccessibilityService() {
         // Intercept tampering in Settings, Package Installer, or Google Play Store
         if (isSettingsOrInstaller(eventPkg)) {
             checkAndApplyUninstallProtection(eventPkg)
+        }
+
+        // Only hide overlay when a genuine window change moves completely away from monitored apps!
+        // Background noise, SystemUI clock/battery updates, notifications, etc. must NEVER hide the overlay!
+        if (event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
+            val activePkg = try {
+                rootInActiveWindow?.packageName?.toString()
+            } catch (_: Exception) {
+                null
+            }
+
+            // If the active foreground window is still Instagram or YouTube, keep the curtain visible!
+            if (activePkg == ScrollDataManager.PKG_INSTAGRAM || activePkg == ScrollDataManager.PKG_YOUTUBE) {
+                return
+            }
+
+            // User has genuinely switched away to Home launcher, Chrome, WhatsApp, etc.
+            currentForegroundPackage = eventPkg
+            overlayManager.hideOverlay()
         }
     }
 
@@ -168,6 +184,7 @@ class KittyAccessibilityService : AccessibilityService() {
         val lower = pkg.lowercase()
         val myPkg = applicationContext.packageName.lowercase()
         return lower == myPkg ||
+               lower == "com.android.systemui" ||
                lower.contains("inputmethod") ||
                lower.contains("keyboard") ||
                lower.contains("keyguard")
