@@ -23,11 +23,11 @@
                 android:layout_height="wrap_content"
                 android:gravity="center_vertical"
                 android:orientation="horizontal"
-                android:layout_marginBottom="20dp">
+                android:layout_marginBottom="16dp">
 
                 <com.google.android.material.imageview.ShapeableImageView
-                    android:layout_width="52dp"
-                    android:layout_height="52dp"
+                    android:layout_width="44dp"
+                    android:layout_height="44dp"
                     android:src="@mipmap/ic_kitty_launcher"
                     android:contentDescription="@string/app_name"
                     app:shapeAppearanceOverlay="@style/ShapeAppearance.Material3.Corner.Medium" />
@@ -35,9 +35,10 @@
                 <LinearLayout
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="16dp"
+                    android:layout_marginStart="12dp"
                     android:layout_weight="1"
-                    android:orientation="vertical">
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
 
                     <TextView
                         android:layout_width="wrap_content"
@@ -47,107 +48,51 @@
                         android:textSize="22sp"
                         android:textStyle="bold" />
 
-                    <TextView
+                    <!-- Small Active / Setup Status Badge next to Clawse -->
+                    <LinearLayout
+                        android:id="@+id/badgeHeaderStatus"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Claw back your focus with Kitty Curtain"
-                        android:textColor="@color/text_secondary"
-                        android:textSize="14sp" />
-                </LinearLayout>
-            </LinearLayout>
-
-            <!-- Card: Dynamic Setup & Guarding Status Banner -->
-            <com.google.android.material.card.MaterialCardView
-                android:id="@+id/cardSetupBanner"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="18dp"
-                app:cardBackgroundColor="@color/surface"
-                app:cardCornerRadius="16dp"
-                app:cardElevation="2dp"
-                app:strokeColor="@color/kitty_orange"
-                app:strokeWidth="1.5dp">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="16dp">
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
+                        android:layout_marginStart="10dp"
+                        android:paddingStart="8dp"
+                        android:paddingEnd="10dp"
+                        android:paddingTop="3dp"
+                        android:paddingBottom="3dp"
                         android:gravity="center_vertical"
+                        android:background="@drawable/bg_status_badge"
+                        android:clickable="true"
+                        android:focusable="true"
                         android:orientation="horizontal">
+
+                        <View
+                            android:id="@+id/dotHeaderStatus"
+                            android:layout_width="7dp"
+                            android:layout_height="7dp"
+                            android:background="@drawable/dot_green" />
 
                         <TextView
-                            android:id="@+id/tvSetupBannerIcon"
+                            android:id="@+id/tvHeaderStatus"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="⚠️"
-                            android:textSize="22sp" />
-
-                        <LinearLayout
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="12dp"
-                            android:layout_weight="1"
-                            android:orientation="vertical">
-
-                            <TextView
-                                android:id="@+id/tvSetupBannerTitle"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="Setup Required to Activate"
-                                android:textColor="@color/text_primary"
-                                android:textSize="15sp"
-                                android:textStyle="bold" />
-
-                            <TextView
-                                android:id="@+id/tvSetupBannerDesc"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="2dp"
-                                android:text="Enable Display Over Other Apps and Accessibility so Clawse can work."
-                                android:textColor="@color/text_secondary"
-                                android:textSize="12sp" />
-                        </LinearLayout>
-                    </LinearLayout>
-
-                    <!-- Quick Permission Buttons -->
-                    <LinearLayout
-                        android:id="@+id/layoutSetupBannerActions"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="12dp"
-                        android:orientation="horizontal">
-
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/btnBannerOverlay"
-                            android:layout_width="0dp"
-                            android:layout_height="40dp"
-                            android:layout_weight="1"
-                            android:layout_marginEnd="6dp"
-                            android:text="1. Overlay"
+                            android:layout_marginStart="5dp"
+                            android:text="Active"
+                            android:textColor="@color/accent_green"
                             android:textSize="12sp"
-                            android:backgroundTint="@color/primary"
-                            android:textColor="@color/on_primary"
-                            app:cornerRadius="8dp" />
-
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/btnBannerAccessibility"
-                            android:layout_width="0dp"
-                            android:layout_height="40dp"
-                            android:layout_weight="1"
-                            android:layout_marginStart="6dp"
-                            android:text="2. Accessibility"
-                            android:textSize="12sp"
-                            android:backgroundTint="@color/primary"
-                            android:textColor="@color/on_primary"
-                            app:cornerRadius="8dp" />
+                            android:textStyle="bold" />
                     </LinearLayout>
                 </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
+
+                <!-- Three-bar menu button (hamburger ☰) on the very top right -->
+                <ImageView
+                    android:id="@+id/btnMenu"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:padding="8dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="Menu"
+                    android:src="@drawable/ic_menu_hamburger"
+                    app:tint="@color/text_primary" />
+            </LinearLayout>
 
             <!-- Card: Today's Scroll Progress -->
             <com.google.android.material.card.MaterialCardView

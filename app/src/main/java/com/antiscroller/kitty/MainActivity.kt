@@ -8,6 +8,7 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.os.CountDownTimer
 import android.os.Handler
@@ -17,6 +18,7 @@ import android.text.InputType
 import android.text.TextUtils
 import android.view.Gravity
 import android.view.View
+import android.view.WindowManager
 import android.view.accessibility.AccessibilityManager
 import android.widget.EditText
 import android.widget.LinearLayout
@@ -36,6 +38,7 @@ import com.antiscroller.kitty.service.KittyAccessibilityService
 import com.antiscroller.kitty.ui.PaywallBottomSheetDialog
 import com.antiscroller.kitty.worker.DailyResetWorker
 import com.antiscroller.kitty.worker.GuardianHeartbeatWorker
+import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 
 class MainActivity : AppCompatActivity() {
@@ -219,18 +222,12 @@ class MainActivity : AppCompatActivity() {
             }, 5000)
         }
 
-        // Banner Setup buttons
-        binding.btnBannerOverlay.setOnClickListener {
-            requestOverlayPermission()
+        // Header status badge and three-bar menu
+        binding.badgeHeaderStatus.setOnClickListener {
+            showPermissionSetupDialog()
         }
-        binding.btnBannerAccessibility.setOnClickListener {
-            val intent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
-            startActivity(intent)
-            Toast.makeText(
-                this,
-                "Tap 'Clawse' under Downloaded / Installed apps and turn it ON",
-                Toast.LENGTH_LONG
-            ).show()
+        binding.btnMenu.setOnClickListener {
+            showMainMenuSheet()
         }
 
         // Accessibility Permission button
@@ -838,6 +835,7 @@ class MainActivity : AppCompatActivity() {
             .setCancelable(false)
             .create()
 
+        applyGlassBlur(dialog)
         initialSetupDialog = dialog
 
         btnLock.setOnClickListener {
@@ -933,6 +931,7 @@ class MainActivity : AppCompatActivity() {
             .setCancelable(true)
             .create()
 
+        applyGlassBlur(dialog)
         permissionSetupDialog = dialog
         activeSetupDialogUpdate = { updatePermButtons() }
 
@@ -956,31 +955,119 @@ class MainActivity : AppCompatActivity() {
         dialog.show()
     }
 
+    private fun showMainMenuSheet() {
+        val sheet = BottomSheetDialog(this)
+        val sheetView = layoutInflater.inflate(R.layout.sheet_main_menu, null)
+        sheet.setContentView(sheetView)
+
+        val tvMenuCurrentLimit = sheetView.findViewById<TextView>(R.id.tvMenuCurrentLimit)
+        val tvMenuPermStatus = sheetView.findViewById<TextView>(R.id.tvMenuPermStatus)
+        val itemChangeLimit = sheetView.findViewById<View>(R.id.menuItemChangeLimit)
+        val itemPermissions = sheetView.findViewById<View>(R.id.menuItemPermissions)
+
+        val pending = dataManager.pendingMaxDailyScrolls
+        if (pending > 0) {
+            tvMenuCurrentLimit.text = "Currently: ${dataManager.maxDailyScrolls} Reels / day (Tomorrow: $pending Reels)"
+        } else {
+            tvMenuCurrentLimit.text = "Currently: ${dataManager.maxDailyScrolls} Reels / day"
+        }
+
+        val isOver = Settings.canDrawOverlays(this)
+        val isAcc = isAccessibilityServiceEnabled(KittyAccessibilityService::class.java)
+        if (isOver && isAcc) {
+            tvMenuPermStatus.text = "🟢 All Permissions Active & Guarding"
+            tvMenuPermStatus.setTextColor(getColor(R.color.accent_green))
+        } else {
+            val missing = mutableListOf<String>()
+            if (!isOver) missing.add("Overlay")
+            if (!isAcc) missing.add("Accessibility")
+            tvMenuPermStatus.text = "⚠️ Setup Needed: ${missing.joinToString(" & ")} (Tap to Enable)"
+            tvMenuPermStatus.setTextColor(getColor(R.color.kitty_orange))
+        }
+
+        itemChangeLimit.setOnClickListener {
+            sheet.dismiss()
+            showChangeLimitDialog()
+        }
+
+        itemPermissions.setOnClickListener {
+            sheet.dismiss()
+            showPermissionSetupDialog()
+        }
+
+        sheet.show()
+    }
+
+    private fun showChangeLimitDialog() {
+        val dialogView = layoutInflater.inflate(R.layout.dialog_change_limit, null)
+        val chipGroup = dialogView.findViewById<com.google.android.material.chip.ChipGroup>(R.id.chipGroupChangeLimit)
+        val etLimit = dialogView.findViewById<com.google.android.material.textfield.TextInputEditText>(R.id.etChangeLimit)
+        val btnSave = dialogView.findViewById<com.google.android.material.button.MaterialButton>(R.id.btnSaveChangeLimit)
+        val btnCancel = dialogView.findViewById<com.google.android.material.button.MaterialButton>(R.id.btnCancelChangeLimit)
+
+        etLimit.setText(dataManager.maxDailyScrolls.toString())
+
+        chipGroup.setOnCheckedStateChangeListener { _, checkedIds ->
+            if (checkedIds.isEmpty()) return@setOnCheckedStateChangeListener
+            when (checkedIds.first()) {
+                R.id.chipChange15 -> etLimit.setText("15")
+                R.id.chipChange25 -> etLimit.setText("25")
+                R.id.chipChange50 -> etLimit.setText("50")
+            }
+        }
+
+        val dialog = MaterialAlertDialogBuilder(this)
+            .setView(dialogView)
+            .create()
+
+        applyGlassBlur(dialog)
+
+        btnCancel.setOnClickListener { dialog.dismiss() }
+
+        btnSave.setOnClickListener {
+            val text = etLimit.text?.toString()?.trim() ?: ""
+            val parsed = text.toIntOrNull()
+            if (parsed == null || parsed < 5) {
+                Toast.makeText(this, "Please enter at least 5 reels.", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+            dialog.dismiss()
+            attemptChangeDailyLimit(parsed)
+        }
+
+        dialog.show()
+    }
+
+    private fun applyGlassBlur(dialog: android.app.Dialog) {
+        dialog.window?.apply {
+            setBackgroundDrawableResource(android.R.color.transparent)
+            setDimAmount(0.75f)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                addFlags(WindowManager.LayoutParams.FLAG_BLUR_BEHIND)
+                attributes = attributes?.apply {
+                    blurBehindRadius = 32
+                }
+            }
+        }
+    }
+
     private fun checkPermissions() {
         val isAccessibilityEnabled = isAccessibilityServiceEnabled(KittyAccessibilityService::class.java)
         if (isAccessibilityEnabled) {
             binding.btnPermAccessibility.text = "Granted ✓"
             binding.btnPermAccessibility.setBackgroundColor(getColor(R.color.accent_green))
-            binding.btnBannerAccessibility.text = "Accessibility ✓"
-            binding.btnBannerAccessibility.setBackgroundColor(getColor(R.color.accent_green))
         } else {
             binding.btnPermAccessibility.text = "Enable"
             binding.btnPermAccessibility.setBackgroundColor(getColor(R.color.primary))
-            binding.btnBannerAccessibility.text = "2. Accessibility"
-            binding.btnBannerAccessibility.setBackgroundColor(getColor(R.color.primary))
         }
 
         val isOverlayEnabled = Settings.canDrawOverlays(this)
         if (isOverlayEnabled) {
             binding.btnPermOverlay.text = "Granted ✓"
             binding.btnPermOverlay.setBackgroundColor(getColor(R.color.accent_green))
-            binding.btnBannerOverlay.text = "Overlay ✓"
-            binding.btnBannerOverlay.setBackgroundColor(getColor(R.color.accent_green))
         } else {
             binding.btnPermOverlay.text = "Enable"
             binding.btnPermOverlay.setBackgroundColor(getColor(R.color.primary))
-            binding.btnBannerOverlay.text = "1. Overlay"
-            binding.btnBannerOverlay.setBackgroundColor(getColor(R.color.primary))
         }
 
         val isAdminActive = devicePolicyManager.isAdminActive(adminComponent)
@@ -992,24 +1079,17 @@ class MainActivity : AppCompatActivity() {
             binding.btnPermAdmin.setBackgroundColor(getColor(R.color.secondary))
         }
 
-        // Dynamic Setup & Guarding Banner
+        // Header active status badge
         if (isOverlayEnabled && isAccessibilityEnabled) {
-            binding.tvSetupBannerIcon.text = "🟢"
-            binding.tvSetupBannerTitle.text = "Clawse is Active & Guarding"
-            binding.tvSetupBannerDesc.text = "Kitty Curtain is ready and will lower as you scroll in Instagram and YouTube Shorts."
-            binding.cardSetupBanner.strokeColor = getColor(R.color.accent_green)
-            binding.layoutSetupBannerActions.visibility = View.GONE
+            binding.badgeHeaderStatus.setBackgroundResource(R.drawable.bg_status_badge)
+            binding.dotHeaderStatus.setBackgroundResource(R.drawable.dot_green)
+            binding.tvHeaderStatus.text = "Active"
+            binding.tvHeaderStatus.setTextColor(getColor(R.color.accent_green))
         } else {
-            binding.tvSetupBannerIcon.text = "⚠️"
-            binding.tvSetupBannerTitle.text = "Setup Required to Activate"
-            val missing = when {
-                !isOverlayEnabled && !isAccessibilityEnabled -> "Display Over Other Apps & Accessibility"
-                !isOverlayEnabled -> "Display Over Other Apps (Overlay)"
-                else -> "Accessibility Service (Scroll Tracker)"
-            }
-            binding.tvSetupBannerDesc.text = "Enable $missing so the Kitty Curtain can appear over reels."
-            binding.cardSetupBanner.strokeColor = getColor(R.color.kitty_orange)
-            binding.layoutSetupBannerActions.visibility = View.VISIBLE
+            binding.badgeHeaderStatus.setBackgroundResource(R.drawable.bg_status_badge_warning)
+            binding.dotHeaderStatus.setBackgroundResource(R.drawable.dot_orange)
+            binding.tvHeaderStatus.text = "Setup"
+            binding.tvHeaderStatus.setTextColor(getColor(R.color.kitty_orange))
         }
     }
 
