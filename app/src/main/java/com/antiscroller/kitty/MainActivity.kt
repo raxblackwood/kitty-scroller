@@ -1,21 +1,25 @@
 package com.antiscroller.kitty
 
 import android.accessibilityservice.AccessibilityServiceInfo
+import android.app.AppOpsManager
 import android.app.admin.DevicePolicyManager
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.content.res.ColorStateList
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.CountDownTimer
 import android.os.Handler
 import android.os.Looper
+import android.os.Process
 import android.provider.Settings
 import android.text.InputType
 import android.text.TextUtils
+import android.util.Log
 import android.view.Gravity
 import android.view.View
 import android.view.WindowManager
@@ -56,6 +60,7 @@ class MainActivity : AppCompatActivity() {
     private var activeSetupDialogUpdate: (() -> Unit)? = null
     private var initialSetupDialog: androidx.appcompat.app.AlertDialog? = null
     private var permissionSetupDialog: androidx.appcompat.app.AlertDialog? = null
+    private var appOpsListener: AppOpsManager.OnOpChangedListener? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -91,6 +96,22 @@ class MainActivity : AppCompatActivity() {
 
         DailyResetWorker.scheduleMidnightReset(this)
 
+        try {
+            val appOps = getSystemService(Context.APP_OPS_SERVICE) as? AppOpsManager
+            val listener = AppOpsManager.OnOpChangedListener { _, pkg ->
+                if (pkg == packageName) {
+                    runOnUiThread {
+                        checkPermissions()
+                        activeSetupDialogUpdate?.invoke()
+                    }
+                }
+            }
+            appOpsListener = listener
+            appOps?.startWatchingMode(AppOpsManager.OPSTR_SYSTEM_ALERT_WINDOW, packageName, listener)
+        } catch (e: Exception) {
+            Log.w("MainActivity", "Failed to register AppOps watcher", e)
+        }
+
         setupUI()
         setupListeners()
     }
@@ -100,6 +121,19 @@ class MainActivity : AppCompatActivity() {
         updateDashboard()
         checkPermissions()
         activeSetupDialogUpdate?.invoke()
+        // Re-check after returning from Settings to overcome Binder IPC propagation delay
+        handler.postDelayed({
+            checkPermissions()
+            activeSetupDialogUpdate?.invoke()
+        }, 200)
+        handler.postDelayed({
+            checkPermissions()
+            activeSetupDialogUpdate?.invoke()
+        }, 500)
+        handler.postDelayed({
+            checkPermissions()
+            activeSetupDialogUpdate?.invoke()
+        }, 1000)
         updateThemeChips()
         updateGuardianChildModeUI()
         updateGuardianUI()
@@ -111,6 +145,14 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onDestroy() {
+        appOpsListener?.let {
+            val appOps = getSystemService(Context.APP_OPS_SERVICE) as? AppOpsManager
+            try {
+                appOps?.stopWatchingMode(it)
+            } catch (e: Exception) {
+                Log.w("MainActivity", "Failed to unregister AppOps watcher", e)
+            }
+        }
         super.onDestroy()
         initialSetupDialog?.dismiss()
         initialSetupDialog = null
@@ -228,40 +270,6 @@ class MainActivity : AppCompatActivity() {
         }
         binding.btnMenu.setOnClickListener {
             showMainMenuSheet()
-        }
-
-        // Accessibility Permission button
-        binding.btnPermAccessibility.setOnClickListener {
-            val intent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
-            startActivity(intent)
-            Toast.makeText(
-                this,
-                "Find 'Clawse' under Downloaded Apps and turn it ON",
-                Toast.LENGTH_LONG
-            ).show()
-        }
-
-        // Overlay Permission button
-        binding.btnPermOverlay.setOnClickListener {
-            requestOverlayPermission()
-        }
-
-        // Device Admin button
-        binding.btnPermAdmin.setOnClickListener {
-            if (checkGuardianLocked()) return@setOnClickListener
-
-            if (devicePolicyManager.isAdminActive(adminComponent)) {
-                Toast.makeText(this, "Protection is already active!", Toast.LENGTH_SHORT).show()
-            } else {
-                val intent = Intent(DevicePolicyManager.ACTION_ADD_DEVICE_ADMIN).apply {
-                    putExtra(DevicePolicyManager.EXTRA_DEVICE_ADMIN, adminComponent)
-                    putExtra(
-                        DevicePolicyManager.EXTRA_ADD_EXPLANATION,
-                        getString(R.string.device_admin_description)
-                    )
-                }
-                startActivity(intent)
-            }
         }
 
         // Custom Limit Set Button
@@ -863,7 +871,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun checkAndPromptPermissions() {
-        val isOverlayGranted = Settings.canDrawOverlays(this)
+        val isOverlayGranted = isOverlayPermissionGranted()
         val isAccessibilityGranted = isAccessibilityServiceEnabled(KittyAccessibilityService::class.java)
 
         if (!isOverlayGranted || !isAccessibilityGranted) {
@@ -882,31 +890,35 @@ class MainActivity : AppCompatActivity() {
         val btnSkip = dialogView.findViewById<com.google.android.material.button.MaterialButton>(R.id.btnSkipPermissions)
 
         fun updatePermButtons() {
-            val isOver = Settings.canDrawOverlays(this)
+            val isOver = isOverlayPermissionGranted()
             val isAcc = isAccessibilityServiceEnabled(KittyAccessibilityService::class.java)
 
             if (isOver) {
                 btnSetupOverlay.text = "Granted ✓"
-                btnSetupOverlay.setBackgroundColor(getColor(R.color.accent_green))
+                btnSetupOverlay.backgroundTintList = ColorStateList.valueOf(getColor(R.color.accent_green))
+                btnSetupOverlay.isEnabled = false
             } else {
                 btnSetupOverlay.text = "Enable"
-                btnSetupOverlay.setBackgroundColor(getColor(R.color.primary))
+                btnSetupOverlay.backgroundTintList = ColorStateList.valueOf(getColor(R.color.primary))
+                btnSetupOverlay.isEnabled = true
             }
 
             if (isAcc) {
                 btnSetupAccessibility.text = "Granted ✓"
-                btnSetupAccessibility.setBackgroundColor(getColor(R.color.accent_green))
+                btnSetupAccessibility.backgroundTintList = ColorStateList.valueOf(getColor(R.color.accent_green))
+                btnSetupAccessibility.isEnabled = false
             } else {
                 btnSetupAccessibility.text = "Enable"
-                btnSetupAccessibility.setBackgroundColor(getColor(R.color.primary))
+                btnSetupAccessibility.backgroundTintList = ColorStateList.valueOf(getColor(R.color.primary))
+                btnSetupAccessibility.isEnabled = true
             }
 
             if (isOver && isAcc) {
                 btnDone.text = "All Set! Enter Clawse 🐾"
-                btnDone.setBackgroundColor(getColor(R.color.accent_green))
+                btnDone.backgroundTintList = ColorStateList.valueOf(getColor(R.color.accent_green))
             } else {
                 btnDone.text = "Done / Go to Dashboard"
-                btnDone.setBackgroundColor(getColor(R.color.primary))
+                btnDone.backgroundTintList = ColorStateList.valueOf(getColor(R.color.primary))
             }
         }
 
@@ -960,30 +972,14 @@ class MainActivity : AppCompatActivity() {
         val sheetView = layoutInflater.inflate(R.layout.sheet_main_menu, null)
         sheet.setContentView(sheetView)
 
-        val tvMenuCurrentLimit = sheetView.findViewById<TextView>(R.id.tvMenuCurrentLimit)
-        val tvMenuPermStatus = sheetView.findViewById<TextView>(R.id.tvMenuPermStatus)
+        sheet.setOnShowListener {
+            val bottomSheet = sheet.findViewById<View>(com.google.android.material.R.id.design_bottom_sheet)
+            bottomSheet?.setBackgroundResource(android.R.color.transparent)
+        }
+        applyGlassBlur(sheet)
+
         val itemChangeLimit = sheetView.findViewById<View>(R.id.menuItemChangeLimit)
         val itemPermissions = sheetView.findViewById<View>(R.id.menuItemPermissions)
-
-        val pending = dataManager.pendingMaxDailyScrolls
-        if (pending > 0) {
-            tvMenuCurrentLimit.text = "Currently: ${dataManager.maxDailyScrolls} Reels / day (Tomorrow: $pending Reels)"
-        } else {
-            tvMenuCurrentLimit.text = "Currently: ${dataManager.maxDailyScrolls} Reels / day"
-        }
-
-        val isOver = Settings.canDrawOverlays(this)
-        val isAcc = isAccessibilityServiceEnabled(KittyAccessibilityService::class.java)
-        if (isOver && isAcc) {
-            tvMenuPermStatus.text = "🟢 All Permissions Active & Guarding"
-            tvMenuPermStatus.setTextColor(getColor(R.color.accent_green))
-        } else {
-            val missing = mutableListOf<String>()
-            if (!isOver) missing.add("Overlay")
-            if (!isAcc) missing.add("Accessibility")
-            tvMenuPermStatus.text = "⚠️ Setup Needed: ${missing.joinToString(" & ")} (Tap to Enable)"
-            tvMenuPermStatus.setTextColor(getColor(R.color.kitty_orange))
-        }
 
         itemChangeLimit.setOnClickListener {
             sheet.dismiss()
@@ -1041,11 +1037,11 @@ class MainActivity : AppCompatActivity() {
     private fun applyGlassBlur(dialog: android.app.Dialog) {
         dialog.window?.apply {
             setBackgroundDrawableResource(android.R.color.transparent)
-            setDimAmount(0.75f)
+            setDimAmount(0.38f)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 addFlags(WindowManager.LayoutParams.FLAG_BLUR_BEHIND)
                 attributes = attributes?.apply {
-                    blurBehindRadius = 32
+                    blurBehindRadius = 60
                 }
             }
         }
@@ -1053,31 +1049,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun checkPermissions() {
         val isAccessibilityEnabled = isAccessibilityServiceEnabled(KittyAccessibilityService::class.java)
-        if (isAccessibilityEnabled) {
-            binding.btnPermAccessibility.text = "Granted ✓"
-            binding.btnPermAccessibility.setBackgroundColor(getColor(R.color.accent_green))
-        } else {
-            binding.btnPermAccessibility.text = "Enable"
-            binding.btnPermAccessibility.setBackgroundColor(getColor(R.color.primary))
-        }
-
-        val isOverlayEnabled = Settings.canDrawOverlays(this)
-        if (isOverlayEnabled) {
-            binding.btnPermOverlay.text = "Granted ✓"
-            binding.btnPermOverlay.setBackgroundColor(getColor(R.color.accent_green))
-        } else {
-            binding.btnPermOverlay.text = "Enable"
-            binding.btnPermOverlay.setBackgroundColor(getColor(R.color.primary))
-        }
-
-        val isAdminActive = devicePolicyManager.isAdminActive(adminComponent)
-        if (isAdminActive) {
-            binding.btnPermAdmin.text = "Active ✓"
-            binding.btnPermAdmin.setBackgroundColor(getColor(R.color.accent_green))
-        } else {
-            binding.btnPermAdmin.text = "Activate"
-            binding.btnPermAdmin.setBackgroundColor(getColor(R.color.secondary))
-        }
+        val isOverlayEnabled = isOverlayPermissionGranted()
 
         // Header active status badge
         if (isOverlayEnabled && isAccessibilityEnabled) {
@@ -1094,11 +1066,44 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun requestOverlayPermission() {
-        val intent = Intent(
-            Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-            Uri.parse("package:$packageName")
-        )
-        startActivity(intent)
+        try {
+            val intent = Intent(
+                Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                Uri.parse("package:$packageName")
+            )
+            startActivity(intent)
+        } catch (e: Exception) {
+            try {
+                val fallbackIntent = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION)
+                startActivity(fallbackIntent)
+            } catch (e2: Exception) {
+                Toast.makeText(this, "Please allow 'Display over other apps' in Settings", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    fun isOverlayPermissionGranted(): Boolean {
+        if (Settings.canDrawOverlays(this)) return true
+        return try {
+            val appOps = getSystemService(Context.APP_OPS_SERVICE) as? AppOpsManager
+            val mode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                appOps?.unsafeCheckOpNoThrow(
+                    AppOpsManager.OPSTR_SYSTEM_ALERT_WINDOW,
+                    Process.myUid(),
+                    packageName
+                )
+            } else {
+                @Suppress("DEPRECATION")
+                appOps?.checkOpNoThrow(
+                    AppOpsManager.OPSTR_SYSTEM_ALERT_WINDOW,
+                    Process.myUid(),
+                    packageName
+                )
+            }
+            mode == AppOpsManager.MODE_ALLOWED
+        } catch (e: Exception) {
+            false
+        }
     }
 
     private fun isAccessibilityServiceEnabled(serviceClass: Class<*>): Boolean {
