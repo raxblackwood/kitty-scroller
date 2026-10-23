@@ -1037,7 +1037,7 @@ class MainActivity : AppCompatActivity() {
     private fun applyGlassBlur(dialog: android.app.Dialog) {
         dialog.window?.apply {
             setBackgroundDrawableResource(android.R.color.transparent)
-            setDimAmount(0.38f)
+            setDimAmount(0.50f)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 addFlags(WindowManager.LayoutParams.FLAG_BLUR_BEHIND)
                 attributes = attributes?.apply {
