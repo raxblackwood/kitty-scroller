@@ -24,7 +24,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="6dp"
-            android:text="Set your daily reel boundary and enable the 2 required Android settings so the Kitty Curtain can protect your focus."
+            android:text="Choose your daily reel boundary before you start. Once locked in, this budget protects your focus."
             android:textColor="@color/text_secondary"
             android:textSize="13sp"
             android:lineSpacingExtra="2dp" />
@@ -119,105 +119,12 @@
             android:text="YouTube (Shorts)"
             android:textColor="@color/text_primary" />
 
-        <!-- 3. Required Permissions -->
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:text="3. REQUIRED SETTINGS (MUST ENABLE)"
-            android:textColor="@color/kitty_orange"
-            android:textSize="12sp"
-            android:letterSpacing="0.08"
-            android:textStyle="bold" />
-
-        <!-- Overlay row -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:gravity="center_vertical"
-            android:orientation="horizontal">
-
-            <LinearLayout
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:orientation="vertical">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Display Over Other Apps"
-                    android:textColor="@color/text_primary"
-                    android:textSize="14sp"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Lowers the Kitty Curtain over reels"
-                    android:textColor="@color/text_secondary"
-                    android:textSize="11sp" />
-            </LinearLayout>
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnSetupOverlay"
-                android:layout_width="wrap_content"
-                android:layout_height="38dp"
-                android:text="Enable"
-                android:textSize="12sp"
-                android:backgroundTint="@color/primary"
-                android:textColor="@color/on_primary"
-                app:cornerRadius="8dp" />
-        </LinearLayout>
-
-        <!-- Accessibility row -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:gravity="center_vertical"
-            android:orientation="horizontal">
-
-            <LinearLayout
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:orientation="vertical">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Accessibility Service"
-                    android:textColor="@color/text_primary"
-                    android:textSize="14sp"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Measures scrolls &amp; stops uninstalls"
-                    android:textColor="@color/text_secondary"
-                    android:textSize="11sp" />
-            </LinearLayout>
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnSetupAccessibility"
-                android:layout_width="wrap_content"
-                android:layout_height="38dp"
-                android:text="Enable"
-                android:textSize="12sp"
-                android:backgroundTint="@color/primary"
-                android:textColor="@color/on_primary"
-                app:cornerRadius="8dp" />
-        </LinearLayout>
-
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnLockInSetup"
             android:layout_width="match_parent"
             android:layout_height="50dp"
             android:layout_marginTop="20dp"
-            android:text="Activate Clawse 🐾"
+            android:text="Lock In Daily Boundary 🔒"
             android:backgroundTint="@color/primary"
             android:textColor="@color/on_primary"
             android:textSize="14sp"

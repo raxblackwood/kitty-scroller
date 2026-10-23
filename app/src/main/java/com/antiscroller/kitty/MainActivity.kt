@@ -51,6 +51,8 @@ class MainActivity : AppCompatActivity() {
 
     private val handler = Handler(Looper.getMainLooper())
     private var activeSetupDialogUpdate: (() -> Unit)? = null
+    private var initialSetupDialog: androidx.appcompat.app.AlertDialog? = null
+    private var permissionSetupDialog: androidx.appcompat.app.AlertDialog? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -107,6 +109,10 @@ class MainActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
+        initialSetupDialog?.dismiss()
+        initialSetupDialog = null
+        permissionSetupDialog?.dismiss()
+        permissionSetupDialog = null
         billingManager.endConnection()
     }
 
@@ -803,13 +809,14 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showInitialSetupDialog() {
+        if (initialSetupDialog?.isShowing == true) return
+        if (dataManager.isInitialSetupDone) return
+
         val dialogView = layoutInflater.inflate(R.layout.dialog_initial_setup, null)
         val chipGroup = dialogView.findViewById<com.google.android.material.chip.ChipGroup>(R.id.chipGroupSetupLimit)
         val etLimit = dialogView.findViewById<com.google.android.material.textfield.TextInputEditText>(R.id.etSetupLimit)
         val switchInsta = dialogView.findViewById<com.google.android.material.switchmaterial.SwitchMaterial>(R.id.switchSetupInstagram)
         val switchYt = dialogView.findViewById<com.google.android.material.switchmaterial.SwitchMaterial>(R.id.switchSetupYouTube)
-        val btnSetupOverlay = dialogView.findViewById<com.google.android.material.button.MaterialButton>(R.id.btnSetupOverlay)
-        val btnSetupAccessibility = dialogView.findViewById<com.google.android.material.button.MaterialButton>(R.id.btnSetupAccessibility)
         val btnLock = dialogView.findViewById<com.google.android.material.button.MaterialButton>(R.id.btnLockInSetup)
 
         // Pre-fill with current settings
@@ -826,7 +833,57 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        fun updateDialogPermButtons() {
+        val dialog = MaterialAlertDialogBuilder(this)
+            .setView(dialogView)
+            .setCancelable(false)
+            .create()
+
+        initialSetupDialog = dialog
+
+        btnLock.setOnClickListener {
+            val inputStr = etLimit.text?.toString()?.trim() ?: "25"
+            val parsedLimit = inputStr.toIntOrNull() ?: 25
+            val finalLimit = parsedLimit.coerceIn(5, 500)
+
+            dataManager.maxDailyScrolls = finalLimit
+            dataManager.isInstagramMonitored = switchInsta.isChecked
+            dataManager.isYouTubeMonitored = switchYt.isChecked
+            dataManager.isInitialSetupDone = true
+
+            updateDashboard()
+            checkPermissions()
+            Toast.makeText(this, "Daily focus boundary locked in ($finalLimit reels)!", Toast.LENGTH_LONG).show()
+
+            dialog.dismiss()
+            initialSetupDialog = null
+
+            // Prompt permissions step only after daily boundary is locked in
+            checkAndPromptPermissions()
+        }
+
+        dialog.show()
+    }
+
+    private fun checkAndPromptPermissions() {
+        val isOverlayGranted = Settings.canDrawOverlays(this)
+        val isAccessibilityGranted = isAccessibilityServiceEnabled(KittyAccessibilityService::class.java)
+
+        if (!isOverlayGranted || !isAccessibilityGranted) {
+            showPermissionSetupDialog()
+        }
+    }
+
+    private fun showPermissionSetupDialog() {
+        if (permissionSetupDialog?.isShowing == true) return
+
+        val dialogView = layoutInflater.inflate(R.layout.dialog_permission_setup, null)
+        val btnClose = dialogView.findViewById<android.widget.ImageView>(R.id.btnClosePermDialog)
+        val btnSetupOverlay = dialogView.findViewById<com.google.android.material.button.MaterialButton>(R.id.btnSetupOverlay)
+        val btnSetupAccessibility = dialogView.findViewById<com.google.android.material.button.MaterialButton>(R.id.btnSetupAccessibility)
+        val btnDone = dialogView.findViewById<com.google.android.material.button.MaterialButton>(R.id.btnDonePermissions)
+        val btnSkip = dialogView.findViewById<com.google.android.material.button.MaterialButton>(R.id.btnSkipPermissions)
+
+        fun updatePermButtons() {
             val isOver = Settings.canDrawOverlays(this)
             val isAcc = isAccessibilityServiceEnabled(KittyAccessibilityService::class.java)
 
@@ -847,13 +904,15 @@ class MainActivity : AppCompatActivity() {
             }
 
             if (isOver && isAcc) {
-                btnLock.text = "Lock In & Start Clawse 🐾"
+                btnDone.text = "All Set! Enter Clawse 🐾"
+                btnDone.setBackgroundColor(getColor(R.color.accent_green))
             } else {
-                btnLock.text = "Lock In Daily Boundary 🔒"
+                btnDone.text = "Done / Go to Dashboard"
+                btnDone.setBackgroundColor(getColor(R.color.primary))
             }
         }
 
-        updateDialogPermButtons()
+        updatePermButtons()
 
         btnSetupOverlay.setOnClickListener {
             requestOverlayPermission()
@@ -871,26 +930,27 @@ class MainActivity : AppCompatActivity() {
 
         val dialog = MaterialAlertDialogBuilder(this)
             .setView(dialogView)
-            .setCancelable(false)
+            .setCancelable(true)
             .create()
 
-        activeSetupDialogUpdate = { updateDialogPermButtons() }
-        dialog.setOnDismissListener { activeSetupDialogUpdate = null }
+        permissionSetupDialog = dialog
+        activeSetupDialogUpdate = { updatePermButtons() }
 
-        btnLock.setOnClickListener {
-            val inputStr = etLimit.text?.toString()?.trim() ?: "25"
-            val parsedLimit = inputStr.toIntOrNull() ?: 25
-            val finalLimit = parsedLimit.coerceIn(5, 500)
-
-            dataManager.maxDailyScrolls = finalLimit
-            dataManager.isInstagramMonitored = switchInsta.isChecked
-            dataManager.isYouTubeMonitored = switchYt.isChecked
-            dataManager.isInitialSetupDone = true
-
-            updateDashboard()
-            checkPermissions()
-            Toast.makeText(this, "Daily focus boundary locked in ($finalLimit reels)!", Toast.LENGTH_LONG).show()
+        val dismissAction = {
             dialog.dismiss()
+            permissionSetupDialog = null
+            activeSetupDialogUpdate = null
+            checkPermissions()
+        }
+
+        btnClose.setOnClickListener { dismissAction() }
+        btnSkip.setOnClickListener { dismissAction() }
+        btnDone.setOnClickListener { dismissAction() }
+
+        dialog.setOnDismissListener {
+            permissionSetupDialog = null
+            activeSetupDialogUpdate = null
+            checkPermissions()
         }
 
         dialog.show()
