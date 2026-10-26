@@ -68,7 +68,7 @@ class KittyOverlayManager(private val context: Context) {
      * Shows or updates the Kitty Curtain overlay with the user's selected kitty breed.
      */
     @Synchronized
-    fun showOrUpdateOverlay(dropPercentage: Float) {
+    fun showOrUpdateOverlay(dropPercentage: Float, animate: Boolean = true) {
         if (!canDrawOverlay()) {
             Log.w(TAG, "Cannot draw overlay: permission not granted.")
             return
@@ -78,14 +78,17 @@ class KittyOverlayManager(private val context: Context) {
         currentDropPercentage = dropPercentage.coerceIn(0f, 1f)
 
         mainHandler.post {
-            if (!isOverlayAttached || overlayView == null) {
+            val wasAttached = isOverlayAttached && overlayView != null
+            if (!wasAttached) {
                 attachOverlay()
             }
             if (theme != lastAppliedTheme) {
                 lastAppliedTheme = theme
                 kittyCurtainView?.applyTheme(theme)
             }
-            kittyCurtainView?.setDropPercentage(currentDropPercentage, animate = true)
+            // If freshly attached, never animate down from 0; position statically
+            val shouldAnimate = animate && wasAttached
+            kittyCurtainView?.setDropPercentage(currentDropPercentage, animate = shouldAnimate)
             updateTouchFlags(isFullScreenCovered = currentDropPercentage >= 0.98f)
         }
     }
@@ -116,6 +119,7 @@ class KittyOverlayManager(private val context: Context) {
             val curtain = KittyCurtainView(context)
             val theme = ScrollDataManager.getInstance(context).kittyTheme
             curtain.applyTheme(theme)
+            curtain.setDropPercentage(currentDropPercentage, animate = false)
 
             kittyCurtainView = curtain
             overlayView = curtain

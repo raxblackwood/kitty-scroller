@@ -75,6 +75,8 @@ class KittyAccessibilityService : AccessibilityService() {
     private var currentForegroundPackage: String = ""
     private var lastInstagramIndex: Int = -1
     private var lastYouTubeIndex: Int = -1
+    private var lastWindowSwitchTs: Long = 0L
+    private val RESUME_SCROLL_GRACE_PERIOD_MS = 800L
 
     @Volatile
     private var lastClawseInteractionTs: Long = 0L
@@ -83,7 +85,7 @@ class KittyAccessibilityService : AccessibilityService() {
     private val overlayUpdateRunnable = Runnable {
         val pct = pendingDropPercentage ?: return@Runnable
         pendingDropPercentage = null
-        overlayManager.showOrUpdateOverlay(pct)
+        overlayManager.showOrUpdateOverlay(pct, animate = true)
     }
 
     private fun scheduleOverlayUpdate(dropPercentage: Float) {
@@ -206,7 +208,7 @@ class KittyAccessibilityService : AccessibilityService() {
 
         var current: AccessibilityNodeInfo? = sourceNode.parent
         var depth = 0
-        while (current != null && depth < 5) {
+        while (current != null && depth < 10) {
             val pId = current.viewIdResourceName?.lowercase() ?: ""
             val pDesc = current.contentDescription?.toString()?.lowercase() ?: ""
             if (pId.contains("comment") || pId.contains("engagement_panel") ||
@@ -223,29 +225,49 @@ class KittyAccessibilityService : AccessibilityService() {
     }
 
     /**
-     * Fast check to see if the scrolled view belongs to Instagram Direct Messages (inbox or chat thread).
+     * Fast check to see if the scrolled view belongs to Instagram Story creation, Gallery picker,
+     * Camera, Album selector, Drafts, Filters, or Composer.
      */
-    private fun isInstagramDmScroll(sourceNode: AccessibilityNodeInfo?): Boolean {
+    private fun isInstagramStoryOrGalleryOrCreation(sourceNode: AccessibilityNodeInfo?): Boolean {
         if (sourceNode == null) return false
-        val sourceId = sourceNode.viewIdResourceName?.lowercase() ?: ""
-        if (sourceId.contains("direct") || sourceId.contains("thread") ||
-            sourceId.contains("message") || sourceId.contains("inbox") ||
-            sourceId.contains("recipient")) {
-            return true
-        }
 
-        var current: AccessibilityNodeInfo? = sourceNode.parent
+        val creationKeywords = arrayOf(
+            "gallery", "picker", "camera", "capture", "creation",
+            "composer", "story", "stories", "album", "draft",
+            "media_grid", "media_picker", "photo", "filter",
+            "sticker", "effect", "canvas", "clip_editor", "clips_creation",
+            "reel_feed_timeline" // horizontal stories tray on home feed
+        )
+
+        var current: AccessibilityNodeInfo? = sourceNode
         var depth = 0
-        while (current != null && depth < 5) {
-            val pId = current.viewIdResourceName?.lowercase() ?: ""
-            if (pId.contains("direct") || pId.contains("thread") ||
-                pId.contains("message") || pId.contains("inbox") ||
-                pId.contains("recipient")) {
-                current.recycle()
+        while (current != null && depth < 10) {
+            val viewId = current.viewIdResourceName?.lowercase() ?: ""
+            val cls = current.className?.toString()?.lowercase() ?: ""
+            val desc = current.contentDescription?.toString()?.lowercase() ?: ""
+            val text = current.text?.toString()?.lowercase() ?: ""
+
+            for (kw in creationKeywords) {
+                if (viewId.contains(kw) || desc.contains(kw) || text.contains(kw) || cls.contains(kw)) {
+                    if (current != sourceNode) current.recycle()
+                    return true
+                }
+            }
+
+            // Specific user-facing strings in gallery and story creation UI
+            if (desc.contains("recents") || text.contains("recents") ||
+                desc.contains("camera roll") || text.contains("camera roll") ||
+                desc.contains("albums") || text.contains("albums") ||
+                desc.contains("new post") || text.contains("new post") ||
+                desc.contains("new story") || text.contains("new story") ||
+                desc.contains("add to story") || text.contains("add to story") ||
+                desc.contains("your story") || text.contains("your story")) {
+                if (current != sourceNode) current.recycle()
                 return true
             }
+
             val next = current.parent
-            current.recycle()
+            if (current != sourceNode) current.recycle()
             current = next
             depth++
         }
@@ -253,20 +275,141 @@ class KittyAccessibilityService : AccessibilityService() {
     }
 
     /**
-     * Fast check to see if the scrolled view belongs to Instagram Explore (Search grid) or Profile grid.
+     * Fast check to see if the scrolled view belongs to Instagram Direct Messages (inbox, threads, chat).
      */
-    private fun isInstagramExploreOrProfileScroll(sourceNode: AccessibilityNodeInfo?): Boolean {
+    private fun isInstagramDmScroll(sourceNode: AccessibilityNodeInfo?): Boolean {
         if (sourceNode == null) return false
-        val sourceId = sourceNode.viewIdResourceName?.lowercase() ?: ""
-        if (sourceId.contains("explore_recycler") || sourceId.contains("profile_recycler")) {
-            return true
+
+        val dmKeywords = arrayOf(
+            "direct", "thread", "message", "inbox", "recipient",
+            "chat", "conversation", "voice_message", "audio_bubble",
+            "row_message", "message_content", "direct_v2", "messaging",
+            "notes_tray", "direct_inbox", "direct_thread", "direct_share",
+            "direct_star", "direct_search"
+        )
+
+        var current: AccessibilityNodeInfo? = sourceNode
+        var depth = 0
+        while (current != null && depth < 10) {
+            val viewId = current.viewIdResourceName?.lowercase() ?: ""
+            val desc = current.contentDescription?.toString()?.lowercase() ?: ""
+
+            for (kw in dmKeywords) {
+                if (viewId.contains(kw) || desc.contains(kw)) {
+                    if (current != sourceNode) current.recycle()
+                    return true
+                }
+            }
+
+            val next = current.parent
+            if (current != sourceNode) current.recycle()
+            current = next
+            depth++
+        }
+        return false
+    }
+
+    /**
+     * Fast check to see if the scrolled view belongs to Instagram Explore (Search grid), Profile, Settings, or Notifications.
+     */
+    private fun isInstagramExploreOrProfileOrSettings(sourceNode: AccessibilityNodeInfo?): Boolean {
+        if (sourceNode == null) return false
+
+        val nonTargetKeywords = arrayOf(
+            "explore", "search", "discover", "profile", "user_profile", "account",
+            "edit_profile", "following", "followers", "settings",
+            "saved", "archive", "notification", "activity", "newsfeed_feed"
+        )
+
+        var current: AccessibilityNodeInfo? = sourceNode
+        var depth = 0
+        while (current != null && depth < 10) {
+            val viewId = current.viewIdResourceName?.lowercase() ?: ""
+            val desc = current.contentDescription?.toString()?.lowercase() ?: ""
+
+            for (kw in nonTargetKeywords) {
+                if (viewId.contains(kw) || desc.contains(kw)) {
+                    if (current != sourceNode) current.recycle()
+                    return true
+                }
+            }
+
+            val next = current.parent
+            if (current != sourceNode) current.recycle()
+            current = next
+            depth++
+        }
+        return false
+    }
+
+    /**
+     * Strictly verifies if the scrolled view in Instagram is either:
+     * 1. Home Feed (main post/reel feed)
+     * 2. Reels (Reels tab or full-screen Reel viewer)
+     * 
+     * Rejects ALL other areas:
+     * - Story creator, gallery picker, camera, drafts, filters
+     * - Direct Messages (inbox, chat threads)
+     * - Explore / Search grid
+     * - Profile grid & settings
+     * - Comments bottom sheet
+     */
+    private fun isInstagramTargetScroll(sourceNode: AccessibilityNodeInfo?): Boolean {
+        if (sourceNode == null) return false
+
+        // 1. First, check negative filters (Story, Gallery, DMs, Comments, Explore, Profile, Settings)
+        if (isInstagramStoryOrGalleryOrCreation(sourceNode) ||
+            isInstagramDmScroll(sourceNode) ||
+            isCommentScroll(sourceNode) ||
+            isInstagramExploreOrProfileOrSettings(sourceNode)) {
+            return false
         }
 
+        // 2. Positive check: Must belong to Home Feed or Reels container
+        var current: AccessibilityNodeInfo? = sourceNode
+        var depth = 0
+        var isFeedOrReels = false
+
+        while (current != null && depth < 10) {
+            val viewId = current.viewIdResourceName?.lowercase() ?: ""
+
+            if (viewId.contains("feed") ||
+                viewId.contains("clips") ||
+                viewId.contains("reel") ||
+                viewId.contains("vertical_view_pager") ||
+                viewId.contains("sticky_header_list")) {
+                isFeedOrReels = true
+                if (current != sourceNode) current.recycle()
+                break
+            }
+
+            val next = current.parent
+            if (current != sourceNode) current.recycle()
+            current = next
+            depth++
+        }
+
+        return isFeedOrReels
+    }
+
+    /**
+     * Checks if the scrolled node belongs to a ViewPager container (used for Reels and Shorts full-screen snaps).
+     */
+    private fun isViewPagerScroll(sourceNode: AccessibilityNodeInfo?): Boolean {
+        if (sourceNode == null) return false
+        val cls = sourceNode.className?.toString()?.lowercase() ?: ""
+        val id = sourceNode.viewIdResourceName?.lowercase() ?: ""
+        if (cls.contains("viewpager") || id.contains("view_pager") ||
+            id.contains("clips") || id.contains("reel") || id.contains("shorts")) {
+            return true
+        }
         var current: AccessibilityNodeInfo? = sourceNode.parent
         var depth = 0
-        while (current != null && depth < 5) {
+        while (current != null && depth < 4) {
             val pId = current.viewIdResourceName?.lowercase() ?: ""
-            if (pId.contains("explore_recycler") || pId.contains("profile_recycler")) {
+            val pCls = current.className?.toString()?.lowercase() ?: ""
+            if (pCls.contains("viewpager") || pId.contains("view_pager") ||
+                pId.contains("clips") || pId.contains("reel") || pId.contains("shorts")) {
                 current.recycle()
                 return true
             }
@@ -328,6 +471,7 @@ class KittyAccessibilityService : AccessibilityService() {
             currentForegroundPackage = packageName
             lastInstagramIndex = -1
             lastYouTubeIndex = -1
+            lastWindowSwitchTs = System.currentTimeMillis()
         }
 
         // Monitored packages: Instagram and YouTube
@@ -341,7 +485,8 @@ class KittyAccessibilityService : AccessibilityService() {
                 mainHandler.post { overlayManager.hideOverlay() }
             } else {
                 mainHandler.post {
-                    overlayManager.showOrUpdateOverlay(dropPercentage)
+                    // Position statically on resume/window switch; never animate down from 0
+                    overlayManager.showOrUpdateOverlay(dropPercentage, animate = false)
                 }
             }
             return
@@ -366,12 +511,13 @@ class KittyAccessibilityService : AccessibilityService() {
 
         if (activePkg == ScrollDataManager.PKG_INSTAGRAM || activePkg == ScrollDataManager.PKG_YOUTUBE) {
             currentForegroundPackage = activePkg
+            lastWindowSwitchTs = System.currentTimeMillis()
             dataManager.checkAndPerformMidnightReset()
             val screenHeight = resources.displayMetrics.heightPixels
             val dropPercentage = dataManager.getDropPercentage(screenHeight)
             if (dropPercentage > 0.0001f) {
                 mainHandler.post {
-                    overlayManager.showOrUpdateOverlay(dropPercentage)
+                    overlayManager.showOrUpdateOverlay(dropPercentage, animate = false)
                 }
                 return
             }
@@ -386,99 +532,97 @@ class KittyAccessibilityService : AccessibilityService() {
     private fun handleViewScrolled(packageName: String, event: AccessibilityEvent) {
         if (!dataManager.isPackageMonitored(packageName)) return
 
+        // Ignore spurious layout restoration or transition scroll events immediately after resuming app
+        if (System.currentTimeMillis() - lastWindowSwitchTs < RESUME_SCROLL_GRACE_PERIOD_MS) {
+            Log.i(TAG, "Scroll ignored: Inside resume grace period ($packageName)")
+            return
+        }
+
         val source = event.source
 
-        // STRICT TARGET FILTERING:
-        // Only 3 places pull the curtain down:
-        // 1. Instagram Home Feed (downward scroll)
-        // 2. Instagram Reels (swiping reels)
-        // 3. YouTube Shorts (swiping shorts)
-        // Everything else (comments, DMs, explore, profile, YouTube homepage) is ignored!
-        val isAllowed = when (packageName) {
-            ScrollDataManager.PKG_INSTAGRAM -> {
-                if (isCommentScroll(source) ||
-                    isInstagramDmScroll(source) ||
-                    isInstagramExploreOrProfileScroll(source)) {
-                    false
-                } else {
-                    true
+        try {
+            // STRICT TARGET FILTERING:
+            // Only 3 places pull the curtain down:
+            // 1. Instagram Home Feed (downward scroll)
+            // 2. Instagram Reels (swiping reels)
+            // 3. YouTube Shorts (swiping shorts)
+            // Everything else (comments, DMs, story creation/gallery, explore, profile, YouTube homepage) is ignored!
+            val isAllowed = when (packageName) {
+                ScrollDataManager.PKG_INSTAGRAM -> isInstagramTargetScroll(source)
+                ScrollDataManager.PKG_YOUTUBE -> isYouTubeShortsScroll(source)
+                else -> false
+            }
+
+            if (!isAllowed) {
+                Log.i(TAG, "Scroll ignored: Not on allowed target screen (pkg=$packageName)")
+                return
+            }
+
+            val deltaX = event.scrollDeltaX
+            val deltaY = event.scrollDeltaY
+
+            // Filter out horizontal swipes (e.g. story carousels, tab swiping)
+            if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 20) {
+                return
+            }
+
+            // CRITICAL: Scrolling UP (backwards/upward swipe to previous content) must NEVER pull the curtain down!
+            // In Android, deltaY < 0 indicates scrolling up.
+            if (deltaY < -10) {
+                Log.i(TAG, "Scroll ignored: User scrolled UP (dy=$deltaY)")
+                val fromIdx = event.fromIndex
+                if (fromIdx >= 0) {
+                    if (packageName == ScrollDataManager.PKG_INSTAGRAM) lastInstagramIndex = fromIdx
+                    if (packageName == ScrollDataManager.PKG_YOUTUBE) lastYouTubeIndex = fromIdx
                 }
-            }
-            ScrollDataManager.PKG_YOUTUBE -> {
-                isYouTubeShortsScroll(source)
-            }
-            else -> false
-        }
-
-        source?.recycle()
-
-        if (!isAllowed) {
-            Log.i(TAG, "Scroll ignored: Not on allowed target screen (pkg=$packageName)")
-            return
-        }
-
-        val deltaX = event.scrollDeltaX
-        val deltaY = event.scrollDeltaY
-
-        // Filter out horizontal swipes (e.g. story carousels, tab swiping)
-        if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 20) {
-            return
-        }
-
-        // CRITICAL: Scrolling UP (backwards/upward swipe to previous content) must NEVER pull the curtain down!
-        // In Android, deltaY < 0 indicates scrolling up.
-        if (deltaY < -10) {
-            Log.i(TAG, "Scroll ignored: User scrolled UP (dy=$deltaY)")
-            val fromIdx = event.fromIndex
-            if (fromIdx >= 0) {
-                if (packageName == ScrollDataManager.PKG_INSTAGRAM) lastInstagramIndex = fromIdx
-                if (packageName == ScrollDataManager.PKG_YOUTUBE) lastYouTubeIndex = fromIdx
-            }
-            return
-        }
-
-        val screenHeight = resources.displayMetrics.heightPixels
-        val fromIndex = event.fromIndex
-
-        val pixelsToAdd: Float
-        if (deltaY > 15) {
-            // Definite downward/forward scroll
-            pixelsToAdd = deltaY.toFloat()
-            if (fromIndex >= 0) {
-                if (packageName == ScrollDataManager.PKG_INSTAGRAM) lastInstagramIndex = fromIndex
-                if (packageName == ScrollDataManager.PKG_YOUTUBE) lastYouTubeIndex = fromIndex
-            }
-        } else if (fromIndex >= 0) {
-            // deltaY is near zero (e.g. ViewPager page snap). Check if page index actually advanced forward!
-            val lastIndex = if (packageName == ScrollDataManager.PKG_INSTAGRAM) lastInstagramIndex else lastYouTubeIndex
-            if (lastIndex < 0) {
-                // First event seen in session: seed initial index without adding pixels
-                if (packageName == ScrollDataManager.PKG_INSTAGRAM) lastInstagramIndex = fromIndex
-                if (packageName == ScrollDataManager.PKG_YOUTUBE) lastYouTubeIndex = fromIndex
                 return
             }
-            if (fromIndex > lastIndex) {
-                // Page advanced forward to the next reel/short!
-                val diff = (fromIndex - lastIndex).coerceAtMost(3)
-                if (packageName == ScrollDataManager.PKG_INSTAGRAM) lastInstagramIndex = fromIndex
-                if (packageName == ScrollDataManager.PKG_YOUTUBE) lastYouTubeIndex = fromIndex
-                pixelsToAdd = screenHeight * diff * 0.85f
-                Log.i(TAG, "Reel page advanced: $lastIndex -> $fromIndex (+$pixelsToAdd px)")
+
+            val screenHeight = resources.displayMetrics.heightPixels
+            val fromIndex = event.fromIndex
+
+            val pixelsToAdd: Float
+            if (deltaY > 15) {
+                // Definite downward/forward scroll
+                pixelsToAdd = deltaY.toFloat()
+                if (fromIndex >= 0) {
+                    if (packageName == ScrollDataManager.PKG_INSTAGRAM) lastInstagramIndex = fromIndex
+                    if (packageName == ScrollDataManager.PKG_YOUTUBE) lastYouTubeIndex = fromIndex
+                }
+            } else if (fromIndex >= 0 && isViewPagerScroll(source)) {
+                // deltaY is near zero (e.g. ViewPager page snap). Check if page index actually advanced forward!
+                val lastIndex = if (packageName == ScrollDataManager.PKG_INSTAGRAM) lastInstagramIndex else lastYouTubeIndex
+                if (lastIndex < 0) {
+                    // First event seen in session: seed initial index without adding pixels
+                    if (packageName == ScrollDataManager.PKG_INSTAGRAM) lastInstagramIndex = fromIndex
+                    if (packageName == ScrollDataManager.PKG_YOUTUBE) lastYouTubeIndex = fromIndex
+                    return
+                }
+                if (fromIndex > lastIndex) {
+                    // Page advanced forward to the next reel/short!
+                    val diff = (fromIndex - lastIndex).coerceAtMost(3)
+                    if (packageName == ScrollDataManager.PKG_INSTAGRAM) lastInstagramIndex = fromIndex
+                    if (packageName == ScrollDataManager.PKG_YOUTUBE) lastYouTubeIndex = fromIndex
+                    pixelsToAdd = screenHeight * diff * 0.85f
+                    Log.i(TAG, "Reel page advanced: $lastIndex -> $fromIndex (+$pixelsToAdd px)")
+                } else {
+                    // fromIndex <= lastIndex: page did not advance, or user swiped up to a previous reel
+                    if (packageName == ScrollDataManager.PKG_INSTAGRAM) lastInstagramIndex = fromIndex
+                    if (packageName == ScrollDataManager.PKG_YOUTUBE) lastYouTubeIndex = fromIndex
+                    Log.i(TAG, "Scroll ignored: Page did not advance forward ($lastIndex -> $fromIndex, dy=$deltaY)")
+                    return
+                }
             } else {
-                // fromIndex <= lastIndex: page did not advance, or user swiped up to a previous reel
-                if (packageName == ScrollDataManager.PKG_INSTAGRAM) lastInstagramIndex = fromIndex
-                if (packageName == ScrollDataManager.PKG_YOUTUBE) lastYouTubeIndex = fromIndex
-                Log.i(TAG, "Scroll ignored: Page did not advance forward ($lastIndex -> $fromIndex, dy=$deltaY)")
+                // deltaY near zero and not a ViewPager page advance: do NOT blindly add pixels
                 return
             }
-        } else {
-            // deltaY near zero and no fromIndex: do NOT blindly add pixels
-            return
-        }
 
-        Log.i(TAG, "Forward scroll applied on $packageName: +$pixelsToAdd px (dy=$deltaY, dx=$deltaX)")
-        val newDropPercentage = dataManager.addScrollPixels(pixelsToAdd, screenHeight)
-        scheduleOverlayUpdate(newDropPercentage)
+            Log.i(TAG, "Forward scroll applied on $packageName: +$pixelsToAdd px (dy=$deltaY, dx=$deltaX)")
+            val newDropPercentage = dataManager.addScrollPixels(pixelsToAdd, screenHeight)
+            scheduleOverlayUpdate(newDropPercentage)
+        } finally {
+            source?.recycle()
+        }
     }
 
     private fun handleViewClicked(packageName: String, event: AccessibilityEvent) {
