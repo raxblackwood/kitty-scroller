@@ -27,3 +27,7 @@ It scopes its overlay strictly to video doomscrolling feeds while leaving produc
   - Designed and implemented interactive 3-slide onboarding walkthrough (`ViewPager2` carousel with dynamic pill dots) for first-time users.
   - Added prominent floating notification card on the home screen when Accessibility or Overlay permissions are missing, allowing 1-tap activation.
   - Refined dashboard typography and surfaces according to Apple Design Principles, removing shouting all-caps text, aggressive disclaimers, and clutter.
+- v1.0.22: Replaced app launcher icon background with deep sapphire indigo blue.
+  - Updated `@color/ic_launcher_background` to `#1E3A8A` in `colors.xml`.
+  - Re-rendered all legacy adaptive and round launcher mipmaps and drawable assets with the new soothing blue background.
+  - Clean uninstalled and reinstalled v1.0.22 on physical device via ADB.
