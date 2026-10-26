@@ -24,16 +24,21 @@ import android.text.TextUtils
 import android.util.Log
 import android.view.Gravity
 import android.view.View
+import android.view.ViewGroup
 import android.view.WindowManager
 import android.view.accessibility.AccessibilityManager
 import android.widget.EditText
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updatePadding
+import androidx.recyclerview.widget.RecyclerView
+import androidx.viewpager2.widget.ViewPager2
 import com.antiscroller.kitty.admin.KittyAdminReceiver
 import com.antiscroller.kitty.billing.BillingManager
 import com.antiscroller.kitty.data.ScrollDataManager
@@ -45,6 +50,7 @@ import com.antiscroller.kitty.ui.PaywallBottomSheetDialog
 import com.antiscroller.kitty.worker.DailyResetWorker
 import com.antiscroller.kitty.worker.GuardianHeartbeatWorker
 import com.google.android.material.bottomsheet.BottomSheetDialog
+import com.google.android.material.button.MaterialButton
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 
 class MainActivity : AppCompatActivity() {
@@ -142,7 +148,9 @@ class MainActivity : AppCompatActivity() {
         updateGuardianUI()
         updateDeviceOwnerUI()
 
-        if (!dataManager.isInitialSetupDone) {
+        if (!dataManager.isOnboardingCompleted) {
+            showOnboardingCarousel()
+        } else if (!dataManager.isInitialSetupDone) {
             showInitialSetupDialog()
         }
     }
@@ -277,6 +285,14 @@ class MainActivity : AppCompatActivity() {
         }
         binding.btnMenu.setOnClickListener {
             showMainMenuSheet()
+        }
+
+        // Floating permission notification banner
+        binding.cardPermissionFloater.setOnClickListener {
+            showPermissionSetupDialog()
+        }
+        binding.btnEnablePermissionsFloater.setOnClickListener {
+            showPermissionSetupDialog()
         }
 
         // Custom Limit Set Button
@@ -820,6 +836,128 @@ class MainActivity : AppCompatActivity() {
             .show()
     }
 
+    data class OnboardingSlide(
+        val imageRes: Int,
+        val title: String,
+        val description: String
+    )
+
+    private var onboardingDialog: AlertDialog? = null
+
+    private fun showOnboardingCarousel(canDismiss: Boolean = false) {
+        if (onboardingDialog?.isShowing == true) return
+
+        val slides = listOf(
+            OnboardingSlide(
+                imageRes = R.mipmap.ic_kitty_launcher,
+                title = "Meet Clawse",
+                description = "A mindful focus companion that quietly watches over your scrolling so you enjoy Reels and Shorts without losing hours."
+            ),
+            OnboardingSlide(
+                imageRes = R.drawable.kitty_ginger_loaf,
+                title = "The Kitty Curtain",
+                description = "As you scroll Reels and Shorts, an animated kitten slowly lowers a curtain. When your daily budget is reached, doomscrolling is paused."
+            ),
+            OnboardingSlide(
+                imageRes = R.mipmap.ic_kitty_launcher,
+                title = "100% Private & Local",
+                description = "Clawse runs entirely on your device with zero ads, no accounts, and no data collection. Only scroll gestures on Reels and Shorts are counted."
+            )
+        )
+
+        val dialogView = layoutInflater.inflate(R.layout.dialog_onboarding, null)
+        val pager = dialogView.findViewById<ViewPager2>(R.id.pagerOnboarding)
+        val btnSkip = dialogView.findViewById<MaterialButton>(R.id.btnOnboardingSkip)
+        val btnAction = dialogView.findViewById<MaterialButton>(R.id.btnOnboardingAction)
+        val dot0 = dialogView.findViewById<View>(R.id.dot0)
+        val dot1 = dialogView.findViewById<View>(R.id.dot1)
+        val dot2 = dialogView.findViewById<View>(R.id.dot2)
+        val dots = listOf(dot0, dot1, dot2)
+
+        fun updateDots(position: Int) {
+            dots.forEachIndexed { index, dot ->
+                val params = dot.layoutParams
+                if (index == position) {
+                    dot.setBackgroundResource(R.drawable.bg_onboarding_dot_active)
+                    params.width = (24 * resources.displayMetrics.density).toInt()
+                } else {
+                    dot.setBackgroundResource(R.drawable.bg_onboarding_dot_inactive)
+                    params.width = (8 * resources.displayMetrics.density).toInt()
+                }
+                dot.layoutParams = params
+            }
+
+            if (position == slides.size - 1) {
+                btnAction.text = "Get Started"
+                btnSkip.visibility = View.INVISIBLE
+            } else {
+                btnAction.text = "Continue"
+                btnSkip.visibility = View.VISIBLE
+            }
+        }
+
+        class OnboardingAdapter : RecyclerView.Adapter<OnboardingAdapter.SlideViewHolder>() {
+            inner class SlideViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+                val ivImage: ImageView = itemView.findViewById(R.id.ivSlideImage)
+                val tvTitle: TextView = itemView.findViewById(R.id.tvSlideTitle)
+                val tvDesc: TextView = itemView.findViewById(R.id.tvSlideDesc)
+            }
+
+            override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): SlideViewHolder {
+                val v = layoutInflater.inflate(R.layout.item_onboarding_slide, parent, false)
+                return SlideViewHolder(v)
+            }
+
+            override fun onBindViewHolder(holder: SlideViewHolder, position: Int) {
+                val slide = slides[position]
+                holder.ivImage.setImageResource(slide.imageRes)
+                holder.tvTitle.text = slide.title
+                holder.tvDesc.text = slide.description
+            }
+
+            override fun getItemCount(): Int = slides.size
+        }
+
+        pager.adapter = OnboardingAdapter()
+        pager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
+            override fun onPageSelected(position: Int) {
+                super.onPageSelected(position)
+                updateDots(position)
+            }
+        })
+
+        val dialog = MaterialAlertDialogBuilder(this)
+            .setView(dialogView)
+            .setCancelable(canDismiss)
+            .create()
+
+        applyGlassBlur(dialog) {
+            onboardingDialog = null
+        }
+        onboardingDialog = dialog
+
+        val completeOnboarding = {
+            dataManager.isOnboardingCompleted = true
+            dialog.dismiss()
+            onboardingDialog = null
+            if (!dataManager.isInitialSetupDone) {
+                showInitialSetupDialog()
+            }
+        }
+
+        btnSkip.setOnClickListener { completeOnboarding() }
+
+        btnAction.setOnClickListener {
+            if (pager.currentItem < slides.size - 1) {
+                pager.currentItem = pager.currentItem + 1
+            } else {
+                completeOnboarding()
+            }
+        }
+
+        dialog.show()
+    }
+
     private fun showInitialSetupDialog() {
         if (initialSetupDialog?.isShowing == true) return
         if (dataManager.isInitialSetupDone) return
@@ -974,6 +1112,7 @@ class MainActivity : AppCompatActivity() {
 
         val itemChangeLimit = sheetView.findViewById<View>(R.id.menuItemChangeLimit)
         val itemPermissions = sheetView.findViewById<View>(R.id.menuItemPermissions)
+        val itemHowItWorks = sheetView.findViewById<View>(R.id.menuItemHowItWorks)
 
         itemChangeLimit.setOnClickListener {
             sheet.dismiss()
@@ -983,6 +1122,11 @@ class MainActivity : AppCompatActivity() {
         itemPermissions.setOnClickListener {
             sheet.dismiss()
             showPermissionSetupDialog()
+        }
+
+        itemHowItWorks?.setOnClickListener {
+            sheet.dismiss()
+            showOnboardingCarousel(canDismiss = true)
         }
 
         sheet.show()
@@ -1053,17 +1197,19 @@ class MainActivity : AppCompatActivity() {
         val isAccessibilityEnabled = isAccessibilityServiceEnabled(KittyAccessibilityService::class.java)
         val isOverlayEnabled = isOverlayPermissionGranted()
 
-        // Header active status badge
+        // Header active status badge & floating permission notification
         if (isOverlayEnabled && isAccessibilityEnabled) {
             binding.badgeHeaderStatus.setBackgroundResource(R.drawable.bg_status_badge)
             binding.dotHeaderStatus.setBackgroundResource(R.drawable.dot_green)
             binding.tvHeaderStatus.text = "Active"
             binding.tvHeaderStatus.setTextColor(getColor(R.color.accent_green))
+            binding.cardPermissionFloater.visibility = View.GONE
         } else {
             binding.badgeHeaderStatus.setBackgroundResource(R.drawable.bg_status_badge_warning)
             binding.dotHeaderStatus.setBackgroundResource(R.drawable.dot_orange)
             binding.tvHeaderStatus.text = "Setup"
             binding.tvHeaderStatus.setTextColor(getColor(R.color.kitty_orange))
+            binding.cardPermissionFloater.visibility = View.VISIBLE
         }
     }
 

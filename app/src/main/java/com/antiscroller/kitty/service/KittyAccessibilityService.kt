@@ -2,6 +2,7 @@ package com.antiscroller.kitty.service
 
 import android.accessibilityservice.AccessibilityService
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
@@ -141,20 +142,28 @@ class KittyAccessibilityService : AccessibilityService() {
         // Only hide overlay when a genuine window change moves completely away from monitored apps!
         // Background noise, SystemUI clock/battery updates, notifications, etc. must NEVER hide the overlay!
         if (event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
+            // Home launcher transition: immediately dismiss overlay
+            if (isLauncherPackage(eventPkg)) {
+                currentForegroundPackage = eventPkg
+                mainHandler.post { overlayManager.hideOverlay() }
+                return
+            }
+
             val activePkg = try {
                 rootInActiveWindow?.packageName?.toString()
             } catch (_: Exception) {
                 null
             }
 
-            // If the active foreground window is still Instagram or YouTube, keep the curtain visible!
-            if (activePkg == ScrollDataManager.PKG_INSTAGRAM || activePkg == ScrollDataManager.PKG_YOUTUBE) {
+            // If the active foreground window is still Instagram or YouTube (and not Home), keep the curtain visible!
+            if (activePkg != null && !isLauncherPackage(activePkg) &&
+                (activePkg == ScrollDataManager.PKG_INSTAGRAM || activePkg == ScrollDataManager.PKG_YOUTUBE)) {
                 return
             }
 
             // User has genuinely switched away to Home launcher, Chrome, WhatsApp, etc.
             currentForegroundPackage = eventPkg
-            overlayManager.hideOverlay()
+            mainHandler.post { overlayManager.hideOverlay() }
         }
     }
 
@@ -190,6 +199,27 @@ class KittyAccessibilityService : AccessibilityService() {
                lower.contains("inputmethod") ||
                lower.contains("keyboard") ||
                lower.contains("keyguard")
+    }
+
+    private fun isLauncherPackage(pkg: String): Boolean {
+        if (pkg.isEmpty()) return false
+        val lower = pkg.lowercase()
+        if (lower.contains("launcher") || lower.contains("home") ||
+            lower == "com.google.android.apps.nexuslauncher" ||
+            lower == "com.android.launcher3" ||
+            lower == "com.sec.android.app.launcher" ||
+            lower == "com.miui.home" ||
+            lower == "com.oppo.launcher" ||
+            lower == "com.nothing.launcher") {
+            return true
+        }
+        return try {
+            val intent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME)
+            val defaultLauncher = packageManager.resolveActivity(intent, PackageManager.MATCH_DEFAULT_ONLY)?.activityInfo?.packageName
+            defaultLauncher != null && pkg.equals(defaultLauncher, ignoreCase = true)
+        } catch (_: Exception) {
+            false
+        }
     }
 
     /**
@@ -492,6 +522,15 @@ class KittyAccessibilityService : AccessibilityService() {
             return
         }
 
+        // Home launcher transition: immediately dismiss overlay
+        if (isLauncherPackage(packageName)) {
+            currentForegroundPackage = packageName
+            mainHandler.post {
+                overlayManager.hideOverlay()
+            }
+            return
+        }
+
         // Check for Settings uninstall/force-stop protection
         if (isSettingsOrInstaller(packageName)) {
             checkAndApplyUninstallProtection(packageName)
@@ -509,7 +548,8 @@ class KittyAccessibilityService : AccessibilityService() {
             null
         }
 
-        if (activePkg == ScrollDataManager.PKG_INSTAGRAM || activePkg == ScrollDataManager.PKG_YOUTUBE) {
+        if (activePkg != null && !isLauncherPackage(activePkg) &&
+            (activePkg == ScrollDataManager.PKG_INSTAGRAM || activePkg == ScrollDataManager.PKG_YOUTUBE)) {
             currentForegroundPackage = activePkg
             lastWindowSwitchTs = System.currentTimeMillis()
             dataManager.checkAndPerformMidnightReset()

@@ -94,6 +94,77 @@
                     app:tint="@color/text_primary" />
             </LinearLayout>
 
+            <!-- Floating Permission Notification (visible only when permissions are missing) -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/cardPermissionFloater"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:visibility="gone"
+                app:cardBackgroundColor="#211812"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="2dp"
+                app:strokeColor="#55FFB74D"
+                app:strokeWidth="1dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="🛡️"
+                            android:textSize="22sp" />
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="10dp"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Permissions Needed to Run"
+                                android:textColor="#FFD54F"
+                                android:textSize="14sp"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:text="Clawse is inactive because Accessibility or Overlay permissions are not granted."
+                                android:textColor="#E0D3C1"
+                                android:textSize="12sp"
+                                android:lineSpacingExtra="2dp" />
+                        </LinearLayout>
+                    </LinearLayout>
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnEnablePermissionsFloater"
+                        android:layout_width="match_parent"
+                        android:layout_height="42dp"
+                        android:layout_marginTop="12dp"
+                        android:text="Enable Permissions"
+                        android:textColor="#1A1208"
+                        android:textSize="13sp"
+                        android:textStyle="bold"
+                        android:backgroundTint="#FFB74D"
+                        app:cornerRadius="21dp" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
             <!-- Card: Today's Scroll Progress -->
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
@@ -114,11 +185,11 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="TODAY\'S DOOMSCROLL METER"
+                        android:text="Today\'s Focus"
                         android:textColor="@color/primary"
-                        android:textSize="12sp"
-                        android:letterSpacing="0.08"
-                        android:textStyle="bold" />
+                        android:textSize="13sp"
+                        android:letterSpacing="0.04"
+                        android:fontFamily="sans-serif-medium" />
 
                     <LinearLayout
                         android:layout_width="match_parent"
@@ -167,17 +238,9 @@
                         android:layout_width="match_parent"
                         android:layout_height="10dp"
                         android:layout_marginTop="12dp"
-                        android:layout_marginBottom="12dp"
                         app:indicatorColor="@color/primary"
                         app:trackColor="@color/surface_variant"
                         app:trackCornerRadius="5dp" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="🌙 Daily reset scheduled every midnight (00:00)"
-                        android:textColor="@color/text_secondary"
-                        android:textSize="13sp" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
@@ -201,11 +264,11 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="KITTY CURTAIN PREVIEW"
+                        android:text="Kitty Companion"
                         android:textColor="@color/kitty_peach"
-                        android:textSize="12sp"
-                        android:letterSpacing="0.08"
-                        android:textStyle="bold" />
+                        android:textSize="13sp"
+                        android:letterSpacing="0.04"
+                        android:fontFamily="sans-serif-medium" />
 
                     <!-- Live Mini Canvas Preview -->
                     <com.antiscroller.kitty.ui.KittyCurtainView
@@ -226,11 +289,10 @@
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
-                            android:text="CHOOSE KITTY BREED:"
+                            android:text="Breed"
                             android:textColor="@color/text_primary"
-                            android:textSize="12sp"
-                            android:letterSpacing="0.06"
-                            android:textStyle="bold" />
+                            android:textSize="13sp"
+                            android:fontFamily="sans-serif-medium" />
 
                         <com.google.android.material.button.MaterialButton
                             android:id="@+id/btnUnlockCosmeticsBanner"
@@ -299,7 +361,7 @@
                         android:id="@+id/tvSliderLabel"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Drag slider to test kitty stretch:"
+                        android:text="Preview Stretch"
                         android:textColor="@color/text_secondary"
                         android:textSize="13sp" />
 
@@ -318,7 +380,7 @@
                         android:id="@+id/btnTestOverlay"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="Test Floating Overlay on Real Screen (5s)"
+                        android:text="Test Floating Overlay (5s)"
                         android:backgroundTint="@color/surface_variant"
                         android:textColor="@color/primary"
                         app:cornerRadius="8dp" />
@@ -361,11 +423,11 @@
                             android:layout_height="wrap_content"
                             android:layout_marginStart="8dp"
                             android:layout_weight="1"
-                            android:text="GUARDIAN UNINSTALL ALERT PIPELINE"
+                            android:text="Guardian Alerts"
                             android:textColor="@color/secondary"
                             android:textSize="13sp"
-                            android:letterSpacing="0.08"
-                            android:textStyle="bold" />
+                            android:letterSpacing="0.04"
+                            android:fontFamily="sans-serif-medium" />
 
                         <TextView
                             android:id="@+id/tvGuardianSubBadge"
@@ -386,7 +448,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="6dp"
-                        android:text="Alerts the guardian's phone in real-time if a child attempts to uninstall Clawse, deactivate Device Admin, or clear app storage."
+                        android:text="Sends alerts to a partner if Clawse is uninstalled or storage is cleared."
                         android:textColor="@color/text_secondary"
                         android:textSize="13sp"
                         android:lineSpacingExtra="2dp" />
@@ -486,18 +548,18 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginStart="8dp"
-                            android:text="PARENT / PARTNER PIN GUARD"
+                            android:text="PIN Security"
                             android:textColor="@color/secondary"
                             android:textSize="13sp"
-                            android:letterSpacing="0.08"
-                            android:textStyle="bold" />
+                            android:letterSpacing="0.04"
+                            android:fontFamily="sans-serif-medium" />
                     </LinearLayout>
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="6dp"
-                        android:text="Lock settings and prevent app deletion with a Security PIN known only to the parent or accountability partner."
+                        android:text="Locks settings with a PIN known only to an accountability partner."
                         android:textColor="@color/text_secondary"
                         android:textSize="13sp"
                         android:lineSpacingExtra="2dp" />
@@ -559,11 +621,11 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="GUARDIAN REEL LIMIT CONFIG"
+                            android:text="Guardian Reel Limit"
                             android:textColor="@color/secondary"
                             android:textSize="12sp"
-                            android:letterSpacing="0.08"
-                            android:textStyle="bold" />
+                            android:letterSpacing="0.04"
+                            android:fontFamily="sans-serif-medium" />
 
                         <LinearLayout
                             android:layout_width="match_parent"
@@ -685,18 +747,18 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginStart="8dp"
-                            android:text="HARDCORE UN-UNINSTALLABLE (DEVICE OWNER)"
+                            android:text="Device Owner Mode"
                             android:textColor="@color/kitty_peach"
-                            android:textSize="12sp"
-                            android:letterSpacing="0.08"
-                            android:textStyle="bold" />
+                            android:textSize="13sp"
+                            android:letterSpacing="0.04"
+                            android:fontFamily="sans-serif-medium" />
                     </LinearLayout>
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="6dp"
-                        android:text="For zero-bypass discipline: makes Clawse 100% un-uninstallable even in Safe Mode using Android\'s enterprise Device Owner policy."
+                        android:text="Advanced enterprise protection to prevent app uninstallation even in Safe Mode."
                         android:textColor="@color/text_secondary"
                         android:textSize="13sp"
                         android:lineSpacingExtra="2dp" />

@@ -22,3 +22,8 @@ It scopes its overlay strictly to video doomscrolling feeds while leaving produc
   - Strengthened Direct Message (DM) and Explore/Profile rejection up to 10 ancestor levels.
   - Added 800ms resume grace period to discard layout restoration scrolls upon switching back to the app.
   - Fixed WindowManager overlay attachment to render statically at current drop level without re-animating downward on app resume.
+- v1.0.21: Soothing UI redesign (Apple Design Principles), first-time walkthrough slider, permission floater notification, and YouTube-to-Home overlay fix.
+  - Resolved YouTube-to-Home overlay persistence bug by adding dedicated launcher package detection and overriding Picture-in-Picture window ambiguity.
+  - Designed and implemented interactive 3-slide onboarding walkthrough (`ViewPager2` carousel with dynamic pill dots) for first-time users.
+  - Added prominent floating notification card on the home screen when Accessibility or Overlay permissions are missing, allowing 1-tap activation.
+  - Refined dashboard typography and surfaces according to Apple Design Principles, removing shouting all-caps text, aggressive disclaimers, and clutter.

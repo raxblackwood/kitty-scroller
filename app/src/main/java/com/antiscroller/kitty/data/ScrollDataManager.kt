@@ -234,6 +234,10 @@ class ScrollDataManager(context: Context) {
         get() = prefs.getBoolean(KEY_INITIAL_SETUP_DONE, false)
         set(value) = prefs.edit().putBoolean(KEY_INITIAL_SETUP_DONE, value).apply()
 
+    var isOnboardingCompleted: Boolean
+        get() = prefs.getBoolean("onboarding_completed", false)
+        set(value) = prefs.edit().putBoolean("onboarding_completed", value).apply()
+
     // ==========================================
     // COSMETIC PACK & PARENTAL CONTROL BILLING
     // ==========================================

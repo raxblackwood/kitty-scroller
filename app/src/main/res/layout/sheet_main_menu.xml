@@ -92,6 +92,44 @@
                 android:textColor="#66FFFFFF"
                 android:textSize="22sp" />
         </LinearLayout>
+
+        <!-- Subtle divider -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="0.75dp"
+            android:layout_marginStart="20dp"
+            android:layout_marginEnd="20dp"
+            android:background="#1AFFFFFF" />
+
+        <!-- 3. How Clawse Works (Walkthrough) -->
+        <LinearLayout
+            android:id="@+id/menuItemHowItWorks"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingStart="20dp"
+            android:paddingEnd="20dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:background="?attr/selectableItemBackground">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="How Clawse Works"
+                android:textColor="@color/text_primary"
+                android:textSize="16sp"
+                android:fontFamily="sans-serif-medium" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="›"
+                android:textColor="#66FFFFFF"
+                android:textSize="22sp" />
+        </LinearLayout>
     </LinearLayout>
 
 </LinearLayout>
