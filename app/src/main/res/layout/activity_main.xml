@@ -363,6 +363,13 @@
                             android:layout_height="wrap_content"
                             android:text="🕶️ Rolex"
                             style="@style/Widget.Material3.Chip.Filter" />
+
+                        <com.google.android.material.chip.Chip
+                            android:id="@+id/chipThemeSalmon"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="⚔️ Salmon"
+                            style="@style/Widget.Material3.Chip.Filter" />
                     </com.google.android.material.chip.ChipGroup>
 
                     <!-- Equip / Unlock Action Button for chosen preview cat -->

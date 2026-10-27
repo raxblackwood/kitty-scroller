@@ -123,6 +123,25 @@ class KittyCurtainView @JvmOverloads constructor(
             speechTextColor = Color.parseColor("#FFD700"),
             poleWoodColor = Color.parseColor("#76513A"),
             poleOutlineColor = Color.parseColor("#140C08")
+        ),
+        SALMON(
+            key = "salmon",
+            displayName = "Salmon",
+            furColor = Color.parseColor("#F5D0C5"),
+            furDarkColor = Color.parseColor("#2C2A36"),
+            innerEarColor = Color.parseColor("#FF8A80"),
+            pawColor = Color.parseColor("#FFF0ED"),
+            pawPadColor = Color.parseColor("#FF5252"),
+            curtainBodyColor = Color.parseColor("#1B2232"),
+            curtainStripeColor = Color.parseColor("#3364B5F6"),
+            eyeColor = Color.parseColor("#42A5F5"),
+            eyeHighlightColor = Color.WHITE,
+            noseColor = Color.parseColor("#FF8A80"),
+            strokeColor = Color.parseColor("#151821"),
+            speechBubbleBg = Color.parseColor("#141A29"),
+            speechTextColor = Color.parseColor("#90CAF9"),
+            poleWoodColor = Color.parseColor("#5A453A"),
+            poleOutlineColor = Color.parseColor("#14100D")
         )
     }
 
@@ -142,13 +161,15 @@ class KittyCurtainView @JvmOverloads constructor(
     private val meshRows = 12
     private val bodyMeshVerts = FloatArray((meshCols + 1) * (meshRows + 1) * 2)
 
-    // Animated 8-frame sprite animation loops for Saturn & Rolex
+    // Animated sprite animation loops for Saturn, Rolex & Salmon
     private var spriteFrameIndex: Int = 0
     private var spriteAnimator: ValueAnimator? = null
     private val saturnBitmaps = mutableListOf<Bitmap>()
     private var saturnFullBitmap: Bitmap? = null
     private val rolexBitmaps = mutableListOf<Bitmap>()
     private var rolexFullBitmap: Bitmap? = null
+    private val salmonBitmaps = mutableListOf<Bitmap>()
+    private var salmonFullBitmap: Bitmap? = null
 
     // Loaf bitmap for full curtain lock (custom per-breed pixel-art cat loaf)
     private var loafBitmap: Bitmap? = null
@@ -214,6 +235,7 @@ class KittyCurtainView @JvmOverloads constructor(
             "tabby", "black" -> CatBreed.TABBY
             "saturn" -> CatBreed.SATURN
             "rolex" -> CatBreed.ROLEX
+            "salmon" -> CatBreed.SALMON
             else -> CatBreed.GINGER
         }
 
@@ -221,7 +243,8 @@ class KittyCurtainView @JvmOverloads constructor(
             loafBitmap == null ||
             (newBreed == CatBreed.SATURN && saturnBitmaps.isEmpty()) ||
             (newBreed == CatBreed.ROLEX && rolexBitmaps.isEmpty()) ||
-            (newBreed != CatBreed.SATURN && newBreed != CatBreed.ROLEX && bodyBitmap == null)
+            (newBreed == CatBreed.SALMON && salmonBitmaps.isEmpty()) ||
+            (newBreed != CatBreed.SATURN && newBreed != CatBreed.ROLEX && newBreed != CatBreed.SALMON && bodyBitmap == null)
 
         currentBreed = newBreed
 
@@ -284,6 +307,31 @@ class KittyCurtainView @JvmOverloads constructor(
                 if (bmp != null) rolexBitmaps.add(bmp)
             }
             rolexFullBitmap = BitmapFactory.decodeResource(resources, R.drawable.kitty_rolex_full, options)
+        } else if (currentBreed == CatBreed.SALMON) {
+            salmonBitmaps.clear()
+            val salmonResIds = intArrayOf(
+                R.drawable.kitty_salmon_0,
+                R.drawable.kitty_salmon_1,
+                R.drawable.kitty_salmon_2,
+                R.drawable.kitty_salmon_3,
+                R.drawable.kitty_salmon_4,
+                R.drawable.kitty_salmon_5,
+                R.drawable.kitty_salmon_6,
+                R.drawable.kitty_salmon_7,
+                R.drawable.kitty_salmon_8,
+                R.drawable.kitty_salmon_9,
+                R.drawable.kitty_salmon_10,
+                R.drawable.kitty_salmon_11,
+                R.drawable.kitty_salmon_12,
+                R.drawable.kitty_salmon_13,
+                R.drawable.kitty_salmon_14,
+                R.drawable.kitty_salmon_15
+            )
+            for (resId in salmonResIds) {
+                val bmp = BitmapFactory.decodeResource(resources, resId, options)
+                if (bmp != null) salmonBitmaps.add(bmp)
+            }
+            salmonFullBitmap = BitmapFactory.decodeResource(resources, R.drawable.kitty_salmon_full, options)
         } else {
             val isTabby = currentBreed == CatBreed.TABBY
             val bodyRes = if (isTabby) R.drawable.kitty_black_body else R.drawable.kitty_orange_body
@@ -299,6 +347,7 @@ class KittyCurtainView @JvmOverloads constructor(
             CatBreed.TABBY -> R.drawable.kitty_tabby_loaf
             CatBreed.SATURN -> R.drawable.kitty_saturn_loaf
             CatBreed.ROLEX -> R.drawable.kitty_rolex_loaf
+            CatBreed.SALMON -> R.drawable.kitty_salmon_loaf
         }
         loafBitmap = BitmapFactory.decodeResource(resources, loafRes, options)
     }
@@ -313,7 +362,7 @@ class KittyCurtainView @JvmOverloads constructor(
             interpolator = AccelerateDecelerateInterpolator()
             addUpdateListener {
                 tailAngle = it.animatedValue as Float
-                if (currentBreed != CatBreed.SATURN && currentBreed != CatBreed.ROLEX) {
+                if (currentBreed != CatBreed.SATURN && currentBreed != CatBreed.ROLEX && currentBreed != CatBreed.SALMON) {
                     invalidate()
                 }
             }
@@ -329,17 +378,17 @@ class KittyCurtainView @JvmOverloads constructor(
             interpolator = AccelerateDecelerateInterpolator()
             addUpdateListener {
                 bodySwayOffset = it.animatedValue as Float
-                if (currentBreed != CatBreed.SATURN && currentBreed != CatBreed.ROLEX) {
+                if (currentBreed != CatBreed.SATURN && currentBreed != CatBreed.ROLEX && currentBreed != CatBreed.SALMON) {
                     invalidate()
                 }
             }
             start()
         }
 
-        // 3. Fluid 8-frame cartoon animation loop for Saturn & Rolex (~120ms per frame)
+        // 3. Fluid cartoon animation loop for Saturn, Rolex & Salmon (~100ms per frame)
         spriteAnimator?.cancel()
-        spriteAnimator = ValueAnimator.ofInt(0, 7).apply {
-            duration = 960
+        spriteAnimator = ValueAnimator.ofInt(0, 15).apply {
+            duration = 1600
             repeatCount = ValueAnimator.INFINITE
             repeatMode = ValueAnimator.RESTART
             interpolator = LinearInterpolator()
@@ -347,7 +396,7 @@ class KittyCurtainView @JvmOverloads constructor(
                 val newIndex = it.animatedValue as Int
                 if (newIndex != spriteFrameIndex) {
                     spriteFrameIndex = newIndex
-                    if (currentBreed == CatBreed.SATURN || currentBreed == CatBreed.ROLEX) {
+                    if (currentBreed == CatBreed.SATURN || currentBreed == CatBreed.ROLEX || currentBreed == CatBreed.SALMON) {
                         invalidate()
                     }
                 }
@@ -411,26 +460,27 @@ class KittyCurtainView @JvmOverloads constructor(
         // Cat display sizing
         val isSaturn = currentBreed == CatBreed.SATURN
         val isRolex = currentBreed == CatBreed.ROLEX
+        val isSalmon = currentBreed == CatBreed.SALMON
         val catW = if (isSaturn) (totalW * 0.28f).coerceIn(240f, 320f) else (totalW * 0.22f).coerceIn(210f, 270f)
-        // Aspect ratio: Saturn is 588x587 (~1.0), Rolex is 280x475 (~0.589), Ginger/Tabby is 628x1162 (~0.540)
+        // Aspect ratio: Saturn is 588x587 (~1.0), Rolex & Salmon is 280x475 (~0.589), Ginger/Tabby is 628x1162 (~0.540)
         val catH = when {
             isSaturn -> catW * (587f / 588f)
-            isRolex -> (catW / 0.589f)
+            isRolex || isSalmon -> (catW / 0.589f)
             else -> (catW / 0.540f)
         }
 
         // Stick offsets within the sprite coordinate space:
         // Saturn (pull-up): stick y=18..58 in 587 height space
-        // Rolex (gangster): stick y=30..47 in 475 height space
+        // Rolex & Salmon (gangster / knight): stick y=30..47 in 475 height space
         // Ginger/Tabby: stick y=28..76 in 1162 height space
         val stickTopRatio = when {
             isSaturn -> (18f / 587f)
-            isRolex -> (30f / 475f)
+            isRolex || isSalmon -> (30f / 475f)
             else -> (28f / 1162f)
         }
         val stickBotRatio = when {
             isSaturn -> (58f / 587f)
-            isRolex -> (47f / 475f)
+            isRolex || isSalmon -> (47f / 475f)
             else -> (76f / 1162f)
         }
 
@@ -500,7 +550,7 @@ class KittyCurtainView @JvmOverloads constructor(
         when (currentBreed) {
             CatBreed.SATURN -> {
                 val frame = if (saturnBitmaps.isNotEmpty()) {
-                    val idx = spriteFrameIndex.coerceIn(0, saturnBitmaps.size - 1)
+                    val idx = spriteFrameIndex % saturnBitmaps.size
                     saturnBitmaps[idx]
                 } else null
                 if (frame != null) {
@@ -509,8 +559,17 @@ class KittyCurtainView @JvmOverloads constructor(
             }
             CatBreed.ROLEX -> {
                 val frame = if (rolexBitmaps.isNotEmpty()) {
-                    val idx = spriteFrameIndex.coerceIn(0, rolexBitmaps.size - 1)
+                    val idx = spriteFrameIndex % rolexBitmaps.size
                     rolexBitmaps[idx]
+                } else null
+                if (frame != null) {
+                    canvas.drawBitmap(frame, null, catRect, catPaint)
+                }
+            }
+            CatBreed.SALMON -> {
+                val frame = if (salmonBitmaps.isNotEmpty()) {
+                    val idx = spriteFrameIndex % salmonBitmaps.size
+                    salmonBitmaps[idx]
                 } else null
                 if (frame != null) {
                     canvas.drawBitmap(frame, null, catRect, catPaint)
@@ -568,6 +627,7 @@ class KittyCurtainView @JvmOverloads constructor(
         val bmp = loafBitmap ?: when (currentBreed) {
             CatBreed.ROLEX -> rolexFullBitmap
             CatBreed.SATURN -> saturnFullBitmap
+            CatBreed.SALMON -> salmonFullBitmap
             else -> bodyBitmap
         }
         if (bmp != null) {

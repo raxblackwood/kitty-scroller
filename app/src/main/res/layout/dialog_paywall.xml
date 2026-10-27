@@ -93,7 +93,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
-                    android:text="Unlock Tabby, Saturn, and Rolex"
+                    android:text="Unlock Tabby, Saturn, Rolex, and Salmon"
                     android:textColor="@color/text_primary"
                     android:textSize="16sp"
                     android:textStyle="bold" />
@@ -110,41 +110,55 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:layout_marginEnd="4dp"
+                        android:layout_marginEnd="3dp"
                         android:background="@color/surface_variant"
                         android:gravity="center"
                         android:paddingTop="6dp"
                         android:paddingBottom="6dp"
                         android:text="🐈‍⬛ Tabby"
                         android:textColor="@color/text_primary"
-                        android:textSize="12sp" />
+                        android:textSize="11sp" />
 
                     <TextView
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:layout_marginStart="4dp"
-                        android:layout_marginEnd="4dp"
+                        android:layout_marginStart="3dp"
+                        android:layout_marginEnd="3dp"
                         android:background="@color/surface_variant"
                         android:gravity="center"
                         android:paddingTop="6dp"
                         android:paddingBottom="6dp"
                         android:text="🐱 Saturn"
                         android:textColor="@color/text_primary"
-                        android:textSize="12sp" />
+                        android:textSize="11sp" />
 
                     <TextView
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:layout_marginStart="4dp"
+                        android:layout_marginStart="3dp"
+                        android:layout_marginEnd="3dp"
                         android:background="@color/surface_variant"
                         android:gravity="center"
                         android:paddingTop="6dp"
                         android:paddingBottom="6dp"
                         android:text="🕶️ Rolex"
                         android:textColor="@color/text_primary"
-                        android:textSize="12sp" />
+                        android:textSize="11sp" />
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:layout_marginStart="3dp"
+                        android:background="@color/surface_variant"
+                        android:gravity="center"
+                        android:paddingTop="6dp"
+                        android:paddingBottom="6dp"
+                        android:text="⚔️ Salmon"
+                        android:textColor="@color/text_primary"
+                        android:textSize="11sp" />
                 </LinearLayout>
 
                 <TextView

@@ -216,6 +216,7 @@ class MainActivity : AppCompatActivity() {
                 R.id.chipThemeTabby -> ScrollDataManager.THEME_TABBY
                 R.id.chipThemeSaturn -> ScrollDataManager.THEME_SATURN
                 R.id.chipThemeRolex -> ScrollDataManager.THEME_ROLEX
+                R.id.chipThemeSalmon -> ScrollDataManager.THEME_SALMON
                 else -> ScrollDataManager.THEME_GINGER
             }
             if (chosenTheme != previewedTheme) {
@@ -493,6 +494,7 @@ class MainActivity : AppCompatActivity() {
             ScrollDataManager.THEME_TABBY, ScrollDataManager.THEME_BLACK -> "Tabby 🐈‍⬛"
             ScrollDataManager.THEME_SATURN -> "Saturn 🐱"
             ScrollDataManager.THEME_ROLEX -> "Rolex 🕶️"
+            ScrollDataManager.THEME_SALMON -> "Salmon ⚔️"
             else -> "Ginger 🍊"
         }
     }
@@ -540,11 +542,13 @@ class MainActivity : AppCompatActivity() {
         binding.chipThemeTabby.text = if (isUnlocked) "🐈‍⬛ Tabby" else "🔒 Tabby"
         binding.chipThemeSaturn.text = if (isUnlocked) "🐱 Saturn" else "🔒 Saturn"
         binding.chipThemeRolex.text = if (isUnlocked) "🕶️ Rolex" else "🔒 Rolex"
+        binding.chipThemeSalmon.text = if (isUnlocked) "⚔️ Salmon" else "🔒 Salmon"
 
         val targetChipId = when (previewedTheme) {
             ScrollDataManager.THEME_TABBY, ScrollDataManager.THEME_BLACK -> R.id.chipThemeTabby
             ScrollDataManager.THEME_SATURN -> R.id.chipThemeSaturn
             ScrollDataManager.THEME_ROLEX -> R.id.chipThemeRolex
+            ScrollDataManager.THEME_SALMON -> R.id.chipThemeSalmon
             else -> R.id.chipThemeGinger
         }
         if (binding.chipGroupKittyTheme.checkedChipId != targetChipId) {
