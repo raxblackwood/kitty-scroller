@@ -80,3 +80,10 @@ It scopes its overlay strictly to video doomscrolling feeds while leaving produc
   - Replaced hardcoded XML dot indicators with dynamic programmatic dots adapting to any number of onboarding slides.
   - Bumped release version to 1.0.28 (versionCode 29).
   - Built production release APK and installed directly to connected physical device via ADB.
+- v1.0.29: Resolved ViewPager2 initial half-width slide rendering bug in onboarding modal.
+  - Explicitly initialized dialog view minimum width to full display bounds (`displayWidth * 0.92f`).
+  - Added `setOnShowListener` configuring window width explicitly and triggering layout refresh on ViewPager2 adapter.
+  - Enforced `ViewGroup.LayoutParams.MATCH_PARENT` on item slide view holders in `OnboardingAdapter`.
+  - Applied the same structured layout sizing to the initial setup limit dialog.
+  - Bumped release version to 1.0.29 (versionCode 30).
+  - Clean uninstalled and reinstalled fresh on connected physical device via ADB.

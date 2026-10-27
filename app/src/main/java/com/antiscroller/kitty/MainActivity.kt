@@ -880,13 +880,17 @@ class MainActivity : AppCompatActivity() {
         )
 
         val dialogView = layoutInflater.inflate(R.layout.dialog_onboarding, null)
+        val displayWidth = resources.displayMetrics.widthPixels
+        val density = resources.displayMetrics.density
+        val dialogWidth = (displayWidth * 0.92f).toInt().coerceAtMost((420 * density).toInt())
+        dialogView.minimumWidth = dialogWidth
+
         val pager = dialogView.findViewById<ViewPager2>(R.id.pagerOnboarding)
         val btnSkip = dialogView.findViewById<MaterialButton>(R.id.btnOnboardingSkip)
         val btnAction = dialogView.findViewById<MaterialButton>(R.id.btnOnboardingAction)
         val layoutDots = dialogView.findViewById<LinearLayout>(R.id.layoutDots)
         layoutDots.removeAllViews()
         val dots = mutableListOf<View>()
-        val density = resources.displayMetrics.density
         for (i in slides.indices) {
             val dot = View(this).apply {
                 val w = if (i == 0) (24 * density).toInt() else (8 * density).toInt()
@@ -932,6 +936,10 @@ class MainActivity : AppCompatActivity() {
 
             override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): SlideViewHolder {
                 val v = layoutInflater.inflate(R.layout.item_onboarding_slide, parent, false)
+                v.layoutParams = ViewGroup.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.MATCH_PARENT
+                )
                 return SlideViewHolder(v)
             }
 
@@ -963,6 +971,14 @@ class MainActivity : AppCompatActivity() {
         }
         onboardingDialog = dialog
 
+        dialog.setOnShowListener {
+            dialog.window?.setLayout(dialogWidth, WindowManager.LayoutParams.WRAP_CONTENT)
+            pager.post {
+                pager.requestLayout()
+                (pager.getChildAt(0) as? RecyclerView)?.adapter?.notifyDataSetChanged()
+            }
+        }
+
         val completeOnboarding = {
             dataManager.isOnboardingCompleted = true
             dialog.dismiss()
@@ -990,6 +1006,11 @@ class MainActivity : AppCompatActivity() {
         if (dataManager.isInitialSetupDone) return
 
         val dialogView = layoutInflater.inflate(R.layout.dialog_initial_setup, null)
+        val displayWidth = resources.displayMetrics.widthPixels
+        val density = resources.displayMetrics.density
+        val dialogWidth = (displayWidth * 0.92f).toInt().coerceAtMost((420 * density).toInt())
+        dialogView.minimumWidth = dialogWidth
+
         val etLimit = dialogView.findViewById<com.google.android.material.textfield.TextInputEditText>(R.id.etSetupLimit)
         val switchInsta = dialogView.findViewById<com.google.android.material.switchmaterial.SwitchMaterial>(R.id.switchSetupInstagram)
         val switchYt = dialogView.findViewById<com.google.android.material.switchmaterial.SwitchMaterial>(R.id.switchSetupYouTube)
@@ -1009,6 +1030,10 @@ class MainActivity : AppCompatActivity() {
             initialSetupDialog = null
         }
         initialSetupDialog = dialog
+
+        dialog.setOnShowListener {
+            dialog.window?.setLayout(dialogWidth, WindowManager.LayoutParams.WRAP_CONTENT)
+        }
 
         btnLock.setOnClickListener {
             val inputStr = etLimit.text?.toString()?.trim() ?: ""
