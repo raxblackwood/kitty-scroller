@@ -31,8 +31,11 @@ It scopes its overlay strictly to video doomscrolling feeds while leaving produc
   - Updated `@color/ic_launcher_background` to `#1E3A8A` in `colors.xml`.
   - Re-rendered all legacy adaptive and round launcher mipmaps and drawable assets with the new soothing blue background.
   - Clean uninstalled and reinstalled v1.0.22 on physical device via ADB.
-- v1.0.23: Finalized black and gray icon design and companion preview mode toggle.
+- v1.0.23: Finalized black and gray icon design, companion preview mode toggle, and seamless wooden rod architecture.
   - Updated app icon to solid black background (`#000000`) with neutral gray kitty interior (`#808080`) and crisp white boundary/facial features (`#FFFFFF`).
   - Unified Kitty Companion avatar preview to display the descending cat by default for all skins (Ginger, Tabby, Saturn, Rolex).
   - Implemented interactive tap toggle to switch between curtain coming down and closed curtain modes with per-breed sleeping loaf artwork.
-  - Generated release APK and AAB bundle (versionCode 24).
+  - Removed baked-in wooden horizontal bar completely from all companion sprite assets across all 4 breeds (Rolex, Saturn, Ginger, Tabby).
+  - Isolated paws and hands to hang directly over the continuous screen-wide wooden pole drawn in the background by `KittyCurtainView.drawExtendedStick`.
+  - Updated stick ratios and early draw clipping in `KittyCurtainView.kt` to eliminate all seams, gaps, notches, and animation jitter.
+  - Generated release APK and AAB bundle (versionCode 24) and installed to physical device via ADB.
