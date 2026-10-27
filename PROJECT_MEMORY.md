@@ -51,3 +51,11 @@ It scopes its overlay strictly to video doomscrolling feeds while leaving produc
   - Unified cartoon sprite animator across all animated breeds (Saturn, Rolex, Salmon, Katrina) to an 8-frame loop at 120ms per frame (960ms duration).
   - Bumped release version to 1.0.24 (versionCode 25).
   - Built production release APK and AAB bundle in `dist/`.
+- v1.0.25: Replaced fast sprite-switching with calm ambient body sway and tail-wagging animation for Rolex, Salmon, and Katrina.
+  - Removed rapid 8-frame sprite looping from Rolex, Salmon, and Katrina to eliminate fast, jarring animation flicker.
+  - Implemented organic 2D mesh deformation (`drawBitmapMesh`) keeping paws 100% stationary and anchored to the wooden pole while the cat body gently sways with the breeze.
+  - Integrated harmonic tail-wagging displacement at the bottom-right curled tail region driven by the 850ms tail animator.
+  - Preserved Saturn's athletic pull-up sprite animation at a smooth, deliberate 180ms per frame pace (1440ms loop).
+  - Reduced release APK download footprint from 7.9 MB to 4.98 MB by shedding redundant multi-frame flipbook drawables.
+  - Bumped release version to 1.0.25 (versionCode 26).
+  - Compiled release APK/AAB and installed directly to connected physical device via ADB.

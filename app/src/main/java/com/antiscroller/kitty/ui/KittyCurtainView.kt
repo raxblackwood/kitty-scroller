@@ -180,17 +180,16 @@ class KittyCurtainView @JvmOverloads constructor(
     private val meshRows = 12
     private val bodyMeshVerts = FloatArray((meshCols + 1) * (meshRows + 1) * 2)
 
-    // Animated sprite animation loops for Saturn, Rolex & Salmon
+    // Animated sprite animation loops for Saturn (pull-up cat)
     private var spriteFrameIndex: Int = 0
     private var spriteAnimator: ValueAnimator? = null
     private val saturnBitmaps = mutableListOf<Bitmap>()
     private var saturnFullBitmap: Bitmap? = null
-    private val rolexBitmaps = mutableListOf<Bitmap>()
-    private var rolexFullBitmap: Bitmap? = null
-    private val salmonBitmaps = mutableListOf<Bitmap>()
-    private var salmonFullBitmap: Bitmap? = null
-    private val katrinaBitmaps = mutableListOf<Bitmap>()
-    private var katrinaFullBitmap: Bitmap? = null
+
+    // Single clean illustrated bitmaps for Rolex, Salmon & Katrina (ambient body sway + tail wagging)
+    private var rolexBitmap: Bitmap? = null
+    private var salmonBitmap: Bitmap? = null
+    private var katrinaBitmap: Bitmap? = null
 
     // Loaf bitmap for full curtain lock (custom per-breed pixel-art cat loaf)
     private var loafBitmap: Bitmap? = null
@@ -264,9 +263,9 @@ class KittyCurtainView @JvmOverloads constructor(
         val needsBitmapReload = (currentBreed != newBreed) ||
             loafBitmap == null ||
             (newBreed == CatBreed.SATURN && saturnBitmaps.isEmpty()) ||
-            (newBreed == CatBreed.ROLEX && rolexBitmaps.isEmpty()) ||
-            (newBreed == CatBreed.SALMON && salmonBitmaps.isEmpty()) ||
-            (newBreed == CatBreed.KATRINA && katrinaBitmaps.isEmpty()) ||
+            (newBreed == CatBreed.ROLEX && rolexBitmap == null) ||
+            (newBreed == CatBreed.SALMON && salmonBitmap == null) ||
+            (newBreed == CatBreed.KATRINA && katrinaBitmap == null) ||
             (newBreed != CatBreed.SATURN && newBreed != CatBreed.ROLEX && newBreed != CatBreed.SALMON && newBreed != CatBreed.KATRINA && bodyBitmap == null)
 
         currentBreed = newBreed
@@ -314,56 +313,11 @@ class KittyCurtainView @JvmOverloads constructor(
             }
             saturnFullBitmap = BitmapFactory.decodeResource(resources, R.drawable.kitty_saturn, options)
         } else if (currentBreed == CatBreed.ROLEX) {
-            rolexBitmaps.clear()
-            val rolexResIds = intArrayOf(
-                R.drawable.kitty_rolex_0,
-                R.drawable.kitty_rolex_1,
-                R.drawable.kitty_rolex_2,
-                R.drawable.kitty_rolex_3,
-                R.drawable.kitty_rolex_4,
-                R.drawable.kitty_rolex_5,
-                R.drawable.kitty_rolex_6,
-                R.drawable.kitty_rolex_7
-            )
-            for (resId in rolexResIds) {
-                val bmp = BitmapFactory.decodeResource(resources, resId, options)
-                if (bmp != null) rolexBitmaps.add(bmp)
-            }
-            rolexFullBitmap = BitmapFactory.decodeResource(resources, R.drawable.kitty_rolex_full, options)
+            rolexBitmap = BitmapFactory.decodeResource(resources, R.drawable.kitty_rolex_0, options)
         } else if (currentBreed == CatBreed.SALMON) {
-            salmonBitmaps.clear()
-            val salmonResIds = intArrayOf(
-                R.drawable.kitty_salmon_0,
-                R.drawable.kitty_salmon_1,
-                R.drawable.kitty_salmon_2,
-                R.drawable.kitty_salmon_3,
-                R.drawable.kitty_salmon_4,
-                R.drawable.kitty_salmon_5,
-                R.drawable.kitty_salmon_6,
-                R.drawable.kitty_salmon_7
-            )
-            for (resId in salmonResIds) {
-                val bmp = BitmapFactory.decodeResource(resources, resId, options)
-                if (bmp != null) salmonBitmaps.add(bmp)
-            }
-            salmonFullBitmap = BitmapFactory.decodeResource(resources, R.drawable.kitty_salmon_full, options)
+            salmonBitmap = BitmapFactory.decodeResource(resources, R.drawable.kitty_salmon_0, options)
         } else if (currentBreed == CatBreed.KATRINA) {
-            katrinaBitmaps.clear()
-            val katrinaResIds = intArrayOf(
-                R.drawable.kitty_katrina_0,
-                R.drawable.kitty_katrina_1,
-                R.drawable.kitty_katrina_2,
-                R.drawable.kitty_katrina_3,
-                R.drawable.kitty_katrina_4,
-                R.drawable.kitty_katrina_5,
-                R.drawable.kitty_katrina_6,
-                R.drawable.kitty_katrina_7
-            )
-            for (resId in katrinaResIds) {
-                val bmp = BitmapFactory.decodeResource(resources, resId, options)
-                if (bmp != null) katrinaBitmaps.add(bmp)
-            }
-            katrinaFullBitmap = BitmapFactory.decodeResource(resources, R.drawable.kitty_katrina_full, options)
+            katrinaBitmap = BitmapFactory.decodeResource(resources, R.drawable.kitty_katrina_0, options)
         } else {
             val isTabby = currentBreed == CatBreed.TABBY
             val bodyRes = if (isTabby) R.drawable.kitty_black_body else R.drawable.kitty_orange_body
@@ -386,7 +340,7 @@ class KittyCurtainView @JvmOverloads constructor(
     }
 
     private fun startAnimations() {
-        // 1. Lively tail wagging behind body for Ginger & Tabby
+        // 1. Lively tail wagging for all hanging breeds (Saturn uses pull-up sprite loop)
         tailAnimator?.cancel()
         tailAnimator = ValueAnimator.ofFloat(-12f, 12f).apply {
             duration = 850
@@ -395,14 +349,14 @@ class KittyCurtainView @JvmOverloads constructor(
             interpolator = AccelerateDecelerateInterpolator()
             addUpdateListener {
                 tailAngle = it.animatedValue as Float
-                if (currentBreed != CatBreed.SATURN && currentBreed != CatBreed.ROLEX && currentBreed != CatBreed.SALMON && currentBreed != CatBreed.KATRINA) {
+                if (currentBreed != CatBreed.SATURN) {
                     invalidate()
                 }
             }
             start()
         }
 
-        // 2. Slow, gentle body swaying/blowing in the breeze for Ginger & Tabby
+        // 2. Slow, gentle body swaying/blowing in the breeze for all hanging breeds (except Saturn)
         swayAnimator?.cancel()
         swayAnimator = ValueAnimator.ofFloat(-9f, 9f).apply {
             duration = 2400
@@ -411,17 +365,17 @@ class KittyCurtainView @JvmOverloads constructor(
             interpolator = AccelerateDecelerateInterpolator()
             addUpdateListener {
                 bodySwayOffset = it.animatedValue as Float
-                if (currentBreed != CatBreed.SATURN && currentBreed != CatBreed.ROLEX && currentBreed != CatBreed.SALMON && currentBreed != CatBreed.KATRINA) {
+                if (currentBreed != CatBreed.SATURN) {
                     invalidate()
                 }
             }
             start()
         }
 
-        // 3. Fluid cartoon animation loop for Saturn, Rolex, Salmon & Katrina (~120ms per frame)
+        // 3. Fluid pull-up cartoon animation loop for Saturn (~180ms per frame)
         spriteAnimator?.cancel()
         spriteAnimator = ValueAnimator.ofInt(0, 7).apply {
-            duration = 960
+            duration = 1440
             repeatCount = ValueAnimator.INFINITE
             repeatMode = ValueAnimator.RESTART
             interpolator = LinearInterpolator()
@@ -429,7 +383,7 @@ class KittyCurtainView @JvmOverloads constructor(
                 val newIndex = it.animatedValue as Int
                 if (newIndex != spriteFrameIndex) {
                     spriteFrameIndex = newIndex
-                    if (currentBreed == CatBreed.SATURN || currentBreed == CatBreed.ROLEX || currentBreed == CatBreed.SALMON || currentBreed == CatBreed.KATRINA) {
+                    if (currentBreed == CatBreed.SATURN) {
                         invalidate()
                     }
                 }
@@ -581,47 +535,21 @@ class KittyCurtainView @JvmOverloads constructor(
         val catLeft = centerX - (catW / 2f)
         catRect.set(catLeft, catTop, catLeft + catW, catTop + catH)
 
-        when (currentBreed) {
-            CatBreed.SATURN -> {
-                val frame = if (saturnBitmaps.isNotEmpty()) {
-                    val idx = spriteFrameIndex % saturnBitmaps.size
-                    saturnBitmaps[idx]
-                } else null
-                if (frame != null) {
-                    canvas.drawBitmap(frame, null, catRect, catPaint)
-                }
+        if (currentBreed == CatBreed.SATURN) {
+            val frame = if (saturnBitmaps.isNotEmpty()) {
+                val idx = spriteFrameIndex % saturnBitmaps.size
+                saturnBitmaps[idx]
+            } else null
+            if (frame != null) {
+                canvas.drawBitmap(frame, null, catRect, catPaint)
             }
-            CatBreed.ROLEX -> {
-                val frame = if (rolexBitmaps.isNotEmpty()) {
-                    val idx = spriteFrameIndex % rolexBitmaps.size
-                    rolexBitmaps[idx]
-                } else null
-                if (frame != null) {
-                    canvas.drawBitmap(frame, null, catRect, catPaint)
-                }
-            }
-            CatBreed.SALMON -> {
-                val frame = if (salmonBitmaps.isNotEmpty()) {
-                    val idx = spriteFrameIndex % salmonBitmaps.size
-                    salmonBitmaps[idx]
-                } else null
-                if (frame != null) {
-                    canvas.drawBitmap(frame, null, catRect, catPaint)
-                }
-            }
-            CatBreed.KATRINA -> {
-                val frame = if (katrinaBitmaps.isNotEmpty()) {
-                    val idx = spriteFrameIndex % katrinaBitmaps.size
-                    katrinaBitmaps[idx]
-                } else null
-                if (frame != null) {
-                    canvas.drawBitmap(frame, null, catRect, catPaint)
-                }
-            }
-            else -> {
-                val bodyBmp = bodyBitmap ?: return
-                val tailBmp = tailBitmap ?: return
+            return
+        }
 
+        // For Ginger & Tabby, draw the separate tail behind the body first
+        if (currentBreed == CatBreed.GINGER || currentBreed == CatBreed.TABBY) {
+            val tailBmp = tailBitmap
+            if (tailBmp != null) {
                 val isTabby = currentBreed == CatBreed.TABBY
                 val tailPivotXRatio = if (isTabby) 0.5207f else 0.5334f
                 val tailPivotYRatio = 0.6885f
@@ -630,7 +558,6 @@ class KittyCurtainView @JvmOverloads constructor(
                 val hipSwayFactor = Math.pow(((tailPivotYRatio - 0.086f) / (1f - 0.086f)).coerceIn(0f, 1f).toDouble(), 1.2).toFloat()
                 val hipDx = bodySwayOffset * hipSwayFactor
 
-                // 1. Lively wagging tail behind the body, swaying seamlessly with the hips
                 canvas.save()
                 val tailPivotX = catRect.left + catW * tailPivotXRatio + hipDx
                 val tailPivotY = catRect.top + catH * tailPivotYRatio
@@ -640,38 +567,56 @@ class KittyCurtainView @JvmOverloads constructor(
                 canvas.drawBitmap(tailBmp, null, catRect, catPaint)
                 catRect.offset(-hipDx, 0f)
                 canvas.restore()
-
-                // 2. Body gentle sway: gradient displacement starts midway down the hands (yRatio > 0.086f).
-                // The pole and paws gripping the pole stay 100% rock-solid and stationary (displacement = 0).
-                var vertIdx = 0
-                for (r in 0..meshRows) {
-                    val yRatio = r.toFloat() / meshRows
-                    val origY = catRect.top + catH * yRatio
-                    val swayFactor = if (yRatio <= 0.086f) {
-                        0f
-                    } else {
-                        Math.pow(((yRatio - 0.086f) / (1f - 0.086f)).toDouble(), 1.2).toFloat()
-                    }
-                    val dx = bodySwayOffset * swayFactor
-
-                    for (c in 0..meshCols) {
-                        val xRatio = c.toFloat() / meshCols
-                        val origX = catRect.left + catW * xRatio
-                        bodyMeshVerts[vertIdx++] = origX + dx
-                        bodyMeshVerts[vertIdx++] = origY
-                    }
-                }
-                canvas.drawBitmapMesh(bodyBmp, meshCols, meshRows, bodyMeshVerts, 0, null, 0, catPaint)
             }
         }
+
+        val bodyBmp = when (currentBreed) {
+            CatBreed.ROLEX -> rolexBitmap
+            CatBreed.SALMON -> salmonBitmap
+            CatBreed.KATRINA -> katrinaBitmap
+            else -> bodyBitmap
+        } ?: return
+
+        val isFullArtBreed = (currentBreed == CatBreed.ROLEX || currentBreed == CatBreed.SALMON || currentBreed == CatBreed.KATRINA)
+
+        // Body gentle sway & tail wagging:
+        // Paws stay 100% rock-solid and stationary at the wooden pole (swayFactor = 0 for yRatio <= 0.086f).
+        // Body swings smoothly with bodySwayOffset.
+        // For Rolex, Salmon & Katrina, the curled tail at bottom-right wiggles playfully with tailAngle!
+        var vertIdx = 0
+        for (r in 0..meshRows) {
+            val yRatio = r.toFloat() / meshRows
+            val origY = catRect.top + catH * yRatio
+            val swayFactor = if (yRatio <= 0.086f) {
+                0f
+            } else {
+                Math.pow(((yRatio - 0.086f) / (1f - 0.086f)).toDouble(), 1.2).toFloat()
+            }
+            val baseDx = bodySwayOffset * swayFactor
+
+            for (c in 0..meshCols) {
+                val xRatio = c.toFloat() / meshCols
+                val origX = catRect.left + catW * xRatio
+
+                val tailWagDx = if (isFullArtBreed && r >= meshRows * 0.65f && c >= meshCols / 2) {
+                    val rFactor = (r - meshRows * 0.65f) / (meshRows * 0.35f)
+                    val cFactor = (c - meshCols / 2f) / (meshCols / 2f)
+                    (tailAngle * 0.65f) * (rFactor * cFactor)
+                } else 0f
+
+                bodyMeshVerts[vertIdx++] = origX + baseDx + tailWagDx
+                bodyMeshVerts[vertIdx++] = origY
+            }
+        }
+        canvas.drawBitmapMesh(bodyBmp, meshCols, meshRows, bodyMeshVerts, 0, null, 0, catPaint)
     }
 
     private fun drawFullSleepyCat(canvas: Canvas, totalH: Float, centerX: Float, totalW: Float) {
         val bmp = loafBitmap ?: when (currentBreed) {
-            CatBreed.ROLEX -> rolexFullBitmap
+            CatBreed.ROLEX -> rolexBitmap
             CatBreed.SATURN -> saturnFullBitmap
-            CatBreed.SALMON -> salmonFullBitmap
-            CatBreed.KATRINA -> katrinaFullBitmap
+            CatBreed.SALMON -> salmonBitmap
+            CatBreed.KATRINA -> katrinaBitmap
             else -> bodyBitmap
         }
         if (bmp != null) {
