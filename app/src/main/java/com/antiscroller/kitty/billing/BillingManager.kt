@@ -18,7 +18,7 @@ import com.antiscroller.kitty.data.ScrollDataManager
 
 /**
  * Manages Google Play In-App Billing for ClawBack:
- * 1. Cosmetic Pack ($2.50 One-Time Lifetime): Unlocks Tabby, Saturn, and Rolex breeds.
+ * 1. Cosmetic Pack ($2.50 One-Time Lifetime): Unlocks Tabby, Saturn, Rolex, Salmon, and Katrina breeds.
  * 2. Guardian Parental Control ($0.50/month Subscription): Real-time tamper alerts & heartbeat.
  * Supports UPI (Google Pay, PhonePe, Paytm) and Cards out-of-the-box via Google Play Checkout.
  */
@@ -244,7 +244,7 @@ class BillingManager(
 
         val msg = when {
             unlockedCosmetic && subscribedParental -> "All Kitties & Parental Control unlocked!"
-            unlockedCosmetic -> "Tabby, Saturn, and Rolex breeds unlocked!"
+            unlockedCosmetic -> "Tabby, Saturn, Rolex, Salmon, and Katrina breeds unlocked!"
             subscribedParental -> "Guardian Parental Alerts activated!"
             else -> "Purchase successful!"
         }

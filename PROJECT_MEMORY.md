@@ -41,3 +41,13 @@ It scopes its overlay strictly to video doomscrolling feeds while leaving produc
   - Removed redundant developer "Preview Stretch" slider from the Kitty Companion card, streamlining the card UI.
   - Integrated the new Knight Cat companion breed "Salmon" (⚔️) with a 16-frame animation loop, matching loaf icon, and custom midnight navy / ice crystal palette.
   - Generated release APK and AAB bundle (versionCode 24) and installed to physical device via ADB.
+- v1.0.24: Integrated new 8-frame Salmon animation, added new Katrina companion breed, and unified 8-frame animation engine.
+  - Extracted new 8-frame Salmon animation loop from Row 0 of `Cats/salmon and katrina.png` and anchored paw at X=65, Y=22.
+  - Removed previous 16-frame Salmon assets and pruned old frame drawables.
+  - Implemented new cat companion breed Katrina (🌸) from Row 1 of `Cats/salmon and katrina.png` with 8-frame pull-up animation loop.
+  - Centered Katrina's dual paws symmetrically at X=140, Y=22 resting seamlessly on top of the continuous wooden pole.
+  - Generated custom pixel-art loaf icon `kitty_katrina_loaf.png` featuring cream fur, soft sakura blossom pink inner ears, coral ribbon, golden bells, and sapphire eyes.
+  - Added Katrina to `ScrollDataManager.kt`, `MainActivity.kt`, `activity_main.xml`, `KittyCurtainView.kt`, `dialog_paywall.xml`, and `BillingManager.kt`.
+  - Unified cartoon sprite animator across all animated breeds (Saturn, Rolex, Salmon, Katrina) to an 8-frame loop at 120ms per frame (960ms duration).
+  - Bumped release version to 1.0.24 (versionCode 25).
+  - Built production release APK and AAB bundle in `dist/`.

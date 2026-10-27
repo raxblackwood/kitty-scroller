@@ -12,7 +12,7 @@ import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 
 /**
  * Material 3 Bottom Sheet Dialog presenting:
- * 1. Cosmetic Pack ($2.50 One-Time Lifetime): Unlocks Tabby, Saturn, Rolex, and Salmon.
+ * 1. Cosmetic Pack ($2.50 One-Time Lifetime): Unlocks Tabby, Saturn, Rolex, Salmon, and Katrina.
  * 2. Guardian Parental Control ($0.50/mo Subscription): Real-time uninstall alerts.
  */
 class PaywallBottomSheetDialog : BottomSheetDialogFragment() {
