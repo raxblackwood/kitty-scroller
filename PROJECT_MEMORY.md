@@ -39,4 +39,5 @@ It scopes its overlay strictly to video doomscrolling feeds while leaving produc
   - Isolated paws and hands to hang directly over the continuous screen-wide wooden pole drawn in the background by `KittyCurtainView.drawExtendedStick`.
   - Updated stick ratios and early draw clipping in `KittyCurtainView.kt` to eliminate all seams, gaps, notches, and animation jitter.
   - Removed redundant developer "Preview Stretch" slider from the Kitty Companion card, streamlining the card UI.
+  - Integrated the new Knight Cat companion breed "Salmon" (⚔️) with a 16-frame animation loop, matching loaf icon, and custom midnight navy / ice crystal palette.
   - Generated release APK and AAB bundle (versionCode 24) and installed to physical device via ADB.
