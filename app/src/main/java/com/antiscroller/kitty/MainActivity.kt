@@ -63,6 +63,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var billingManager: BillingManager
 
     private var previewedTheme: String = ScrollDataManager.THEME_GINGER
+    private var isPreviewCurtainClosed: Boolean = false
 
     private val handler = Handler(Looper.getMainLooper())
     private var activeSetupDialogUpdate: (() -> Unit)? = null
@@ -182,9 +183,10 @@ class MainActivity : AppCompatActivity() {
         updateThemeChips()
         updateEquipButtonState()
 
-        val screenHeight = resources.displayMetrics.heightPixels
-        val dropPct = dataManager.getDropPercentage(screenHeight)
-        binding.previewCurtain.setDropPercentage(if (dropPct > 0) dropPct else 0.35f, animate = false)
+        // By default show the cat that comes down (curtain coming down) for all companion skins
+        isPreviewCurtainClosed = false
+        binding.previewCurtain.setDropPercentage(0.40f, animate = false)
+        updatePreviewModeBadge()
 
         binding.etCustomLimit.setText(dataManager.maxDailyScrolls.toString())
         binding.tvCurrentLimitLabel.text = "Active Cap: ${dataManager.maxDailyScrolls} Reels / day"
@@ -220,8 +222,20 @@ class MainActivity : AppCompatActivity() {
                 previewedTheme = chosenTheme
                 binding.previewCurtain.applyTheme(previewedTheme)
                 updateEquipButtonState()
+                val targetDrop = if (isPreviewCurtainClosed) 1.0f else 0.40f
+                binding.previewCurtain.setDropPercentage(targetDrop, animate = false)
             }
         }
+
+        // Tap avatar preview to toggle between curtain coming down and full closed curtain
+        val togglePreviewAction = View.OnClickListener {
+            isPreviewCurtainClosed = !isPreviewCurtainClosed
+            val targetDrop = if (isPreviewCurtainClosed) 1.0f else 0.40f
+            binding.previewCurtain.setDropPercentage(targetDrop, animate = true)
+            updatePreviewModeBadge()
+        }
+        binding.previewCurtain.setOnClickListener(togglePreviewAction)
+        binding.tvPreviewModeBadge.setOnClickListener(togglePreviewAction)
 
         // Equip or Unlock Action Button
         binding.btnEquipOrUnlock.setOnClickListener {
@@ -262,6 +276,8 @@ class MainActivity : AppCompatActivity() {
             val fraction = value / 100f
             binding.previewCurtain.setDropPercentage(fraction, animate = true)
             binding.tvSliderLabel.text = "Testing Kitty Drop: ${(fraction * 100).toInt()}%"
+            isPreviewCurtainClosed = (fraction >= 0.96f)
+            updatePreviewModeBadge()
         }
 
         // Test floating overlay
@@ -487,6 +503,14 @@ class MainActivity : AppCompatActivity() {
             ScrollDataManager.THEME_SATURN -> "Saturn 🐱"
             ScrollDataManager.THEME_ROLEX -> "Rolex 🕶️"
             else -> "Ginger 🍊"
+        }
+    }
+
+    private fun updatePreviewModeBadge() {
+        if (isPreviewCurtainClosed) {
+            binding.tvPreviewModeBadge.text = "🌙 Closed (Tap to see hanging cat)"
+        } else {
+            binding.tvPreviewModeBadge.text = "🐾 Curtain Down (Tap to see closed)"
         }
     }
 

@@ -373,7 +373,7 @@ class KittyCurtainView @JvmOverloads constructor(
 
         animator?.cancel()
         animator = ValueAnimator.ofFloat(animatedProgress, clamped).apply {
-            duration = 200
+            duration = 320
             interpolator = DecelerateInterpolator(1.2f)
             addUpdateListener {
                 animatedProgress = it.animatedValue as Float
@@ -563,35 +563,11 @@ class KittyCurtainView @JvmOverloads constructor(
     }
 
     private fun drawFullSleepyCat(canvas: Canvas, totalH: Float, centerX: Float, totalW: Float) {
-        if (currentBreed == CatBreed.ROLEX && rolexFullBitmap != null) {
-            val bmp = rolexFullBitmap!!
-            val bmpW = (totalW * 0.48f).coerceIn(240f, 320f)
-            val bmpH = bmpW * (bmp.height.toFloat() / bmp.width.toFloat())
-            val dstRect = RectF(
-                centerX - (bmpW / 2f),
-                (totalH * 0.45f) - (bmpH / 2f),
-                centerX + (bmpW / 2f),
-                (totalH * 0.45f) + (bmpH / 2f)
-            )
-            canvas.drawBitmap(bmp, null, dstRect, catPaint)
-            return
+        val bmp = loafBitmap ?: when (currentBreed) {
+            CatBreed.ROLEX -> rolexFullBitmap
+            CatBreed.SATURN -> saturnFullBitmap
+            else -> bodyBitmap
         }
-        if (currentBreed == CatBreed.SATURN && saturnFullBitmap != null) {
-            val bmp = saturnFullBitmap!!
-            val bmpW = (totalW * 0.44f).coerceIn(240f, 320f)
-            val bmpH = bmpW * (bmp.height.toFloat() / bmp.width.toFloat())
-            val dstRect = RectF(
-                centerX - (bmpW / 2f),
-                (totalH * 0.45f) - (bmpH / 2f),
-                centerX + (bmpW / 2f),
-                (totalH * 0.45f) + (bmpH / 2f)
-            )
-            canvas.drawBitmap(bmp, null, dstRect, catPaint)
-            return
-        }
-
-        // For Ginger & Tabby: draw the custom pixel-art sleeping loaf cat!
-        val bmp = loafBitmap
         if (bmp != null) {
             val bmpW = (totalW * 0.46f).coerceIn(240f, 360f)
             val bmpH = bmpW * (bmp.height.toFloat() / bmp.width.toFloat())

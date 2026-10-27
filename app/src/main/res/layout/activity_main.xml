@@ -261,14 +261,31 @@
                     android:orientation="vertical"
                     android:padding="20dp">
 
-                    <TextView
-                        android:layout_width="wrap_content"
+                    <LinearLayout
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="Kitty Companion"
-                        android:textColor="@color/kitty_peach"
-                        android:textSize="13sp"
-                        android:letterSpacing="0.04"
-                        android:fontFamily="sans-serif-medium" />
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="Kitty Companion"
+                            android:textColor="@color/kitty_peach"
+                            android:textSize="13sp"
+                            android:letterSpacing="0.04"
+                            android:fontFamily="sans-serif-medium" />
+
+                        <TextView
+                            android:id="@+id/tvPreviewModeBadge"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="🐾 Curtain Down (Tap to switch)"
+                            android:textColor="@color/text_secondary"
+                            android:textSize="11sp"
+                            android:fontFamily="sans-serif" />
+                    </LinearLayout>
 
                     <!-- Live Mini Canvas Preview -->
                     <com.antiscroller.kitty.ui.KittyCurtainView
@@ -277,6 +294,8 @@
                         android:layout_height="220dp"
                         android:layout_marginTop="12dp"
                         android:layout_marginBottom="12dp"
+                        android:clickable="true"
+                        android:focusable="true"
                         android:background="#2A2A2A" />
 
                     <LinearLayout
