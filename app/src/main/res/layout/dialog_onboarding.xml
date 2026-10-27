@@ -74,28 +74,7 @@
         android:layout_marginTop="4dp"
         android:layout_marginBottom="24dp"
         android:orientation="horizontal"
-        android:gravity="center_vertical">
-
-        <View
-            android:id="@+id/dot0"
-            android:layout_width="24dp"
-            android:layout_height="8dp"
-            android:layout_marginEnd="6dp"
-            android:background="@drawable/bg_onboarding_dot_active" />
-
-        <View
-            android:id="@+id/dot1"
-            android:layout_width="8dp"
-            android:layout_height="8dp"
-            android:layout_marginEnd="6dp"
-            android:background="@drawable/bg_onboarding_dot_inactive" />
-
-        <View
-            android:id="@+id/dot2"
-            android:layout_width="8dp"
-            android:layout_height="8dp"
-            android:background="@drawable/bg_onboarding_dot_inactive" />
-    </LinearLayout>
+        android:gravity="center_vertical" />
 
     <!-- Action Button (Continue / Get Started) -->
     <com.google.android.material.button.MaterialButton

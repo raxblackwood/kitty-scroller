@@ -73,3 +73,10 @@ It scopes its overlay strictly to video doomscrolling feeds while leaving produc
   - Documented complete Guardian testing procedure using free, zero-login ntfy.sh topics and simulated tamper events.
   - Bumped release version to 1.0.27 (versionCode 28).
   - Built production release APK and AAB bundle in `dist/`.
+- v1.0.28: Silenced local alert notifications, added dynamic Security onboarding slide, and bumped release.
+  - Removed intrusive local status-bar notifications completely from `GuardianAlertManager.kt`.
+  - Guardian alerts are now dispatched silently in the background strictly to the remote endpoint.
+  - Added dedicated "Security & Anti-Tamper" slide to the first-time onboarding walkthrough carousel.
+  - Replaced hardcoded XML dot indicators with dynamic programmatic dots adapting to any number of onboarding slides.
+  - Bumped release version to 1.0.28 (versionCode 29).
+  - Built production release APK and installed directly to connected physical device via ADB.

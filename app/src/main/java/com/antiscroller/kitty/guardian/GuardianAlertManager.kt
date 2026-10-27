@@ -1,14 +1,10 @@
 package com.antiscroller.kitty.guardian
 
-import android.app.NotificationChannel
-import android.app.NotificationManager
 import android.content.Context
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
-import androidx.core.app.NotificationCompat
-import com.antiscroller.kitty.R
 import com.antiscroller.kitty.data.ScrollDataManager
 import org.json.JSONObject
 import java.io.OutputStreamWriter
@@ -22,11 +18,12 @@ import java.util.concurrent.Executors
 /**
  * Handles real-time guardian security alert dispatches when tamper,
  * deactivation, or uninstallation attempts occur on a monitored child device.
+ * Alerts are sent silently in the background exclusively to the guardian endpoint
+ * with zero intrusive local notifications displayed on the monitored device.
  */
 object GuardianAlertManager {
 
     private const val TAG = "GuardianAlertManager"
-    private const val CHANNEL_ID = "clawse_guardian_alerts"
 
     const val EVENT_SETUP_TEST = "SETUP_TEST"
     const val EVENT_UNINSTALL_ATTEMPT = "UNINSTALL_ATTEMPT"
@@ -55,8 +52,7 @@ object GuardianAlertManager {
 
         val endpoint = dataManager.guardianAlertEndpoint.trim()
         if (endpoint.isEmpty()) {
-            Log.w(TAG, "No guardian endpoint configured. Alert $eventType recorded locally.")
-            showLocalNotification(appContext, eventType, details, success = false)
+            Log.w(TAG, "No guardian endpoint configured. Alert $eventType skipped.")
             callback?.let { mainHandler.post { it(false, "No guardian endpoint configured") } }
             return
         }
@@ -70,7 +66,6 @@ object GuardianAlertManager {
             }
 
             mainHandler.post {
-                showLocalNotification(appContext, eventType, details, success)
                 callback?.invoke(success, if (success) "Alert sent successfully" else "Failed to connect to endpoint")
             }
         }
@@ -157,44 +152,5 @@ object GuardianAlertManager {
         }
 
         return ok
-    }
-
-    private fun showLocalNotification(
-        context: Context,
-        eventType: String,
-        details: String,
-        success: Boolean
-    ) {
-        val notificationManager =
-            context.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager ?: return
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
-                CHANNEL_ID,
-                "Guardian Security Alerts",
-                NotificationManager.IMPORTANCE_HIGH
-            ).apply {
-                description = "Notifies when tampering or uninstall attempts occur on child phone"
-            }
-            notificationManager.createNotificationChannel(channel)
-        }
-
-        val title = if (success) "🛡️ Guardian Alert Delivered" else "⚠️ Guardian Alert Failed to Send"
-        val text = when (eventType) {
-            EVENT_UNINSTALL_ATTEMPT -> "Uninstall attempt was blocked & guardian alerted."
-            EVENT_ADMIN_DISABLE_ATTEMPT -> "Admin deactivation attempt notified to guardian."
-            EVENT_SETUP_TEST -> if (success) "Guardian webhook test succeeded!" else "Could not reach guardian endpoint."
-            else -> details.ifEmpty { "Security event logged." }
-        }
-
-        val notification = NotificationCompat.Builder(context, CHANNEL_ID)
-            .setSmallIcon(R.mipmap.ic_kitty_launcher)
-            .setContentTitle(title)
-            .setContentText(text)
-            .setPriority(NotificationCompat.PRIORITY_HIGH)
-            .setAutoCancel(true)
-            .build()
-
-        notificationManager.notify(eventType.hashCode(), notification)
     }
 }

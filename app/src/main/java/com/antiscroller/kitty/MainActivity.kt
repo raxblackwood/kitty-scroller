@@ -868,6 +868,11 @@ class MainActivity : AppCompatActivity() {
                 description = "As you scroll Reels and Shorts, an animated kitten slowly lowers a curtain. When your daily budget is reached, doomscrolling is paused."
             ),
             OnboardingSlide(
+                imageRes = R.drawable.kitty_salmon_loaf,
+                title = "Security & Anti-Tamper",
+                description = "Protect your limits with an optional PIN, 60-second cooldown friction, and device admin shields against uninstalls or bypasses."
+            ),
+            OnboardingSlide(
                 imageRes = R.mipmap.ic_kitty_launcher,
                 title = "100% Private & Local",
                 description = "Clawse runs entirely on your device with zero ads, no accounts, and no data collection. Only scroll gestures on Reels and Shorts are counted."
@@ -878,10 +883,23 @@ class MainActivity : AppCompatActivity() {
         val pager = dialogView.findViewById<ViewPager2>(R.id.pagerOnboarding)
         val btnSkip = dialogView.findViewById<MaterialButton>(R.id.btnOnboardingSkip)
         val btnAction = dialogView.findViewById<MaterialButton>(R.id.btnOnboardingAction)
-        val dot0 = dialogView.findViewById<View>(R.id.dot0)
-        val dot1 = dialogView.findViewById<View>(R.id.dot1)
-        val dot2 = dialogView.findViewById<View>(R.id.dot2)
-        val dots = listOf(dot0, dot1, dot2)
+        val layoutDots = dialogView.findViewById<LinearLayout>(R.id.layoutDots)
+        layoutDots.removeAllViews()
+        val dots = mutableListOf<View>()
+        val density = resources.displayMetrics.density
+        for (i in slides.indices) {
+            val dot = View(this).apply {
+                val w = if (i == 0) (24 * density).toInt() else (8 * density).toInt()
+                val h = (8 * density).toInt()
+                val lp = LinearLayout.LayoutParams(w, h).apply {
+                    if (i < slides.size - 1) marginEnd = (6 * density).toInt()
+                }
+                layoutParams = lp
+                setBackgroundResource(if (i == 0) R.drawable.bg_onboarding_dot_active else R.drawable.bg_onboarding_dot_inactive)
+            }
+            layoutDots.addView(dot)
+            dots.add(dot)
+        }
 
         fun updateDots(position: Int) {
             dots.forEachIndexed { index, dot ->
