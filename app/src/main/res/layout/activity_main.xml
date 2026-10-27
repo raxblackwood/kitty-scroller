@@ -384,19 +384,9 @@
                         android:id="@+id/btnEquipOrUnlock"
                         android:layout_width="match_parent"
                         android:layout_height="48dp"
-                        android:layout_marginBottom="12dp"
                         android:text="✓ Currently Equipped"
                         android:textSize="14sp"
                         android:textStyle="bold"
-                        app:cornerRadius="8dp" />
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btnTestOverlay"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="Test Floating Overlay (5s)"
-                        android:backgroundTint="@color/surface_variant"
-                        android:textColor="@color/primary"
                         app:cornerRadius="8dp" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>

@@ -65,3 +65,11 @@ It scopes its overlay strictly to video doomscrolling feeds while leaving produc
   - Updated stick ratios (30f/510f and 47f/510f) and aspect ratio (0.549) in `KittyCurtainView.kt` so the continuous wooden rod aligns with millimeter accuracy.
   - Bumped release version to 1.0.26 (versionCode 27).
   - Compiled release APK/AAB and installed directly to connected physical device via ADB.
+- v1.0.27: Fixed Settings App Info access, removed test overlay button, and prioritized Guardian in paywall.
+  - Narrowed anti-tamper interception in Android Settings to only fire on actual confirmation dialogs rather than blocking regular viewing of App Info.
+  - Removed premature `GLOBAL_ACTION_HOME` from anti-tamper interception that previously killed the cooling-off activity after 1 millisecond.
+  - Removed "Test Floating Overlay (5s)" developer button from the main screen and cleaned up its listeners.
+  - Prioritized Guardian Parental Control card on top of the paywall bottom sheet whenever triggered from the Guardian section.
+  - Documented complete Guardian testing procedure using free, zero-login ntfy.sh topics and simulated tamper events.
+  - Bumped release version to 1.0.27 (versionCode 28).
+  - Built production release APK and AAB bundle in `dist/`.

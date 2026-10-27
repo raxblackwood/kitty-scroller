@@ -58,6 +58,20 @@ class PaywallBottomSheetDialog : BottomSheetDialogFragment() {
         val context = requireContext()
         dataManager = ScrollDataManager.getInstance(context)
 
+        val targetProduct = arguments?.getString(ARG_TARGET_PRODUCT)
+        if (targetProduct == BillingManager.PRODUCT_PARENTAL_MONTHLY) {
+            binding.tvPaywallTitle.text = "🛡️ Guardian Parental Control"
+            binding.tvPaywallSubtitle.text = "Real-time uninstall alerts & tamper detection for parents and partners."
+            val parent = binding.cardParental.parent as? ViewGroup
+            if (parent != null) {
+                val cosmeticIndex = parent.indexOfChild(binding.cardCosmetics)
+                if (cosmeticIndex >= 0) {
+                    parent.removeView(binding.cardParental)
+                    parent.addView(binding.cardParental, cosmeticIndex)
+                }
+            }
+        }
+
         updateButtonStates()
 
         binding.btnBuyCosmetics.setOnClickListener {

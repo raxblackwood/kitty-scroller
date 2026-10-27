@@ -23,6 +23,7 @@
             android:background="#444444" />
 
         <TextView
+            android:id="@+id/tvPaywallTitle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="🐾 Clawse Premium"
@@ -31,6 +32,7 @@
             android:textStyle="bold" />
 
         <TextView
+            android:id="@+id/tvPaywallSubtitle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"

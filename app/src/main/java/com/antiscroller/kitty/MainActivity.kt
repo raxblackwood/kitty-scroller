@@ -273,20 +273,6 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        // Test floating overlay
-        binding.btnTestOverlay.setOnClickListener {
-            if (!overlayManager.canDrawOverlay()) {
-                requestOverlayPermission()
-                return@setOnClickListener
-            }
-            val testPercentage = if (isPreviewCurtainClosed) 1.0f else 0.40f
-            overlayManager.showOrUpdateOverlay(testPercentage)
-            Toast.makeText(this, "Displaying Kitty Curtain for 5 seconds...", Toast.LENGTH_SHORT).show()
-
-            handler.postDelayed({
-                overlayManager.hideOverlay()
-            }, 5000)
-        }
 
         // Header status badge and three-bar menu
         binding.badgeHeaderStatus.setOnClickListener {
@@ -645,7 +631,7 @@ class MainActivity : AppCompatActivity() {
 
         MaterialAlertDialogBuilder(this)
             .setTitle("Guardian Alert Endpoint")
-            .setMessage("Set where uninstallation and tamper alerts should be sent in real-time.")
+            .setMessage("Set where uninstallation and tamper alerts should be sent in real-time.\n\nTip: Enter any topic name (e.g. mytestalerts) to view live alerts on https://ntfy.sh/mytestalerts without signing up!")
             .setView(layout)
             .setPositiveButton("Save") { _, _ ->
                 val ep = etEndpoint.text.toString().trim()

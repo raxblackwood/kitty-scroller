@@ -861,11 +861,29 @@ class KittyAccessibilityService : AccessibilityService() {
                     isTamperingTarget = true
                 }
             } else if (isSettings) {
-                // In Settings App Info: check for uninstall, force stop, clear data, deactivate admin
-                val hasTamperAction = screenTexts.any { text ->
-                    TAMPER_KEYWORDS.any { kw -> text.contains(kw) }
+                // In Settings: only intercept when a destructive confirmation dialog is actually showing!
+                // Viewing App Info or managing permissions/notifications must NEVER be blocked.
+                val cancelButtons = rootNode.findAccessibilityNodeInfosByViewId("android:id/button2")
+                    .plus(rootNode.findAccessibilityNodeInfosByViewId("android:id/cancel"))
+                    .plus(rootNode.findAccessibilityNodeInfosByText("Cancel"))
+                    .plus(rootNode.findAccessibilityNodeInfosByText("cancel"))
+                    .plus(rootNode.findAccessibilityNodeInfosByText("CANCEL"))
+                    .plus(rootNode.findAccessibilityNodeInfosByText("Cancelar"))
+                    .plus(rootNode.findAccessibilityNodeInfosByText("Annuler"))
+                    .plus(rootNode.findAccessibilityNodeInfosByText("Abbrechen"))
+                    .plus(rootNode.findAccessibilityNodeInfosByText("रद्द करें"))
+
+                val hasConfirmationDialog = cancelButtons.isNotEmpty()
+                val hasDestructivePrompt = screenTexts.any { text ->
+                    UNINSTALL_PROMPTS.any { prompt -> text.contains(prompt) } ||
+                    text.contains("misbehave") ||
+                    text.contains("delete app data") ||
+                    text.contains("permanently delete") ||
+                    text.contains("deactivate this device admin") ||
+                    text.contains("deactivate and uninstall")
                 }
-                if (hasAppReference && hasTamperAction) {
+
+                if (hasConfirmationDialog && (hasDestructivePrompt || hasAppReference || isRecentClawseTarget)) {
                     isTamperingTarget = true
                 }
             } else if (isPlayStore) {
@@ -915,11 +933,8 @@ class KittyAccessibilityService : AccessibilityService() {
                 btn.recycle()
             }
 
-            // Send Back to dismiss
+            // Send Back to dismiss dangerous prompt
             performGlobalAction(GLOBAL_ACTION_BACK)
-
-            // Return user safely to Home
-            performGlobalAction(GLOBAL_ACTION_HOME)
 
             mainHandler.postDelayed({
                 if (dataManager.isGuardianLockEnabled) {
