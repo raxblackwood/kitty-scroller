@@ -38,4 +38,5 @@ It scopes its overlay strictly to video doomscrolling feeds while leaving produc
   - Removed baked-in wooden horizontal bar completely from all companion sprite assets across all 4 breeds (Rolex, Saturn, Ginger, Tabby).
   - Isolated paws and hands to hang directly over the continuous screen-wide wooden pole drawn in the background by `KittyCurtainView.drawExtendedStick`.
   - Updated stick ratios and early draw clipping in `KittyCurtainView.kt` to eliminate all seams, gaps, notches, and animation jitter.
+  - Removed redundant developer "Preview Stretch" slider from the Kitty Companion card, streamlining the card UI.
   - Generated release APK and AAB bundle (versionCode 24) and installed to physical device via ADB.
