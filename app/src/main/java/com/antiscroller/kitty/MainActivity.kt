@@ -271,22 +271,13 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        // Live preview slider
-        binding.sliderPreview.addOnChangeListener { _, value, _ ->
-            val fraction = value / 100f
-            binding.previewCurtain.setDropPercentage(fraction, animate = true)
-            binding.tvSliderLabel.text = "Testing Kitty Drop: ${(fraction * 100).toInt()}%"
-            isPreviewCurtainClosed = (fraction >= 0.96f)
-            updatePreviewModeBadge()
-        }
-
         // Test floating overlay
         binding.btnTestOverlay.setOnClickListener {
             if (!overlayManager.canDrawOverlay()) {
                 requestOverlayPermission()
                 return@setOnClickListener
             }
-            val testPercentage = binding.sliderPreview.value / 100f
+            val testPercentage = if (isPreviewCurtainClosed) 1.0f else 0.40f
             overlayManager.showOrUpdateOverlay(testPercentage)
             Toast.makeText(this, "Displaying Kitty Curtain for 5 seconds...", Toast.LENGTH_SHORT).show()
 
