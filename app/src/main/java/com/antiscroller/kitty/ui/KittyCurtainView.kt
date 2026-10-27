@@ -450,25 +450,33 @@ class KittyCurtainView @JvmOverloads constructor(
         val isSalmon = currentBreed == CatBreed.SALMON
         val isKatrina = currentBreed == CatBreed.KATRINA
         val catW = if (isSaturn) (totalW * 0.28f).coerceIn(240f, 320f) else (totalW * 0.22f).coerceIn(210f, 270f)
-        // Aspect ratio: Saturn is 588x587 (~1.0), Rolex, Salmon & Katrina is 280x475 (~0.589), Ginger/Tabby is 628x1162 (~0.540)
+        // Aspect ratio:
+        // Saturn is 588x587 (~1.0)
+        // Rolex is 280x475 (~0.589)
+        // Salmon & Katrina is 280x510 (~0.549, full-length tail)
+        // Ginger/Tabby is 628x1162 (~0.540)
         val catH = when {
             isSaturn -> catW * (587f / 588f)
-            isRolex || isSalmon || isKatrina -> (catW / 0.589f)
+            isRolex -> (catW / 0.589f)
+            isSalmon || isKatrina -> (catW / 0.549f)
             else -> (catW / 0.540f)
         }
 
         // Stick offsets within the sprite coordinate space:
         // Saturn (pull-up): stick y=18..58 in 587 height space
-        // Rolex, Salmon & Katrina: stick y=30..47 in 475 height space
+        // Rolex: stick y=30..47 in 475 height space
+        // Salmon & Katrina: stick y=30..47 in 510 height space
         // Ginger/Tabby: stick y=28..76 in 1162 height space
         val stickTopRatio = when {
             isSaturn -> (18f / 587f)
-            isRolex || isSalmon || isKatrina -> (30f / 475f)
+            isRolex -> (30f / 475f)
+            isSalmon || isKatrina -> (30f / 510f)
             else -> (28f / 1162f)
         }
         val stickBotRatio = when {
             isSaturn -> (58f / 587f)
-            isRolex || isSalmon || isKatrina -> (47f / 475f)
+            isRolex -> (47f / 475f)
+            isSalmon || isKatrina -> (47f / 510f)
             else -> (76f / 1162f)
         }
 

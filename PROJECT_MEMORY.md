@@ -59,3 +59,9 @@ It scopes its overlay strictly to video doomscrolling feeds while leaving produc
   - Reduced release APK download footprint from 7.9 MB to 4.98 MB by shedding redundant multi-frame flipbook drawables.
   - Bumped release version to 1.0.25 (versionCode 26).
   - Compiled release APK/AAB and installed directly to connected physical device via ADB.
+- v1.0.26: Fixed bottom tail truncation on Salmon and Katrina by expanding canvas to 280x510.
+  - Sliced and re-exported Salmon and Katrina to a full 280x510 canvas (leaving 23px and 18px of transparent bottom padding).
+  - Preserved the full natural tapered tails for both breeds without any clipped or flat-cut rows.
+  - Updated stick ratios (30f/510f and 47f/510f) and aspect ratio (0.549) in `KittyCurtainView.kt` so the continuous wooden rod aligns with millimeter accuracy.
+  - Bumped release version to 1.0.26 (versionCode 27).
+  - Compiled release APK/AAB and installed directly to connected physical device via ADB.
