@@ -789,6 +789,29 @@
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
+            <!-- Bottom Ad Banner Container -->
+            <FrameLayout
+                android:id="@+id/layoutAdContainer"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:minHeight="52dp"
+                android:layout_marginTop="4dp"
+                android:layout_marginBottom="24dp"
+                android:background="@drawable/bg_menu_group">
+
+                <TextView
+                    android:id="@+id/tvAdPlaceholder"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:paddingTop="16dp"
+                    android:paddingBottom="16dp"
+                    android:text="📢 Advertisement"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="12sp"
+                    android:fontFamily="sans-serif-medium" />
+            </FrameLayout>
+
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

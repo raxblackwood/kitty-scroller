@@ -87,3 +87,8 @@ It scopes its overlay strictly to video doomscrolling feeds while leaving produc
   - Applied the same structured layout sizing to the initial setup limit dialog.
   - Bumped release version to 1.0.29 (versionCode 30).
   - Clean uninstalled and reinstalled fresh on connected physical device via ADB.
+- v1.0.30: Added bottom Ad banner placeholder and updated onboarding privacy copy.
+  - Added structured bottom Ad container (`layoutAdContainer`) below Device Owner settings in `activity_main.xml`.
+  - Updated onboarding Slide 4 to "Private & Secure" without the "zero ads" restriction.
+  - Bumped release version to 1.0.30 (versionCode 31).
+  - Installed updated release APK directly to connected physical device via ADB.

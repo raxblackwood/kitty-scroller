@@ -874,8 +874,8 @@ class MainActivity : AppCompatActivity() {
             ),
             OnboardingSlide(
                 imageRes = R.mipmap.ic_kitty_launcher,
-                title = "100% Private & Local",
-                description = "Clawse runs entirely on your device with zero ads, no accounts, and no data collection. Only scroll gestures on Reels and Shorts are counted."
+                title = "Private & Secure",
+                description = "Clawse runs with strict privacy: no accounts, no logins, and zero tracking of personal data. Only Reels and Shorts scroll distance is counted."
             )
         )
 
