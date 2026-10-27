@@ -420,18 +420,18 @@ class KittyCurtainView @JvmOverloads constructor(
         }
 
         // Stick offsets within the sprite coordinate space:
-        // Saturn (pull-up): stick y=18..56 in 587 height space
-        // Rolex (gangster): stick y=30..46 in 475 height space
-        // Ginger/Tabby: stick y=30..72 in 1162 height space
+        // Saturn (pull-up): stick y=18..58 in 587 height space
+        // Rolex (gangster): stick y=30..47 in 475 height space
+        // Ginger/Tabby: stick y=28..76 in 1162 height space
         val stickTopRatio = when {
             isSaturn -> (18f / 587f)
             isRolex -> (30f / 475f)
-            else -> (30f / 1162f)
+            else -> (28f / 1162f)
         }
         val stickBotRatio = when {
-            isSaturn -> (56f / 587f)
-            isRolex -> (46f / 475f)
-            else -> (72f / 1162f)
+            isSaturn -> (58f / 587f)
+            isRolex -> (47f / 475f)
+            else -> (76f / 1162f)
         }
 
         // The cat slides down smoothly from above the ceiling:
@@ -448,7 +448,9 @@ class KittyCurtainView @JvmOverloads constructor(
         // 1. Draw solid curtain fabric from ceiling straight down to top edge of the stick
         if (stickTop > 0f) {
             drawCurtainBody(canvas, totalW, stickTop + 1.5f)
-            // 2. Extend the stick seamlessly across the entire width of the curtain
+        }
+        // 2. Extend the stick seamlessly across the entire width of the curtain
+        if (stickBottom > 0f) {
             drawExtendedStick(canvas, totalW, stickTop, stickBottom)
         }
 
