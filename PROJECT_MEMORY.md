@@ -132,7 +132,7 @@ It scopes its overlay strictly to video doomscrolling feeds while leaving produc
   - Paired buttons have a uniform 12dp gap, kept on the second button so a lone button fills the width.
   - The Guardian Phone status uses a green or red dot span instead of emoji.
   - Verified on the physical device.
-- Guardian card merge (2026-10-28, on `feat/guardian-push-alerts`): Guardian Alerts (child side) and Guardian Phone (parent side) were one feature split across two cards, which confused first-time users. They are now merged into a single Guardian Alerts card (see ADR-008).
+- Guardian card merge (2026-10-28, commit `c0aeea2` on `feat/guardian-push-alerts`, part of v1.0.31): Guardian Alerts (child side) and Guardian Phone (parent side) were one feature split across two cards, which confused first-time users. They are now merged into a single Guardian Alerts card (see ADR-008).
   - The section is now three cards: PIN Security, Guardian Alerts, Device Owner Mode.
   - The card has two labelled halves split by a divider: "Protect this phone" (Premium) and "Get alerts on this phone" (Free).
   - Button labels:
