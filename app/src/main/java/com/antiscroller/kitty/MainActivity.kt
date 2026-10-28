@@ -612,27 +612,43 @@ class MainActivity : AppCompatActivity() {
 
         val ep = dataManager.guardianAlertEndpoint
         val code = dataManager.guardianLinkCode
-        val device = dataManager.childDeviceName
         binding.tvGuardianEndpointSummary.text = when {
-            code.isNotEmpty() -> "Linked to guardian phone (code ${GuardianLinkManager.formatCode(code)}) · $device"
-            ep.isNotEmpty() -> "Alert Target: $ep ($device)"
-            else -> "Not linked yet (Tap Configure below)"
+            code.isNotEmpty() -> statusLine(true, "Linked to the guardian's phone · code ${GuardianLinkManager.formatCode(code)}")
+            ep.isNotEmpty() -> statusLine(true, "Sending alerts to $ep")
+            else -> "Not linked to a guardian's phone yet"
         }
+        binding.btnConfigGuardianEndpoint.text = if (hasGuardianAlertTarget()) "Change Code" else "Enter Code"
+    }
+
+    /** One status line with a colored dot: green when healthy, red when attention is needed. */
+    private fun statusLine(healthy: Boolean, text: String): CharSequence {
+        val line = android.text.SpannableStringBuilder("●  $text")
+        line.setSpan(
+            android.text.style.ForegroundColorSpan(getColor(if (healthy) R.color.accent_green else R.color.accent_red)),
+            0, 1, android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+        )
+        return line
     }
 
     private fun hasGuardianAlertTarget(): Boolean =
         dataManager.guardianLinkCode.isNotEmpty() || dataManager.guardianAlertEndpoint.isNotEmpty()
 
     private fun showConfigureGuardianEndpointDialog(onSaved: (() -> Unit)? = null) {
+        // EditText backgrounds inset their text by about 4dp, so the container is 4dp narrower
+        // than the dialog's 24dp text inset and labels add the 4dp back: everything lines up.
+        val density = resources.displayMetrics.density
+        val inset = (20 * density).toInt()
+        val labelInset = (4 * density).toInt()
         val layout = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(50, 20, 50, 10)
+            setPadding(inset, (8 * density).toInt(), inset, 0)
         }
 
         val tvCodeLabel = TextView(this).apply {
-            text = "Guardian pairing code (from the parent's phone):"
+            text = "Pairing code"
             setTextColor(getColor(R.color.text_secondary))
             textSize = 12f
+            setPadding(labelInset, 0, 0, 0)
         }
         val etCode = EditText(this).apply {
             hint = "e.g. ABCD-2345"
@@ -641,22 +657,22 @@ class MainActivity : AppCompatActivity() {
         }
 
         val tvEpLabel = TextView(this).apply {
-            text = "Advanced (optional): webhook or ntfy topic:"
+            text = "Advanced (optional): webhook or ntfy topic"
             setTextColor(getColor(R.color.text_secondary))
             textSize = 12f
-            setPadding(0, 24, 0, 0)
+            setPadding(labelInset, (16 * density).toInt(), 0, 0)
         }
         val etEndpoint = EditText(this).apply {
-            hint = "e.g. https://discord.com/api/webhooks/... or alerts_topic"
+            hint = "e.g. my-alerts-topic"
             setText(dataManager.guardianAlertEndpoint)
             inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_URI
         }
 
         val tvDeviceLabel = TextView(this).apply {
-            text = "Child Device Identifier:"
+            text = "Name for this phone (shown to the guardian)"
             setTextColor(getColor(R.color.text_secondary))
             textSize = 12f
-            setPadding(0, 24, 0, 0)
+            setPadding(labelInset, (16 * density).toInt(), 0, 0)
         }
         val etDeviceName = EditText(this).apply {
             hint = "e.g. Timmy's Phone"
@@ -666,14 +682,14 @@ class MainActivity : AppCompatActivity() {
 
         layout.addView(tvCodeLabel)
         layout.addView(etCode)
-        layout.addView(tvEpLabel)
-        layout.addView(etEndpoint)
         layout.addView(tvDeviceLabel)
         layout.addView(etDeviceName)
+        layout.addView(tvEpLabel)
+        layout.addView(etEndpoint)
 
         MaterialAlertDialogBuilder(this)
-            .setTitle("Link Guardian Phone")
-            .setMessage("On the parent's phone, open Clawse and tap \"Link a Child Phone\" in the Guardian Phone card. Enter the code it shows here.")
+            .setTitle("Enter Guardian Code")
+            .setMessage("On the parent's or partner's phone, open Clawse → Guardian Alerts and tap \"Show Pairing Code\". Type that code here.")
             .setView(layout)
             .setPositiveButton("Save") { _, _ ->
                 val ep = etEndpoint.text.toString().trim()
@@ -704,18 +720,18 @@ class MainActivity : AppCompatActivity() {
 
     private fun updateGuardianPhoneUI() {
         if (dataManager.guardianModeLinkCodes.isEmpty()) {
-            binding.tvGuardianLinksStatus.text = "No child phones linked yet"
+            binding.tvGuardianLinksStatus.text = "No phones linked yet"
             binding.btnUnlinkChildPhone.visibility = View.GONE
-            binding.btnPairChildPhone.text = "Link a Child Phone"
+            binding.btnPairChildPhone.text = "Show Pairing Code"
             return
         }
         GuardianLinkManager.loadGuardianLinks(this) { links ->
             if (isFinishing || isDestroyed) return@loadGuardianLinks
             val paired = links.filter { it.isPaired }
             binding.btnUnlinkChildPhone.visibility = if (paired.isEmpty()) View.GONE else View.VISIBLE
-            binding.btnPairChildPhone.text = if (paired.isEmpty()) "Link a Child Phone" else "Link Another"
+            binding.btnPairChildPhone.text = if (paired.isEmpty()) "Show Pairing Code" else "Link Another"
             binding.tvGuardianLinksStatus.text = if (paired.isEmpty()) {
-                "No child phones linked yet"
+                "No phones linked yet"
             } else {
                 val status = android.text.SpannableStringBuilder()
                 paired.forEachIndexed { index, link ->
@@ -774,7 +790,7 @@ class MainActivity : AppCompatActivity() {
         }
         val tvFootnote = TextView(this).apply {
             visibility = View.GONE
-            text = "Tap the code to copy it. It works for 15 minutes. Keep this screen open until the child's phone is linked."
+            text = "Tap the code to copy it. It works for 15 minutes. Keep this screen open until the other phone is linked."
             setTextColor(getColor(R.color.text_secondary))
             textSize = 13f
             setLineSpacing(0f, 1.15f)
@@ -791,7 +807,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         val progress = MaterialAlertDialogBuilder(this)
-            .setTitle("Link a Child Phone")
+            .setTitle("Pairing Code")
             .setView(content)
             .setNegativeButton("Close", null)
             .show()
@@ -808,7 +824,7 @@ class MainActivity : AppCompatActivity() {
                 return@createLink
             }
             val formatted = GuardianLinkManager.formatCode(code)
-            tvInstructions.text = "On the child's phone, open Clawse → Guardian Alerts → Configure Alert, and enter this code:"
+            tvInstructions.text = "On the phone you want to protect, open Clawse → Guardian Alerts → Enter Code, and type this code:"
             tvCode.text = formatted
             tvCode.visibility = View.VISIBLE
             tvFootnote.visibility = View.VISIBLE
