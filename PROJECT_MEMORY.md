@@ -120,8 +120,8 @@ It scopes its overlay strictly to video doomscrolling feeds while leaving produc
   - Pending:
     - Two-device test of missed check-in (needs child mode, which is behind the parental subscription).
     - Rules tests (need JDK 21).
-    - Play data safety form update before publishing.
-    - Merge branch `feat/guardian-push-alerts` into main, which also publishes the updated privacy policy via GitHub Pages.
+    - Play data safety form update, then upload `dist/Clawse-v1.0.31-release.aab`.
+  - Merged into main (fast-forward to `53a7844`) and pushed 2026-10-28. The updated privacy policy is live at https://raxblackwood.github.io/kitty-scroller/privacy.html.
   - Bumped release version to 1.0.31 (versionCode 32).
   - Built the release APK and AAB into `dist/` and installed the APK on the physical device via ADB.
 - Protection section redesign (2026-10-28, commit `cc63701` on `feat/guardian-push-alerts`, part of v1.0.31; `dist/` APK and AAB rebuilt): Grouped the four security cards under one "Protection" section (see ADR-007).
