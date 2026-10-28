@@ -574,7 +574,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun updateGuardianChildModeUI() {
         val isSubscribed = dataManager.isParentalSubscribed
-        binding.tvGuardianSubBadge.text = if (isSubscribed) "ACTIVE" else "PREMIUM"
+        binding.tvGuardianSubBadge.text = if (isSubscribed) "Active" else "Premium"
 
         binding.switchChildMode.setOnCheckedChangeListener(null)
         binding.switchChildMode.isChecked = dataManager.isChildModeEnabled
@@ -717,14 +717,23 @@ class MainActivity : AppCompatActivity() {
             binding.tvGuardianLinksStatus.text = if (paired.isEmpty()) {
                 "No child phones linked yet"
             } else {
-                paired.joinToString("\n") { link ->
+                val status = android.text.SpannableStringBuilder()
+                paired.forEachIndexed { index, link ->
+                    if (index > 0) status.append("\n")
                     val name = link.childDeviceName.ifEmpty { "Child phone" }
                     val seen = link.lastHeartbeat?.let {
                         DateUtils.getRelativeTimeSpanString(it.time, System.currentTimeMillis(), DateUtils.MINUTE_IN_MILLIS)
                     } ?: "never"
-                    val icon = if (link.isOffline) "⚠️" else "✅"
-                    "$icon $name · last check-in $seen"
+                    // Colored status dot: green while checking in, red once the phone went silent.
+                    val dotStart = status.length
+                    status.append("●  ")
+                    status.setSpan(
+                        android.text.style.ForegroundColorSpan(getColor(if (link.isOffline) R.color.accent_red else R.color.accent_green)),
+                        dotStart, dotStart + 1, android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+                    )
+                    status.append(if (link.isOffline) "$name · not checked in since $seen" else "$name · last check-in $seen")
                 }
+                status
             }
         }
     }

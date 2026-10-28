@@ -124,3 +124,11 @@ It scopes its overlay strictly to video doomscrolling feeds while leaving produc
     - Merge branch `feat/guardian-push-alerts` into main, which also publishes the updated privacy policy via GitHub Pages.
   - Bumped release version to 1.0.31 (versionCode 32).
   - Built the release APK and AAB into `dist/` and installed the APK on the physical device via ADB.
+- Protection section redesign (2026-10-28, uncommitted, on `feat/guardian-push-alerts`): Grouped the four security cards under one "Protection" section (see ADR-007).
+  - Order: PIN Security, Guardian Alerts, Device Owner Mode, Guardian Phone.
+  - The section has a 20sp "Protection" header and a one-line description. Cards inside it are 12dp apart.
+  - Emoji headers are replaced by 36dp teal-tinted icon tiles with 24dp outline vector icons (`ic_sec_lock`, `ic_sec_bell`, `ic_sec_shield`, `ic_sec_phone`, 1.75 stroke) and 16sp `text_primary` titles.
+  - Badges are rounded chips in title case (`bg_security_badge`, text `secondary_light` #4DB6AC for WCAG AA).
+  - Paired buttons have a uniform 12dp gap, kept on the second button so a lone button fills the width.
+  - The Guardian Phone status uses a green or red dot span instead of emoji.
+  - Verified on the physical device.
