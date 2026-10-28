@@ -69,7 +69,7 @@ You remain fully aware of how much content you have consumed in real time.
 
 KEY FEATURES:
 • Zero Friction on Productive Apps: Clawse only observes Instagram Reels and YouTube Shorts. WhatsApp, Chrome, Notion, Phone, and all other apps remain 100% unrestricted.
-• 100% Private & Offline: Clawse runs entirely on your device. Zero analytics, zero tracking, and zero personal data collection.
+• Private by Design: Clawse runs on your device. Zero analytics, zero tracking, and no personal data collection. Optional Guardian Alerts only share what's needed to notify a linked parent's phone.
 • Unlockable Kitty Companions: Choose your favorite feline guide - Ginger, Saturn, Tabby, or Rolex.
 • Optional Parental / Guardian Shields: Real-time alerts to notify parents or accountability partners if uninstall or admin deactivation is attempted.
 

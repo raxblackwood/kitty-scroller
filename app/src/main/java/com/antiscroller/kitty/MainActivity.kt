@@ -1,5 +1,6 @@
 package com.antiscroller.kitty
 
+import android.Manifest
 import android.accessibilityservice.AccessibilityServiceInfo
 import android.app.AppOpsManager
 import android.app.admin.DevicePolicyManager
@@ -8,6 +9,7 @@ import android.content.ClipboardManager
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.content.res.ColorStateList
 import android.graphics.RenderEffect
 import android.graphics.Shader
@@ -21,6 +23,7 @@ import android.os.Process
 import android.provider.Settings
 import android.text.InputType
 import android.text.TextUtils
+import android.text.format.DateUtils
 import android.util.Log
 import android.view.Gravity
 import android.view.View
@@ -32,6 +35,7 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
@@ -44,6 +48,7 @@ import com.antiscroller.kitty.billing.BillingManager
 import com.antiscroller.kitty.data.ScrollDataManager
 import com.antiscroller.kitty.databinding.ActivityMainBinding
 import com.antiscroller.kitty.guardian.GuardianAlertManager
+import com.antiscroller.kitty.guardian.GuardianLinkManager
 import com.antiscroller.kitty.overlay.KittyOverlayManager
 import com.antiscroller.kitty.service.KittyAccessibilityService
 import com.antiscroller.kitty.ui.PaywallBottomSheetDialog
@@ -52,6 +57,7 @@ import com.antiscroller.kitty.worker.GuardianHeartbeatWorker
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.google.firebase.firestore.ListenerRegistration
 
 class MainActivity : AppCompatActivity() {
 
@@ -71,6 +77,13 @@ class MainActivity : AppCompatActivity() {
     private var permissionSetupDialog: androidx.appcompat.app.AlertDialog? = null
     private var appOpsListener: AppOpsManager.OnOpChangedListener? = null
     private var activeBlurCount = 0
+    private var pairingListener: ListenerRegistration? = null
+    private val notificationPermissionLauncher =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+            if (!granted) {
+                Toast.makeText(this, "Allow notifications so guardian alerts can appear on this phone.", Toast.LENGTH_LONG).show()
+            }
+        }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -147,6 +160,7 @@ class MainActivity : AppCompatActivity() {
         updateThemeChips()
         updateGuardianChildModeUI()
         updateGuardianUI()
+        updateGuardianPhoneUI()
         updateDeviceOwnerUI()
 
         if (!dataManager.isOnboardingCompleted) {
@@ -157,6 +171,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onDestroy() {
+        pairingListener?.remove()
+        pairingListener = null
         appOpsListener?.let {
             val appOps = getSystemService(Context.APP_OPS_SERVICE) as? AppOpsManager
             try {
@@ -261,16 +277,24 @@ class MainActivity : AppCompatActivity() {
         }
 
         binding.btnTestGuardianAlert.setOnClickListener {
-            val endpoint = dataManager.guardianAlertEndpoint
-            if (endpoint.isEmpty()) {
-                Toast.makeText(this, "Please configure an alert endpoint first!", Toast.LENGTH_SHORT).show()
+            if (!hasGuardianAlertTarget()) {
+                Toast.makeText(this, "Link a guardian phone first!", Toast.LENGTH_SHORT).show()
                 showConfigureGuardianEndpointDialog()
                 return@setOnClickListener
             }
-            Toast.makeText(this, "Sending test ping to guardian endpoint...", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "Sending test alert to guardian...", Toast.LENGTH_SHORT).show()
             GuardianAlertManager.sendAlert(this, GuardianAlertManager.EVENT_SETUP_TEST) { _, msg ->
                 Toast.makeText(this, "Test Ping: $msg", Toast.LENGTH_LONG).show()
             }
+        }
+
+        // Guardian Phone Mode (this phone receives alerts)
+        binding.btnPairChildPhone.setOnClickListener {
+            showPairChildPhoneDialog()
+        }
+
+        binding.btnUnlinkChildPhone.setOnClickListener {
+            showUnlinkChildPhoneDialog()
         }
 
 
@@ -562,10 +586,10 @@ class MainActivity : AppCompatActivity() {
                 return@setOnCheckedChangeListener
             }
 
-            if (isChecked && dataManager.guardianAlertEndpoint.isEmpty()) {
+            if (isChecked && !hasGuardianAlertTarget()) {
                 binding.switchChildMode.isChecked = false
                 showConfigureGuardianEndpointDialog {
-                    if (dataManager.guardianAlertEndpoint.isNotEmpty()) {
+                    if (hasGuardianAlertTarget()) {
                         dataManager.isChildModeEnabled = true
                         binding.switchChildMode.isChecked = true
                         GuardianHeartbeatWorker.scheduleHeartbeat(this)
@@ -587,13 +611,17 @@ class MainActivity : AppCompatActivity() {
         }
 
         val ep = dataManager.guardianAlertEndpoint
+        val code = dataManager.guardianLinkCode
         val device = dataManager.childDeviceName
-        binding.tvGuardianEndpointSummary.text = if (ep.isEmpty()) {
-            "Endpoint: Not configured (Tap Configure below)"
-        } else {
-            "Alert Target: $ep ($device)"
+        binding.tvGuardianEndpointSummary.text = when {
+            code.isNotEmpty() -> "Linked to guardian phone (code ${GuardianLinkManager.formatCode(code)}) · $device"
+            ep.isNotEmpty() -> "Alert Target: $ep ($device)"
+            else -> "Not linked yet (Tap Configure below)"
         }
     }
+
+    private fun hasGuardianAlertTarget(): Boolean =
+        dataManager.guardianLinkCode.isNotEmpty() || dataManager.guardianAlertEndpoint.isNotEmpty()
 
     private fun showConfigureGuardianEndpointDialog(onSaved: (() -> Unit)? = null) {
         val layout = LinearLayout(this).apply {
@@ -601,10 +629,22 @@ class MainActivity : AppCompatActivity() {
             setPadding(50, 20, 50, 10)
         }
 
-        val tvEpLabel = TextView(this).apply {
-            text = "Guardian Webhook, ntfy topic, or Email:"
+        val tvCodeLabel = TextView(this).apply {
+            text = "Guardian pairing code (from the parent's phone):"
             setTextColor(getColor(R.color.text_secondary))
             textSize = 12f
+        }
+        val etCode = EditText(this).apply {
+            hint = "e.g. ABCD-2345"
+            setText(GuardianLinkManager.formatCode(dataManager.guardianLinkCode))
+            inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_CAP_CHARACTERS
+        }
+
+        val tvEpLabel = TextView(this).apply {
+            text = "Advanced (optional): webhook or ntfy topic:"
+            setTextColor(getColor(R.color.text_secondary))
+            textSize = 12f
+            setPadding(0, 24, 0, 0)
         }
         val etEndpoint = EditText(this).apply {
             hint = "e.g. https://discord.com/api/webhooks/... or alerts_topic"
@@ -624,28 +664,174 @@ class MainActivity : AppCompatActivity() {
             inputType = InputType.TYPE_CLASS_TEXT
         }
 
+        layout.addView(tvCodeLabel)
+        layout.addView(etCode)
         layout.addView(tvEpLabel)
         layout.addView(etEndpoint)
         layout.addView(tvDeviceLabel)
         layout.addView(etDeviceName)
 
         MaterialAlertDialogBuilder(this)
-            .setTitle("Guardian Alert Endpoint")
-            .setMessage("Set where uninstallation and tamper alerts should be sent in real-time.\n\nTip: Enter any topic name (e.g. mytestalerts) to view live alerts on https://ntfy.sh/mytestalerts without signing up!")
+            .setTitle("Link Guardian Phone")
+            .setMessage("On the parent's phone, open Clawse and tap \"Link a Child Phone\" in the Guardian Phone card. Enter the code it shows here.")
             .setView(layout)
             .setPositiveButton("Save") { _, _ ->
                 val ep = etEndpoint.text.toString().trim()
                 val dev = etDeviceName.text.toString().trim()
+                val code = GuardianLinkManager.normalizeCode(etCode.text.toString())
                 dataManager.guardianAlertEndpoint = ep
                 if (dev.isNotEmpty()) {
                     dataManager.childDeviceName = dev
                 }
-                updateGuardianChildModeUI()
-                onSaved?.invoke()
-                Toast.makeText(this, "Guardian alert configuration saved!", Toast.LENGTH_SHORT).show()
+                if (code.isEmpty() || code == dataManager.guardianLinkCode) {
+                    if (code.isEmpty()) dataManager.guardianLinkCode = ""
+                    updateGuardianChildModeUI()
+                    onSaved?.invoke()
+                    Toast.makeText(this, "Guardian alert configuration saved!", Toast.LENGTH_SHORT).show()
+                    return@setPositiveButton
+                }
+                Toast.makeText(this, "Linking to guardian phone...", Toast.LENGTH_SHORT).show()
+                GuardianLinkManager.claimLink(this, code, dataManager.childDeviceName) { ok, msg ->
+                    Toast.makeText(this, if (ok) "🛡️ $msg" else "Couldn't link: $msg", Toast.LENGTH_LONG).show()
+                    updateGuardianChildModeUI()
+                    updateGuardianPhoneUI()
+                    if (ok) onSaved?.invoke()
+                }
             }
             .setNegativeButton("Cancel", null)
             .show()
+    }
+
+    private fun updateGuardianPhoneUI() {
+        if (dataManager.guardianModeLinkCodes.isEmpty()) {
+            binding.tvGuardianLinksStatus.text = "No child phones linked yet"
+            binding.btnUnlinkChildPhone.visibility = View.GONE
+            binding.btnPairChildPhone.text = "Link a Child Phone"
+            return
+        }
+        GuardianLinkManager.loadGuardianLinks(this) { links ->
+            if (isFinishing || isDestroyed) return@loadGuardianLinks
+            val paired = links.filter { it.isPaired }
+            binding.btnUnlinkChildPhone.visibility = if (paired.isEmpty()) View.GONE else View.VISIBLE
+            binding.btnPairChildPhone.text = if (paired.isEmpty()) "Link a Child Phone" else "Link Another"
+            binding.tvGuardianLinksStatus.text = if (paired.isEmpty()) {
+                "No child phones linked yet"
+            } else {
+                paired.joinToString("\n") { link ->
+                    val name = link.childDeviceName.ifEmpty { "Child phone" }
+                    val seen = link.lastHeartbeat?.let {
+                        DateUtils.getRelativeTimeSpanString(it.time, System.currentTimeMillis(), DateUtils.MINUTE_IN_MILLIS)
+                    } ?: "never"
+                    val icon = if (link.isOffline) "⚠️" else "✅"
+                    "$icon $name · last check-in $seen"
+                }
+            }
+        }
+    }
+
+    private fun requestNotificationPermissionIfNeeded() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+            checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+        ) {
+            notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+        }
+    }
+
+    private fun showPairChildPhoneDialog() {
+        requestNotificationPermissionIfNeeded()
+        GuardianLinkManager.ensureNotificationChannel(this)
+
+        val density = resources.displayMetrics.density
+        val tvInstructions = TextView(this).apply {
+            text = "Creating a pairing code..."
+            setTextColor(getColor(R.color.text_secondary))
+            textSize = 15f
+            setLineSpacing(0f, 1.15f)
+        }
+        val tvCode = TextView(this).apply {
+            visibility = View.GONE
+            gravity = Gravity.CENTER
+            setTextColor(getColor(R.color.text_primary))
+            textSize = 34f
+            typeface = android.graphics.Typeface.create(android.graphics.Typeface.MONOSPACE, android.graphics.Typeface.BOLD)
+            letterSpacing = 0.12f
+            background = android.graphics.drawable.GradientDrawable().apply {
+                setColor(getColor(R.color.surface_variant))
+                cornerRadius = 12 * density
+            }
+            val pad = (16 * density).toInt()
+            setPadding(pad, pad, pad, pad)
+            contentDescription = "Pairing code. Tap to copy."
+        }
+        val tvFootnote = TextView(this).apply {
+            visibility = View.GONE
+            text = "Tap the code to copy it. It works for 15 minutes. Keep this screen open until the child's phone is linked."
+            setTextColor(getColor(R.color.text_secondary))
+            textSize = 13f
+            setLineSpacing(0f, 1.15f)
+        }
+        val content = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            val side = (24 * density).toInt()
+            setPadding(side, (8 * density).toInt(), side, 0)
+            addView(tvInstructions)
+            addView(tvCode, LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT
+            ).apply { topMargin = (16 * density).toInt(); bottomMargin = (16 * density).toInt() })
+            addView(tvFootnote)
+        }
+
+        val progress = MaterialAlertDialogBuilder(this)
+            .setTitle("Link a Child Phone")
+            .setView(content)
+            .setNegativeButton("Close", null)
+            .show()
+        progress.setOnDismissListener {
+            pairingListener?.remove()
+            pairingListener = null
+            updateGuardianPhoneUI()
+        }
+
+        GuardianLinkManager.createLink(this, Build.MODEL) { code, error ->
+            if (!progress.isShowing) return@createLink
+            if (code == null) {
+                tvInstructions.text = "Couldn't create a code: $error"
+                return@createLink
+            }
+            val formatted = GuardianLinkManager.formatCode(code)
+            tvInstructions.text = "On the child's phone, open Clawse → Guardian Alerts → Configure Alert, and enter this code:"
+            tvCode.text = formatted
+            tvCode.visibility = View.VISIBLE
+            tvFootnote.visibility = View.VISIBLE
+            tvCode.setOnClickListener {
+                val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                clipboard.setPrimaryClip(ClipData.newPlainText("Clawse pairing code", formatted))
+                Toast.makeText(this, "Code copied", Toast.LENGTH_SHORT).show()
+            }
+            pairingListener?.remove()
+            pairingListener = GuardianLinkManager.watchForPairing(code) { childName ->
+                Toast.makeText(this, "🛡️ Linked to ${childName.ifEmpty { "child phone" }}!", Toast.LENGTH_LONG).show()
+                progress.dismiss()
+            }
+        }
+    }
+
+    private fun showUnlinkChildPhoneDialog() {
+        GuardianLinkManager.loadGuardianLinks(this) { links ->
+            val paired = links.filter { it.isPaired }
+            if (paired.isEmpty() || isFinishing || isDestroyed) return@loadGuardianLinks
+            val names = paired.map { "${it.childDeviceName.ifEmpty { "Child phone" }} (${GuardianLinkManager.formatCode(it.code)})" }
+            MaterialAlertDialogBuilder(this)
+                .setTitle("Unlink which phone?")
+                .setItems(names.toTypedArray()) { _, which ->
+                    GuardianLinkManager.unlink(this, paired[which].code) { ok ->
+                        Toast.makeText(this, if (ok) "Phone unlinked." else "Couldn't unlink. Check your connection.", Toast.LENGTH_SHORT).show()
+                        updateGuardianPhoneUI()
+                    }
+                }
+                .setNegativeButton("Cancel", null)
+                .show()
+        }
     }
 
     private fun showPaywallDialog(targetProduct: String? = null) {

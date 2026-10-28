@@ -1,0 +1,14 @@
+{
+  "name": "clawback-firebase-dev",
+  "private": true,
+  "description": "Firebase CLI and Firestore security-rules tests for ClawBack (no Cloud Functions; pushes are sent by /worker)",
+  "scripts": {
+    "deploy:rules": "firebase deploy --only firestore --project clawse-app --config ../firebase.json",
+    "test:rules": "firebase emulators:exec --only firestore --project clawse-rules-test --config ../firebase.json \"node --test test/\""
+  },
+  "devDependencies": {
+    "@firebase/rules-unit-testing": "^6.0.0",
+    "firebase": "^13.1.0",
+    "firebase-tools": "^15.34.1"
+  }
+}

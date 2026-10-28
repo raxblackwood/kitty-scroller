@@ -1,0 +1,13 @@
+{
+  "name": "clawback-guardian-worker",
+  "private": true,
+  "description": "Cloudflare Worker that pushes ClawBack guardian alerts and missed check-in warnings",
+  "scripts": {
+    "deploy": "wrangler deploy",
+    "logs": "wrangler tail",
+    "check": "wrangler deploy --dry-run --outdir dist"
+  },
+  "devDependencies": {
+    "wrangler": "^4.153.0"
+  }
+}

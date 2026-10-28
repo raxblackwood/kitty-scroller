@@ -1,0 +1,21 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "links",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "offlineAlertSent", "order": "ASCENDING" },
+        { "fieldPath": "lastHeartbeat", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "links",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "childUid", "order": "ASCENDING" },
+        { "fieldPath": "pairingExpiresAt", "order": "ASCENDING" }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}

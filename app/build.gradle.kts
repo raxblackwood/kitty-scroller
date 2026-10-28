@@ -1,6 +1,7 @@
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
+    id("com.google.gms.google-services")
 }
 
 android {
@@ -11,10 +12,13 @@ android {
         applicationId = "com.clawse.app"
         minSdk = 26
         targetSdk = 36
-        versionCode = 31
-        versionName = "1.0.30"
+        versionCode = 32
+        versionName = "1.0.31"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        // Cloudflare Worker that relays guardian alerts as push notifications (see /worker)
+        buildConfigField("String", "GUARDIAN_RELAY_URL", "\"https://clawback-guardian.clawback-guardian-worker.workers.dev\"")
     }
 
     signingConfigs {
@@ -49,6 +53,7 @@ android {
     }
     buildFeatures {
         viewBinding = true
+        buildConfig = true
     }
     lint {
         checkReleaseBuilds = false
@@ -64,5 +69,9 @@ dependencies {
     implementation("androidx.work:work-runtime-ktx:2.9.0")
     implementation("androidx.preference:preference-ktx:1.2.1")
     implementation("com.android.billingclient:billing-ktx:8.0.0")
+    implementation(platform("com.google.firebase:firebase-bom:34.10.0"))
+    implementation("com.google.firebase:firebase-auth")
+    implementation("com.google.firebase:firebase-firestore")
+    implementation("com.google.firebase:firebase-messaging")
     testImplementation("junit:junit:4.13.2")
 }

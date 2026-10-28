@@ -12,3 +12,7 @@ app/build/
 *.keystore
 /dist/
 keystore/KEYSTORE_INFO.txt
+google-services.json
+*firebase-adminsdk*.json
+*service-account*.json
+firebase-debug.log

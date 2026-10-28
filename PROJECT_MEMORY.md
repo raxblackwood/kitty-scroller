@@ -92,3 +92,35 @@ It scopes its overlay strictly to video doomscrolling feeds while leaving produc
   - Updated onboarding Slide 4 to "Private & Secure" without the "zero ads" restriction.
   - Bumped release version to 1.0.30 (versionCode 31).
   - Installed updated release APK directly to connected physical device via ADB.
+- v1.0.31 Firebase Guardian Push Alerts (2026-10-27 to 2026-10-28): Two-phone parental alerts over Firebase, replacing ntfy as the default channel.
+  - Firebase project `clawse-app` on the free Spark plan, owned by the Google account raxblackwoodbackup@gmail.com (separate from the Play Console account, which is fine).
+  - Firebase BoM 34.10.0, because newer BoMs ship Kotlin 2.3+ metadata that the project's Kotlin 2.1 compiler can't read.
+  - `app/google-services.json` is gitignored because GitHub Pages publishes the repo root.
+  - Both phones sign in with Firebase Anonymous Auth (no accounts). The guardian phone creates an 8-character pairing code (15-minute window); the child enters it under Guardian Alerts > Configure Alert.
+  - Push relay is a free Cloudflare Worker (`worker/`), not Cloud Functions: the Blaze upgrade needed a ₹1,000 UPI prepayment in India, so Firebase stays on the free Spark plan (see ADR-006).
+  - The child app POSTs alerts to `${GUARDIAN_RELAY_URL}/alert` with its Firebase ID token. The Worker checks `link.childUid == uid` and sends FCM HTTP v1 to the guardian. A "Phone linked" push is sent right after pairing. ntfy/webhook kept as optional advanced backup.
+  - Missed check-in: child heartbeat (15-min WorkManager) writes `lastHeartbeat` to Firestore. A Worker cron (every 30 min) warns the guardian after 6h of silence, sends "back online", and deletes unused codes after 24h.
+  - New: `GuardianLinkManager.kt`, `GuardianMessagingService.kt`, Guardian Phone card in `activity_main.xml`, `worker/`, `firestore.rules`, `firestore.indexes.json`, `firebase-dev/` (Firebase CLI plus rules tests).
+  - Privacy policy (`privacy.html`, `Docs/PRIVACY_POLICY.md`) and Play listing copy updated to disclose the optional Firebase and Cloudflare relay; `Docs/PRIVACY_POLICY.html` now redirects to `privacy.html`.
+  - Deployed 2026-10-28:
+    - Firestore rules and indexes are live.
+    - Worker `clawback-guardian` is live at https://clawback-guardian.clawback-guardian-worker.workers.dev, on Cloudflare account raxblackwoodbackup@gmail.com, with cron `*/30 * * * *`.
+    - The `FIREBASE_SERVICE_ACCOUNT` secret is set. The key file lives outside the repo, in `C:\Users\raman\Documents\clawse-keys\`.
+    - `GUARDIAN_RELAY_URL` is set in `app/build.gradle.kts`. Debug and release APKs rebuilt.
+  - Verified 2026-10-28 on a physical phone (A142, Android 16), using one phone as both guardian and child:
+    - Pairing code created, code claimed, and the "Phone linked" push arrived.
+    - "Send Test Ping" push arrived.
+    - The guardian card shows the last check-in time.
+    - The 15:30 Worker cron sweep ran cleanly (indexes and service account OK).
+  - UI polish from the test:
+    - Pairing code is shown large, monospaced and tap-to-copy in a rounded box.
+    - The guardian card refreshes after a claim.
+    - The button reads "Link Another" once a phone is linked, so it no longer wraps.
+    - The claim toast reads "Linked to the guardian's phone".
+  - Pending:
+    - Two-device test of missed check-in (needs child mode, which is behind the parental subscription).
+    - Rules tests (need JDK 21).
+    - Play data safety form update before publishing.
+    - Merge branch `feat/guardian-push-alerts` into main, which also publishes the updated privacy policy via GitHub Pages.
+  - Bumped release version to 1.0.31 (versionCode 32).
+  - Built the release APK and AAB into `dist/` and installed the APK on the physical device via ADB.

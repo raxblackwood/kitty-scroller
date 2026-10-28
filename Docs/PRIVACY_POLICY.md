@@ -1,13 +1,13 @@
 ﻿# Privacy Policy for ClawBack: Kitty Screen Curtain
 
-**Last updated:** October 19, 2026
+**Last updated:** October 27, 2026
 
 **ClawBack: Kitty Screen Curtain** ("ClawBack", "we", "our", or "the app") is committed to protecting your privacy. This Privacy Policy outlines our strict privacy practices, explains the permissions our Android application requests, and details how user information is handled.
 
 ---
 
-### Summary: Zero Data Collection
-**ClawBack does NOT collect, store, transmit, or share any personal data, usage data, device identifiers, or analytics with any third party or remote server.** The application runs 100% locally and offline on your device.
+### Summary: Local by Default
+**ClawBack does NOT collect, store, transmit, or share any personal data, scrolling activity, or analytics.** Everything ClawBack does to limit doomscrolling happens locally on your device. The only data that leaves your phone is the small amount needed for the optional Guardian Alerts feature (see "Optional Guardian Alerts" below), and only if you choose to link two phones.
 
 ---
 
@@ -46,20 +46,40 @@ ClawBack is designed to curb excessive short-form video consumption ("doomscroll
 
 ---
 
+### Optional Guardian Alerts (Google Firebase)
+Guardian Alerts notify a parent or accountability partner on their own phone when someone tries to remove ClawBack from a linked phone, or when that phone stops checking in. The feature is **off by default** and only works once two phones are linked with a pairing code. It uses Google Firebase (Authentication, Cloud Firestore, Cloud Messaging), operated by Google LLC, plus a small Cloudflare Workers relay (Cloudflare, Inc.) that forwards alerts to the guardian's phone without storing them.
+
+When Guardian Alerts are in use, only this data is sent to Firebase:
+- **Anonymous app ID** from Firebase Anonymous Authentication (no name, email, phone number or account).
+- **Pairing code and device label** (the name you enter, or the phone model).
+- **Push notification token** for the guardian's phone.
+- **Check-in time** of the protected phone (about every 15 minutes), used to warn the guardian if it goes silent.
+- **Alert events**: event type and a short message, forwarded through the relay to the guardian's phone and not stored.
+
+ClawBack never sends scroll counts, app usage, screen content, location, contacts or accessibility data to Firebase. This data is used only to deliver Guardian Alerts; it is not used for advertising, analytics or profiling, and is not sold or shared. Data is encrypted in transit. Either phone can unlink at any time, which deletes the link from the server; unused pairing codes are deleted within 24 hours. See Google's Firebase privacy information: https://firebase.google.com/support/privacy
+
+Alternatively, alerts can be sent to a webhook or ntfy.sh topic you configure yourself, in which case the alert message goes to the address you provide.
+
+---
+
 ### Data Storage & Retention
 - All user preferences (such as selected kitty theme, scroll limits, Guardian PIN hash, and daily counter) are stored locally on your device via Android's secure `SharedPreferences`.
 - All daily counters reset automatically at midnight or can be manually reset within the app.
 - When you uninstall the application, all local settings and data are permanently deleted by Android.
+- Guardian Alert link data on Firebase is deleted when either phone unlinks, or on request via the contact below.
 
 ---
 
 ### Third-Party Services
-ClawBack does **not** include any third-party advertising SDKs, tracking libraries, cloud analytics (such as Google Analytics or Firebase), or external telemetry frameworks.
+- **Google Play Billing** for optional purchases.
+- **Google Firebase** and **Cloudflare Workers**, only for the optional Guardian Alerts feature described above.
+
+ClawBack does **not** include tracking libraries, cloud analytics (such as Google Analytics), or external telemetry frameworks.
 
 ---
 
 ### Children's Privacy
-ClawBack does not collect information from anyone, including children under the age of 13. When used with the Guardian PIN feature, parents have full control over the application settings and limits on their child's device.
+ClawBack does not knowingly collect personal information from children under 13. When a parent links a child's phone for Guardian Alerts, only the limited, non-identifying data listed above is processed, solely to notify the parent. All other settings and limits stay on the child's device under the parent's control.
 
 ---
 

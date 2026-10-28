@@ -1,0 +1,17 @@
+name = "clawback-guardian"
+main = "src/index.js"
+compatibility_date = "2026-10-01"
+workers_dev = true
+
+[vars]
+FIREBASE_PROJECT_ID = "clawse-app"
+
+# Missed check-in sweep (free plan allows up to 5 cron triggers)
+[triggers]
+crons = ["*/30 * * * *"]
+
+[observability]
+enabled = true
+
+# Secret (never commit): FIREBASE_SERVICE_ACCOUNT = full service-account JSON
+#   npx wrangler secret put FIREBASE_SERVICE_ACCOUNT < path/to/service-account.json

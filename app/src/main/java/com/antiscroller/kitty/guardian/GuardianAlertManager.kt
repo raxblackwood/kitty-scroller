@@ -18,8 +18,9 @@ import java.util.concurrent.Executors
 /**
  * Handles real-time guardian security alert dispatches when tamper,
  * deactivation, or uninstallation attempts occur on a monitored child device.
- * Alerts are sent silently in the background exclusively to the guardian endpoint
- * with zero intrusive local notifications displayed on the monitored device.
+ * Alerts are sent silently in the background to the linked guardian phone (Firebase)
+ * and/or an optional webhook / ntfy endpoint, with zero intrusive local notifications
+ * displayed on the monitored device.
  */
 object GuardianAlertManager {
 
@@ -51,24 +52,69 @@ object GuardianAlertManager {
         }
 
         val endpoint = dataManager.guardianAlertEndpoint.trim()
-        if (endpoint.isEmpty()) {
-            Log.w(TAG, "No guardian endpoint configured. Alert $eventType skipped.")
-            callback?.let { mainHandler.post { it(false, "No guardian endpoint configured") } }
+        val linkCode = dataManager.guardianLinkCode
+        if (endpoint.isEmpty() && linkCode.isEmpty()) {
+            Log.w(TAG, "No guardian phone or endpoint configured. Alert $eventType skipped.")
+            callback?.let { mainHandler.post { it(false, "No guardian phone linked") } }
             return
         }
 
         executor.execute {
-            val success = try {
+            val firebaseOk = linkCode.isNotEmpty() && try {
+                dispatchFirebaseAlert(dataManager, linkCode, eventType, details)
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to dispatch alert $eventType via Firebase: ${e.message}", e)
+                false
+            }
+            val endpointOk = endpoint.isNotEmpty() && try {
                 dispatchNetworkAlert(appContext, dataManager, endpoint, eventType, details)
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to dispatch alert $eventType to $endpoint: ${e.message}", e)
                 false
             }
+            val success = firebaseOk || endpointOk
+            if (success) dataManager.lastHeartbeatTimestamp = System.currentTimeMillis()
 
             mainHandler.post {
-                callback?.invoke(success, if (success) "Alert sent successfully" else "Failed to connect to endpoint")
+                callback?.invoke(success, if (success) "Alert sent successfully" else "Couldn't reach the guardian. Check the internet connection.")
             }
         }
+    }
+
+    private fun dispatchFirebaseAlert(
+        dataManager: ScrollDataManager,
+        linkCode: String,
+        eventType: String,
+        details: String
+    ): Boolean {
+        val deviceName = dataManager.childDeviceName.ifEmpty { Build.MODEL }
+        // Heartbeats only refresh the check-in time; the server raises missed check-in alerts.
+        if (eventType == EVENT_HEARTBEAT) {
+            return GuardianLinkManager.sendHeartbeatBlocking(linkCode, deviceName)
+        }
+        val (title, summary) = describeEvent(eventType, deviceName, details)
+        return GuardianLinkManager.sendAlertBlocking(linkCode, eventType, title, summary, deviceName)
+    }
+
+    private fun describeEvent(eventType: String, deviceName: String, details: String): Pair<String, String> {
+        val title = when (eventType) {
+            EVENT_UNINSTALL_ATTEMPT -> "🚨 CRITICAL: Clawse Uninstall Attempted!"
+            EVENT_ADMIN_DISABLE_ATTEMPT -> "⚠️ WARNING: Device Admin Deactivation Attempted!"
+            EVENT_ADMIN_DISABLED -> "🚨 DANGER: Device Admin Deactivated!"
+            EVENT_HEARTBEAT -> "💚 Child Device Heartbeat: Active"
+            EVENT_SETUP_TEST -> "🔔 Clawse Guardian Alert Setup Test"
+            else -> "🛡️ Clawse Security Alert"
+        }
+
+        val summary = when (eventType) {
+            EVENT_UNINSTALL_ATTEMPT -> "Someone attempted to uninstall Clawse on $deviceName. The system intercepted and cancelled the dialog."
+            EVENT_ADMIN_DISABLE_ATTEMPT -> "An attempt to revoke Device Administrator privileges for Clawse was made on $deviceName."
+            EVENT_ADMIN_DISABLED -> "Device Administrator protection was turned off on $deviceName!"
+            EVENT_HEARTBEAT -> "$deviceName is online and Clawse screen-time shield is running."
+            EVENT_SETUP_TEST -> "Testing connection from child device $deviceName. Guardian alerts are functioning properly."
+            else -> details
+        }
+        return title to summary
     }
 
     private fun dispatchNetworkAlert(
@@ -88,23 +134,7 @@ object GuardianAlertManager {
         val timestamp = SimpleDateFormat("yyyy-MM-dd HH:mm:ss z", Locale.US).format(Date())
         val deviceName = dataManager.childDeviceName.ifEmpty { Build.MODEL }
 
-        val title = when (eventType) {
-            EVENT_UNINSTALL_ATTEMPT -> "🚨 CRITICAL: Clawse Uninstall Attempted!"
-            EVENT_ADMIN_DISABLE_ATTEMPT -> "⚠️ WARNING: Device Admin Deactivation Attempted!"
-            EVENT_ADMIN_DISABLED -> "🚨 DANGER: Device Admin Deactivated!"
-            EVENT_HEARTBEAT -> "💚 Child Device Heartbeat: Active"
-            EVENT_SETUP_TEST -> "🔔 Clawse Guardian Alert Setup Test"
-            else -> "🛡️ Clawse Security Alert"
-        }
-
-        val summary = when (eventType) {
-            EVENT_UNINSTALL_ATTEMPT -> "Someone attempted to uninstall Clawse on $deviceName. The system intercepted and cancelled the dialog."
-            EVENT_ADMIN_DISABLE_ATTEMPT -> "An attempt to revoke Device Administrator privileges for Clawse was made on $deviceName."
-            EVENT_ADMIN_DISABLED -> "Device Administrator protection was turned off on $deviceName!"
-            EVENT_HEARTBEAT -> "$deviceName is online and Clawse screen-time shield is running."
-            EVENT_SETUP_TEST -> "Testing connection from child device $deviceName. Guardian alerts are functioning properly."
-            else -> details
-        }
+        val (title, summary) = describeEvent(eventType, deviceName, details)
 
         val formattedMessage = "$title\nDevice: $deviceName\nTime: $timestamp\nDetails: $summary"
 
@@ -145,7 +175,6 @@ object GuardianAlertManager {
         val ok = responseCode in 200..299
 
         if (ok) {
-            dataManager.lastHeartbeatTimestamp = System.currentTimeMillis()
             Log.i(TAG, "Guardian alert $eventType successfully sent to $targetUrl (HTTP $responseCode)")
         } else {
             Log.w(TAG, "Guardian alert $eventType returned HTTP $responseCode from $targetUrl")

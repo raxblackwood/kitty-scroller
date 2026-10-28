@@ -54,15 +54,15 @@
 </head>
 <body>
   <div class="card">
-    <span class="badge">Zero Data Collection &bull; 100% Local Execution</span>
+    <span class="badge">No Tracking &bull; No Ads Profiling &bull; Local by Default</span>
     <h1>Privacy Policy for Clawse: Kitty Screen Curtain</h1>
-    <p><strong>Effective Date:</strong> October 22, 2026</p>
+    <p><strong>Effective Date:</strong> October 27, 2026</p>
     <p><strong>Application:</strong> Clawse (com.clawse.app)</p>
 
     <p><strong>Clawse: Kitty Screen Curtain</strong> (&quot;Clawse&quot;, &quot;we&quot;, &quot;our&quot;) is a digital wellbeing and mindful screen-time companion designed to help you claw back your focus from compulsive short-form doomscrolling. We respect your right to privacy above all else.</p>
 
     <div class="alert">
-      <strong>Core Privacy Guarantee:</strong> Clawse does NOT collect, store, transmit, or share any personal information, messages, keystrokes, contact lists, browsing history, or device identifiers with any remote server, advertising network, or third party. The application runs locally and offline on your device.
+      <strong>Core Privacy Guarantee:</strong> Clawse does NOT collect, store, transmit, or share any personal information, messages, keystrokes, contact lists, browsing history, or scrolling activity. Everything Clawse does to limit doomscrolling happens locally on your device. The only data that ever leaves your phone is the small amount needed for the optional Guardian Alerts feature (see Section 4), and only if you choose to link two phones.
     </div>
 
     <h2>1. Accessibility Service API Declaration (Google Play Policy Compliance)</h2>
@@ -75,7 +75,7 @@
         <ul>
           <li>The Accessibility Service ignores all comments, direct messages, passwords, text input, audio, cameras, search bars, and home feeds.</li>
           <li>No keystrokes, personal messages, or screen text are ever recorded, analyzed, or stored.</li>
-          <li>The app does not possess network transmission servers for accessibility telemetry. No accessibility data ever leaves your device.</li>
+          <li>No accessibility data ever leaves your device. Accessibility events are processed in memory and never uploaded.</li>
         </ul>
       </li>
     </ul>
@@ -90,16 +90,29 @@
     <h2>3. In-App Purchases &amp; Billing</h2>
     <p>Optional cosmetic kitty breeds (Tabby, Saturn, Rolex) and Guardian Mode features are processed securely through the official <strong>Google Play In-App Billing API</strong>. We do not process, store, or receive your credit card numbers, billing addresses, or payment credentials. All transactions are governed by Google Play&#39;s Terms of Service and Privacy Policy.</p>
 
-    <h2>4. Data Storage &amp; Deletion</h2>
-    <p>All app settings, selected kitty breed, daily scroll limit counters, and the salted hash of your Guardian PIN are stored locally on your device in private Android <code>SharedPreferences</code>. Uninstalling Clawse permanently and immediately deletes all stored application data.</p>
+    <h2>4. Optional Guardian Alerts (Google Firebase)</h2>
+    <p>Guardian Alerts let a parent or accountability partner receive a notification on their own phone when someone tries to remove Clawse from a linked phone, or when that phone stops checking in. This feature is <strong>off by default</strong> and is only used if both phones are linked with a pairing code. It uses Google Firebase (Authentication, Cloud Firestore and Cloud Messaging), operated by Google LLC, and a small Cloudflare Workers relay, operated by Cloudflare, Inc., that delivers the notifications. The relay does not store alert data.</p>
+    <p>When Guardian Alerts are in use, only the following data is sent to Firebase:</p>
+    <ul>
+      <li><strong>Anonymous app ID:</strong> a random identifier created by Firebase Anonymous Authentication. No name, email, phone number or account is required.</li>
+      <li><strong>Pairing code and device label:</strong> the pairing code linking the two phones and the device name you enter (for example &quot;Sam&#39;s phone&quot;) or the phone model.</li>
+      <li><strong>Push notification token:</strong> a token for the guardian&#39;s phone so alerts can be delivered to it.</li>
+      <li><strong>Check-in time:</strong> the time the protected phone last checked in (about every 15 minutes), used to warn the guardian if it goes silent.</li>
+      <li><strong>Alert events:</strong> the type of event (for example an uninstall attempt) and a short message, forwarded to the guardian&#39;s phone and not stored.</li>
+    </ul>
+    <p>Alert messages pass through the Cloudflare relay only to be forwarded to the guardian&#39;s phone. Clawse never sends scroll counts, app usage, screen content, location, contacts or any accessibility data to Firebase. This data is used only to deliver Guardian Alerts; it is not used for advertising, analytics or profiling, and is not sold or shared with anyone else. Data is encrypted in transit. Either phone can unlink at any time, which deletes the link and its data from the server; unused pairing codes are deleted automatically within 24 hours. You can read Google&#39;s privacy practices for Firebase at <a href="https://firebase.google.com/support/privacy" target="_blank" rel="noopener">firebase.google.com/support/privacy</a>.</p>
+    <p>If you prefer, Guardian Alerts can instead be sent to a webhook or <a href="https://ntfy.sh" target="_blank" rel="noopener">ntfy.sh</a> topic that you configure yourself; in that case the alert message is sent to the address you provide.</p>
 
-    <h2>5. Children&#39;s Privacy</h2>
-    <p>Clawse does not collect personal data from anyone, including children under 13. When utilized by families or parents as a screen-time boundary tool, all controls and PIN locks operate strictly locally on the physical device.</p>
+    <h2>5. Data Storage &amp; Deletion</h2>
+    <p>All app settings, selected kitty breed, daily scroll limit counters, and the salted hash of your Guardian PIN are stored locally on your device in private Android <code>SharedPreferences</code>. Uninstalling Clawse permanently and immediately deletes all locally stored application data. Guardian Alert link data stored on Firebase is deleted when either phone unlinks; you can also request deletion through the contact details below.</p>
 
-    <h2>6. Security &amp; Compliance</h2>
-    <p>Because Clawse does not transmit user data across the Internet, your personal data is immune to external data breaches or server-side unauthorized access.</p>
+    <h2>6. Children&#39;s Privacy</h2>
+    <p>Clawse does not knowingly collect personal information from children under 13. When a parent links a child&#39;s phone for Guardian Alerts, only the limited, non-identifying data listed in Section 4 is processed, solely to notify the parent. All other controls and PIN locks operate locally on the device.</p>
 
-    <h2>7. Contact Us</h2>
+    <h2>7. Security &amp; Compliance</h2>
+    <p>Everything except Guardian Alerts stays on your device and is never transmitted. Guardian Alert data is protected by Firebase security rules so that only the two linked phones can access their own link, and it is encrypted in transit.</p>
+
+    <h2>8. Contact Us</h2>
     <p>If you have any questions, concerns, or feedback regarding this Privacy Policy or Clawse, please contact us or open an issue on our GitHub repository:</p>
     <ul>
       <li><strong>Repository:</strong> <a href="https://github.com/raxblackwood/kitty-scroller" target="_blank" rel="noopener">https://github.com/raxblackwood/kitty-scroller</a></li>

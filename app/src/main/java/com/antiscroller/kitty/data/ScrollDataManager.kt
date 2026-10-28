@@ -63,6 +63,8 @@ class ScrollDataManager(context: Context) {
         private const val KEY_GUARDIAN_ENDPOINT = "guardian_alert_endpoint"
         private const val KEY_CHILD_DEVICE_NAME = "child_device_name"
         private const val KEY_LAST_HEARTBEAT_TS = "last_heartbeat_timestamp"
+        private const val KEY_GUARDIAN_LINK_CODE = "guardian_link_code"
+        private const val KEY_GUARDIAN_MODE_CODES = "guardian_mode_link_codes"
 
         const val THEME_GINGER = "ginger"
         const val THEME_TABBY = "tabby"
@@ -287,6 +289,20 @@ class ScrollDataManager(context: Context) {
         get() = prefs.getLong(KEY_LAST_HEARTBEAT_TS, 0L)
         set(value) {
             prefs.edit().putLong(KEY_LAST_HEARTBEAT_TS, value).apply()
+        }
+
+    /** Firebase pairing code linking this child phone to a guardian phone (empty if not paired). */
+    var guardianLinkCode: String
+        get() = prefs.getString(KEY_GUARDIAN_LINK_CODE, "") ?: ""
+        set(value) {
+            prefs.edit().putString(KEY_GUARDIAN_LINK_CODE, value.trim()).apply()
+        }
+
+    /** Pairing codes of child phones this phone receives guardian alerts for. */
+    var guardianModeLinkCodes: Set<String>
+        get() = prefs.getStringSet(KEY_GUARDIAN_MODE_CODES, emptySet())?.toSet() ?: emptySet()
+        set(value) {
+            prefs.edit().putStringSet(KEY_GUARDIAN_MODE_CODES, value).apply()
         }
 
     // ==========================================

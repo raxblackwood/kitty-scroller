@@ -1,0 +1,77 @@
+rules_version = '2';
+
+// ClawBack guardian pairing. Both phones sign in anonymously (no accounts).
+//   links/{code}   created by the guardian phone, claimed by the child phone
+// Alerts are not stored: the child posts them to the Cloudflare Worker relay (/worker).
+// Server-only fields (offlineAlertSent, offlineSince) are written by the relay's service account.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function onlyChanges(keys) {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(keys);
+    }
+
+    function validDeviceName() {
+      return request.resource.data.childDeviceName is string
+        && request.resource.data.childDeviceName.size() <= 60;
+    }
+
+    match /links/{code} {
+      // Readable while unclaimed (so the child can check the code), then only by the two linked phones.
+      allow get: if signedIn() && (
+        resource.data.childUid == null
+        || resource.data.guardianUid == request.auth.uid
+        || resource.data.childUid == request.auth.uid
+      );
+      allow list: if false;
+
+      // Guardian phone creates an unclaimed link valid for a short pairing window.
+      allow create: if signedIn()
+        && code.matches('^[A-HJ-NP-Z2-9]{8}$')
+        && request.resource.data.keys().hasOnly([
+             'guardianUid', 'guardianToken', 'guardianName', 'childUid', 'childDeviceName',
+             'createdAt', 'pairingExpiresAt', 'offlineAlertSent'])
+        && request.resource.data.guardianUid == request.auth.uid
+        && request.resource.data.guardianToken is string
+        && request.resource.data.guardianName is string
+        && request.resource.data.guardianName.size() <= 60
+        && request.resource.data.childUid == null
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.pairingExpiresAt is timestamp
+        && request.resource.data.pairingExpiresAt <= request.time + duration.value(20, 'm')
+        && request.resource.data.offlineAlertSent == false;
+
+      allow update: if signedIn() && (
+        // Guardian refreshes its push token.
+        (resource.data.guardianUid == request.auth.uid
+          && onlyChanges(['guardianToken', 'guardianName'])
+          && request.resource.data.guardianToken is string)
+        ||
+        // Child claims an unclaimed link inside the pairing window.
+        (resource.data.childUid == null
+          && request.time < resource.data.pairingExpiresAt
+          && onlyChanges(['childUid', 'childDeviceName', 'pairedAt', 'lastHeartbeat'])
+          && request.resource.data.childUid == request.auth.uid
+          && request.resource.data.pairedAt == request.time
+          && request.resource.data.lastHeartbeat == request.time
+          && validDeviceName())
+        ||
+        // Linked child checks in.
+        (resource.data.childUid == request.auth.uid
+          && onlyChanges(['lastHeartbeat', 'childDeviceName'])
+          && request.resource.data.lastHeartbeat == request.time
+          && validDeviceName())
+      );
+
+      // Either linked phone can unlink.
+      allow delete: if signedIn() && (
+        resource.data.guardianUid == request.auth.uid
+        || resource.data.childUid == request.auth.uid
+      );
+    }
+  }
+}
