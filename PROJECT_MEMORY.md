@@ -142,3 +142,12 @@ It scopes its overlay strictly to video doomscrolling feeds while leaving produc
   - The child dialog is now "Enter Guardian Code". Fields: pairing code, a name for this phone, then the optional advanced webhook. Labels align with the dialog text.
   - The pairing dialog is now titled "Pairing Code" and refers to "Enter Code" on the other phone.
   - `ic_sec_phone` is no longer used by the layout and is kept for possible reuse.
+- v1.0.32: Fixed startup permission prompt flow and added Daily Progress History modal.
+  - Resolved missing permission setup dialog on initial launch by ensuring `checkAndPromptPermissions()` fires after onboarding and boundary lock-in.
+  - Sized `dialog_permission_setup` with explicit window bounds and minimum width matching other glass dialogs.
+  - Implemented persistent daily focus history in `ScrollDataManager` (`getDailyHistory`, `recordHistoryEntry`, `KEY_DAILY_HISTORY`).
+  - Automatically records previous day counts upon midnight reset and upserts live daily scroll stats.
+  - Created `ProgressHistoryBottomSheetDialog` displaying past 14 days breakdown, daily averages, budget adherence metrics, and per-day progress bars.
+  - Added "📊 Progress" button in the "Today's Focus" header card in `activity_main.xml`.
+  - Bumped release version to 1.0.32 (versionCode 33).
+  - Built release APK and AAB bundle in `dist/`.

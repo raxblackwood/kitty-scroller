@@ -52,6 +52,7 @@ import com.antiscroller.kitty.guardian.GuardianLinkManager
 import com.antiscroller.kitty.overlay.KittyOverlayManager
 import com.antiscroller.kitty.service.KittyAccessibilityService
 import com.antiscroller.kitty.ui.PaywallBottomSheetDialog
+import com.antiscroller.kitty.ui.ProgressHistoryBottomSheetDialog
 import com.antiscroller.kitty.worker.DailyResetWorker
 import com.antiscroller.kitty.worker.GuardianHeartbeatWorker
 import com.google.android.material.bottomsheet.BottomSheetDialog
@@ -167,6 +168,8 @@ class MainActivity : AppCompatActivity() {
             showOnboardingCarousel()
         } else if (!dataManager.isInitialSetupDone) {
             showInitialSetupDialog()
+        } else {
+            checkAndPromptPermissions()
         }
     }
 
@@ -312,6 +315,10 @@ class MainActivity : AppCompatActivity() {
         }
         binding.btnEnablePermissionsFloater.setOnClickListener {
             showPermissionSetupDialog()
+        }
+        binding.btnViewProgress.setOnClickListener {
+            ProgressHistoryBottomSheetDialog.newInstance()
+                .show(supportFragmentManager, ProgressHistoryBottomSheetDialog.TAG)
         }
 
         // Custom Limit Set Button
@@ -1196,6 +1203,8 @@ class MainActivity : AppCompatActivity() {
             onboardingDialog = null
             if (!dataManager.isInitialSetupDone) {
                 showInitialSetupDialog()
+            } else {
+                checkAndPromptPermissions()
             }
         }
 
@@ -1338,6 +1347,11 @@ class MainActivity : AppCompatActivity() {
             ).show()
         }
 
+        val displayWidth = resources.displayMetrics.widthPixels
+        val density = resources.displayMetrics.density
+        val dialogWidth = (displayWidth * 0.92f).toInt().coerceAtMost((420 * density).toInt())
+        dialogView.minimumWidth = dialogWidth
+
         val dialog = MaterialAlertDialogBuilder(this)
             .setView(dialogView)
             .setCancelable(true)
@@ -1349,6 +1363,9 @@ class MainActivity : AppCompatActivity() {
             checkPermissions()
         }
         permissionSetupDialog = dialog
+        dialog.setOnShowListener {
+            dialog.window?.setLayout(dialogWidth, WindowManager.LayoutParams.WRAP_CONTENT)
+        }
         activeSetupDialogUpdate = { updatePermButtons() }
 
         val dismissAction = {

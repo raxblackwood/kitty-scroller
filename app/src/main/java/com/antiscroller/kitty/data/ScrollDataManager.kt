@@ -7,6 +7,9 @@ import android.os.Looper
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import android.util.Log
+import org.json.JSONObject
+import java.util.Calendar
 
 /**
  * Manages daily scroll distance, limits, target apps, kitty themes,
@@ -30,6 +33,7 @@ class ScrollDataManager(context: Context) {
             .putFloat(KEY_ACCUMULATED_PX, inMemoryAccumulatedPx)
             .putInt(KEY_SCROLL_COUNT, inMemoryScrollCount)
             .apply()
+        recordHistoryEntry(getTodayDateString(), inMemoryScrollCount, inMemoryMaxScrolls)
     }
 
     private fun scheduleDebouncedSave() {
@@ -50,6 +54,7 @@ class ScrollDataManager(context: Context) {
         private const val KEY_GUARDIAN_PIN = "guardian_pin"
         private const val KEY_MAINTENANCE_EXPIRES = "maintenance_expires_ts"
         private const val KEY_INITIAL_SETUP_DONE = "initial_setup_done"
+        private const val KEY_DAILY_HISTORY = "daily_history_records"
 
         // Anti-Impulse Cooling-Off Keys
         private const val KEY_PENDING_MAX_SCROLLS = "pending_max_scrolls"
@@ -110,6 +115,11 @@ class ScrollDataManager(context: Context) {
         val today = getTodayDateString()
         val lastDate = prefs.getString(KEY_LAST_DATE, "") ?: ""
         if (today != lastDate) {
+            if (lastDate.isNotEmpty()) {
+                val prevCount = prefs.getInt(KEY_SCROLL_COUNT, 0)
+                val prevLimit = prefs.getInt(KEY_MAX_SCROLLS, DEFAULT_MAX_SCROLLS)
+                recordHistoryEntry(lastDate, prevCount, prevLimit)
+            }
             inMemoryScrollCount = 0
             inMemoryAccumulatedPx = 0f
             val editor = prefs.edit()
@@ -441,4 +451,84 @@ class ScrollDataManager(context: Context) {
         return (isInstagramMonitored && packageName == PKG_INSTAGRAM) ||
                (isYouTubeMonitored && packageName == PKG_YOUTUBE)
     }
+
+    data class DailyHistoryItem(
+        val dateString: String,
+        val displayDate: String,
+        val dayOfWeek: String,
+        val count: Int,
+        val limit: Int,
+        val isToday: Boolean = false
+    ) {
+        val isOverLimit: Boolean get() = count >= limit
+        val percentage: Float get() = if (limit > 0) (count.toFloat() / limit).coerceIn(0f, 1f) else 0f
+    }
+
+    private fun recordHistoryEntry(date: String, count: Int, limit: Int) {
+        try {
+            val jsonStr = prefs.getString(KEY_DAILY_HISTORY, "{}") ?: "{}"
+            val jsonObj = JSONObject(jsonStr)
+            val entryObj = JSONObject().apply {
+                put("count", count)
+                put("limit", limit)
+            }
+            jsonObj.put(date, entryObj)
+            prefs.edit().putString(KEY_DAILY_HISTORY, jsonObj.toString()).apply()
+        } catch (e: Exception) {
+            Log.e("ScrollDataManager", "Error saving daily history: ${e.message}")
+        }
+    }
+
+    fun getDailyHistory(daysToFetch: Int = 14): List<DailyHistoryItem> {
+        checkAndPerformMidnightReset()
+        val todayStr = getTodayDateString()
+        recordHistoryEntry(todayStr, inMemoryScrollCount.coerceAtLeast(0), maxDailyScrolls)
+
+        val jsonStr = prefs.getString(KEY_DAILY_HISTORY, "{}") ?: "{}"
+        val jsonObj = try { JSONObject(jsonStr) } catch (_: Exception) { JSONObject() }
+
+        val result = mutableListOf<DailyHistoryItem>()
+        val calendar = Calendar.getInstance()
+        val displayFormat = SimpleDateFormat("EEE, MMM d", Locale.getDefault())
+        val dayOfWeekFormat = SimpleDateFormat("EEEE", Locale.getDefault())
+
+        for (i in 0 until daysToFetch) {
+            val date = calendar.time
+            val dStr = dateFormat.format(date)
+            val isToday = (i == 0)
+            val displayDate = when (i) {
+                0 -> "Today"
+                1 -> "Yesterday"
+                else -> displayFormat.format(date)
+            }
+            val dayOfWeek = if (isToday) "Today" else dayOfWeekFormat.format(date)
+
+            var count = 0
+            var limit = maxDailyScrolls
+
+            if (jsonObj.has(dStr)) {
+                val dayObj = jsonObj.getJSONObject(dStr)
+                count = dayObj.optInt("count", 0)
+                limit = dayObj.optInt("limit", maxDailyScrolls)
+            } else if (isToday) {
+                count = inMemoryScrollCount.coerceAtLeast(0)
+                limit = maxDailyScrolls
+            }
+
+            result.add(
+                DailyHistoryItem(
+                    dateString = dStr,
+                    displayDate = displayDate,
+                    dayOfWeek = dayOfWeek,
+                    count = count,
+                    limit = limit,
+                    isToday = isToday
+                )
+            )
+
+            calendar.add(Calendar.DAY_OF_YEAR, -1)
+        }
+        return result
+    }
+
 }
