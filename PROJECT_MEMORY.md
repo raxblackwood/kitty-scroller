@@ -157,3 +157,10 @@ It scopes its overlay strictly to video doomscrolling feeds while leaving produc
   - Added dynamic Selected Day detail card showing exact reel counts, remaining budget, and status chips.
   - Bumped release version to 1.0.33 (versionCode 34).
   - Stream-installed release APK to connected phone via ADB and compiled release AAB bundle in `dist/`.
+- v1.0.34: Themed Progress Button Highlight & Production Release Bundle.
+  - Designed custom rounded vector icon `ic_chart_progress.xml` featuring ascending capsule bars.
+  - Upgraded "Today's Focus" dashboard button to a prominent highlighted chip with 15% orange tint background and 1.2dp solid border.
+  - Updated progress dialog header row with security icon tile matching the app-wide design system.
+  - Bumped release version to 1.0.34 (versionCode 35).
+  - Built production release APK and App Bundle (`dist/Clawse-v1.0.34-release.aab`).
+  - Stream-installed release APK directly to connected physical device via ADB.
