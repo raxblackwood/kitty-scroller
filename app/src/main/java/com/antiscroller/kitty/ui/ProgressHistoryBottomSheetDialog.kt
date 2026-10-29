@@ -1,23 +1,18 @@
 package com.antiscroller.kitty.ui
 
-import android.content.res.ColorStateList
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.TextView
-import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
 import com.antiscroller.kitty.R
 import com.antiscroller.kitty.data.ScrollDataManager
 import com.antiscroller.kitty.databinding.DialogProgressHistoryBinding
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
-import com.google.android.material.progressindicator.LinearProgressIndicator
 import kotlin.math.roundToInt
 
 /**
- * Bottom sheet dialog presenting vertical daily reel progress history.
- * Displays past 14 days breakdown, streak summary, and boundary metrics.
+ * Bottom sheet dialog presenting a vertical bar graph of daily reel consumption.
+ * Inspired by native Android/Digital Wellbeing usage charts with interactive day inspection.
  */
 class ProgressHistoryBottomSheetDialog : BottomSheetDialogFragment() {
 
@@ -47,83 +42,64 @@ class ProgressHistoryBottomSheetDialog : BottomSheetDialogFragment() {
         val context = requireContext()
         dataManager = ScrollDataManager.getInstance(context)
 
-        val history = dataManager.getDailyHistory(14)
+        // Fetch past 7 days for the weekly chart
+        val history = dataManager.getDailyHistory(7)
 
-        // Summary Stats
+        // Summary Stats across the 7 days
         val daysUnderBudget = history.count { !it.isOverLimit }
         binding.tvStatDaysUnderBudget.text = "$daysUnderBudget / ${history.size}"
 
         val totalReels = history.sumOf { it.count }
         val avgReels = if (history.isNotEmpty()) (totalReels.toFloat() / history.size).roundToInt() else 0
-        binding.tvStatDailyAvg.text = "$avgReels reels"
+        binding.tvStatDailyAvg.text = "$avgReels"
 
-        binding.tvStatActiveCap.text = "${dataManager.maxDailyScrolls} reels"
+        binding.tvStatActiveCap.text = "${dataManager.maxDailyScrolls}"
 
-        // Vertical List
-        binding.rvHistoryDays.layoutManager = LinearLayoutManager(context)
-        binding.rvHistoryDays.adapter = HistoryAdapter(history)
+        // Configure Vertical Bar Graph
+        binding.chartDailyBars.setData(history)
+
+        // Set initial selected day to Today
+        val initialSelected = history.firstOrNull { it.isToday } ?: history.firstOrNull()
+        if (initialSelected != null) {
+            updateSelectedDetail(initialSelected)
+        }
+
+        // Handle user tap on any bar
+        binding.chartDailyBars.onDaySelectedListener = { selectedItem ->
+            updateSelectedDetail(selectedItem)
+        }
 
         binding.btnDoneHistory.setOnClickListener {
             dismiss()
         }
     }
 
+    private fun updateSelectedDetail(item: ScrollDataManager.DailyHistoryItem) {
+        val context = requireContext()
+        val title = if (item.isToday) "Today (${item.dayOfWeek})" else "${item.displayDate} (${item.dayOfWeek})"
+        binding.tvSelectedDayTitle.text = title
+        binding.tvSelectedDaySubtitle.text = "${item.count} of ${item.limit} reels watched (${item.dateString})"
+
+        when {
+            item.count == 0 -> {
+                binding.tvSelectedBadge.text = "🌿 Mindful Day (0)"
+                binding.tvSelectedBadge.setTextColor(context.getColor(R.color.accent_green))
+            }
+            !item.isOverLimit -> {
+                val remaining = item.limit - item.count
+                binding.tvSelectedBadge.text = "🎯 Under Limit ($remaining left)"
+                binding.tvSelectedBadge.setTextColor(context.getColor(R.color.accent_green))
+            }
+            else -> {
+                val excess = item.count - item.limit
+                binding.tvSelectedBadge.text = "🔒 Limit Hit (+$excess reels)"
+                binding.tvSelectedBadge.setTextColor(context.getColor(R.color.kitty_orange))
+            }
+        }
+    }
+
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
-    }
-
-    private inner class HistoryAdapter(
-        private val items: List<ScrollDataManager.DailyHistoryItem>
-    ) : RecyclerView.Adapter<HistoryAdapter.ViewHolder>() {
-
-        inner class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-            val tvDayTitle: TextView = itemView.findViewById(R.id.tvDayTitle)
-            val tvDaySubtitle: TextView = itemView.findViewById(R.id.tvDaySubtitle)
-            val tvReelsRatio: TextView = itemView.findViewById(R.id.tvReelsRatio)
-            val tvDayBadge: TextView = itemView.findViewById(R.id.tvDayBadge)
-            val progressDay: LinearProgressIndicator = itemView.findViewById(R.id.progressDay)
-        }
-
-        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
-            val v = layoutInflater.inflate(R.layout.item_history_day, parent, false)
-            return ViewHolder(v)
-        }
-
-        override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-            val item = items[position]
-            val context = holder.itemView.context
-
-            holder.tvDayTitle.text = if (item.isToday) "${item.displayDate} 📍" else item.displayDate
-            holder.tvDaySubtitle.text = item.dayOfWeek
-            holder.tvReelsRatio.text = "${item.count} / ${item.limit} reels"
-
-            val maxCap = item.limit.coerceAtLeast(1)
-            holder.progressDay.max = maxCap
-            holder.progressDay.progress = item.count.coerceAtMost(maxCap)
-
-            when {
-                item.count == 0 -> {
-                    holder.tvDayBadge.text = "🌿 Mindful (0)"
-                    val greenColor = context.getColor(R.color.accent_green)
-                    holder.tvDayBadge.setTextColor(greenColor)
-                    holder.progressDay.setIndicatorColor(greenColor)
-                }
-                !item.isOverLimit -> {
-                    holder.tvDayBadge.text = "🎯 Under Limit"
-                    val greenColor = context.getColor(R.color.accent_green)
-                    holder.tvDayBadge.setTextColor(greenColor)
-                    holder.progressDay.setIndicatorColor(greenColor)
-                }
-                else -> {
-                    holder.tvDayBadge.text = "🔒 Limit Hit"
-                    val alertColor = context.getColor(R.color.kitty_orange)
-                    holder.tvDayBadge.setTextColor(alertColor)
-                    holder.progressDay.setIndicatorColor(alertColor)
-                }
-            }
-        }
-
-        override fun getItemCount(): Int = items.size
     }
 }

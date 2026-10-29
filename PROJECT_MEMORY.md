@@ -151,3 +151,9 @@ It scopes its overlay strictly to video doomscrolling feeds while leaving produc
   - Added "📊 Progress" button in the "Today's Focus" header card in `activity_main.xml`.
   - Bumped release version to 1.0.32 (versionCode 33).
   - Built release APK and AAB bundle in `dist/`.
+- v1.0.33: Native Android Digital Wellbeing style Vertical Bar Chart for Daily Progress.
+  - Built custom hardware-accelerated `DailyBarChartView` featuring vertical animated columns, horizontal dashed limit baseline, and interactive day tap inspection.
+  - Refactored `ProgressHistoryBottomSheetDialog` to replace list rows with the 7-day weekly vertical column chart.
+  - Added dynamic Selected Day detail card showing exact reel counts, remaining budget, and status chips.
+  - Bumped release version to 1.0.33 (versionCode 34).
+  - Stream-installed release APK to connected phone via ADB and compiled release AAB bundle in `dist/`.
