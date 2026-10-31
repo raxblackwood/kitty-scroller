@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@drawable/bg_sticker_dialog_paper"
+    android:padding="24dp">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Change Daily Reel Limit 🎯"
+        android:textColor="@color/sticker_ink"
+        android:textSize="22sp"
+        android:textStyle="bold"
+        android:fontFamily="@font/bricolage_grotesque" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:text="Tightening your limit takes effect immediately. Increasing your limit takes effect tomorrow at midnight to prevent binge scrolling."
+        android:textColor="@color/sticker_ink_soft"
+        android:textSize="13.5sp"
+        android:lineSpacingExtra="2dp"
+        android:fontFamily="@font/bricolage_grotesque" />
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="52dp"
+        android:layout_marginTop="16dp"
+        android:background="@drawable/bg_sticker_input_box">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/etChangeLimit"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@null"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:inputType="number"
+            android:maxLength="4"
+            android:hint="Example: 25"
+            android:textColorHint="@color/sticker_ink_muted"
+            android:textColor="@color/sticker_ink"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:fontFamily="@font/bricolage_grotesque" />
+    </FrameLayout>
+
+    <TextView
+        android:id="@+id/btnSaveChangeLimit"
+        android:layout_width="match_parent"
+        android:layout_height="52dp"
+        android:layout_marginTop="22dp"
+        android:background="@drawable/bg_sticker_card_yellow"
+        android:gravity="center"
+        android:text="Update Daily Boundary 🔒"
+        android:textColor="@color/sticker_ink"
+        android:textSize="15.5sp"
+        android:textStyle="bold"
+        android:clickable="true"
+        android:focusable="true"
+        android:fontFamily="@font/bricolage_grotesque" />
+
+    <TextView
+        android:id="@+id/btnCancelChangeLimit"
+        android:layout_width="match_parent"
+        android:layout_height="40dp"
+        android:layout_marginTop="6dp"
+        android:gravity="center"
+        android:text="Cancel"
+        android:textColor="@color/sticker_ink_muted"
+        android:textSize="13.5sp"
+        android:textStyle="bold"
+        android:clickable="true"
+        android:focusable="true"
+        android:fontFamily="@font/bricolage_grotesque" />
+
+</LinearLayout>

@@ -203,13 +203,13 @@
                 <ImageView
                     android:id="@+id/ivHeroCat"
                     android:layout_width="120dp"
-                    android:layout_height="175dp"
+                    android:layout_height="228dp"
                     android:layout_alignParentEnd="true"
                     android:layout_alignParentTop="true"
-                    android:layout_marginTop="2dp"
+                    android:layout_marginTop="-6dp"
                     android:layout_marginEnd="6dp"
                     android:src="@drawable/kitty_ginger_sticker"
-                    android:scaleType="fitCenter"
+                    android:scaleType="fitXY"
                     android:contentDescription="Hanging Cat" />
 
                 <!-- "TODAY'S FOCUS" black pill tag -->

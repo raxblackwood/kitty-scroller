@@ -1576,15 +1576,16 @@ class MainActivity : AppCompatActivity() {
             )
         )
 
-        val dialogView = layoutInflater.inflate(R.layout.dialog_onboarding, null)
+        val layoutRes = if (isLightMode) R.layout.dialog_onboarding_light else R.layout.dialog_onboarding
+        val dialogView = layoutInflater.inflate(layoutRes, null)
         val displayWidth = resources.displayMetrics.widthPixels
         val density = resources.displayMetrics.density
         val dialogWidth = (displayWidth * 0.92f).toInt().coerceAtMost((420 * density).toInt())
         dialogView.minimumWidth = dialogWidth
 
         val pager = dialogView.findViewById<ViewPager2>(R.id.pagerOnboarding)
-        val btnSkip = dialogView.findViewById<MaterialButton>(R.id.btnOnboardingSkip)
-        val btnAction = dialogView.findViewById<MaterialButton>(R.id.btnOnboardingAction)
+        val btnSkip = dialogView.findViewById<View>(R.id.btnOnboardingSkip)
+        val btnAction = dialogView.findViewById<TextView>(R.id.btnOnboardingAction)
         val layoutDots = dialogView.findViewById<LinearLayout>(R.id.layoutDots)
         layoutDots.removeAllViews()
         val dots = mutableListOf<View>()
@@ -1596,7 +1597,9 @@ class MainActivity : AppCompatActivity() {
                     if (i < slides.size - 1) marginEnd = (6 * density).toInt()
                 }
                 layoutParams = lp
-                setBackgroundResource(if (i == 0) R.drawable.bg_onboarding_dot_active else R.drawable.bg_onboarding_dot_inactive)
+                val activeDot = if (isLightMode) R.drawable.bg_sticker_dot_active else R.drawable.bg_onboarding_dot_active
+                val inactiveDot = if (isLightMode) R.drawable.bg_sticker_dot_inactive else R.drawable.bg_onboarding_dot_inactive
+                setBackgroundResource(if (i == 0) activeDot else inactiveDot)
             }
             layoutDots.addView(dot)
             dots.add(dot)
@@ -1605,11 +1608,13 @@ class MainActivity : AppCompatActivity() {
         fun updateDots(position: Int) {
             dots.forEachIndexed { index, dot ->
                 val params = dot.layoutParams
+                val activeDot = if (isLightMode) R.drawable.bg_sticker_dot_active else R.drawable.bg_onboarding_dot_active
+                val inactiveDot = if (isLightMode) R.drawable.bg_sticker_dot_inactive else R.drawable.bg_onboarding_dot_inactive
                 if (index == position) {
-                    dot.setBackgroundResource(R.drawable.bg_onboarding_dot_active)
+                    dot.setBackgroundResource(activeDot)
                     params.width = (24 * resources.displayMetrics.density).toInt()
                 } else {
-                    dot.setBackgroundResource(R.drawable.bg_onboarding_dot_inactive)
+                    dot.setBackgroundResource(inactiveDot)
                     params.width = (8 * resources.displayMetrics.density).toInt()
                 }
                 dot.layoutParams = params
@@ -1632,7 +1637,8 @@ class MainActivity : AppCompatActivity() {
             }
 
             override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): SlideViewHolder {
-                val v = layoutInflater.inflate(R.layout.item_onboarding_slide, parent, false)
+                val slideLayout = if (isLightMode) R.layout.item_onboarding_slide_light else R.layout.item_onboarding_slide
+                val v = layoutInflater.inflate(slideLayout, parent, false)
                 v.layoutParams = ViewGroup.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT,
                     ViewGroup.LayoutParams.MATCH_PARENT
@@ -1704,7 +1710,8 @@ class MainActivity : AppCompatActivity() {
         if (initialSetupDialog?.isShowing == true) return
         if (dataManager.isInitialSetupDone) return
 
-        val dialogView = layoutInflater.inflate(R.layout.dialog_initial_setup, null)
+        val layoutRes = if (isLightMode) R.layout.dialog_initial_setup_light else R.layout.dialog_initial_setup
+        val dialogView = layoutInflater.inflate(layoutRes, null)
         val displayWidth = resources.displayMetrics.widthPixels
         val density = resources.displayMetrics.density
         val dialogWidth = (displayWidth * 0.92f).toInt().coerceAtMost((420 * density).toInt())
@@ -1713,7 +1720,7 @@ class MainActivity : AppCompatActivity() {
         val etLimit = dialogView.findViewById<com.google.android.material.textfield.TextInputEditText>(R.id.etSetupLimit)
         val switchInsta = dialogView.findViewById<com.google.android.material.switchmaterial.SwitchMaterial>(R.id.switchSetupInstagram)
         val switchYt = dialogView.findViewById<com.google.android.material.switchmaterial.SwitchMaterial>(R.id.switchSetupYouTube)
-        val btnLock = dialogView.findViewById<com.google.android.material.button.MaterialButton>(R.id.btnLockInSetup)
+        val btnLock = dialogView.findViewById<TextView>(R.id.btnLockInSetup)
 
         // Empty text so the translucent "Example: 25" placeholder shows cleanly
         etLimit.setText("")
@@ -1770,43 +1777,80 @@ class MainActivity : AppCompatActivity() {
     private fun showPermissionSetupDialog() {
         if (permissionSetupDialog?.isShowing == true) return
 
-        val dialogView = layoutInflater.inflate(R.layout.dialog_permission_setup, null)
+        val layoutRes = if (isLightMode) R.layout.dialog_permission_setup_light else R.layout.dialog_permission_setup
+        val dialogView = layoutInflater.inflate(layoutRes, null)
         val btnClose = dialogView.findViewById<android.widget.ImageView>(R.id.btnClosePermDialog)
-        val btnSetupOverlay = dialogView.findViewById<com.google.android.material.button.MaterialButton>(R.id.btnSetupOverlay)
-        val btnSetupAccessibility = dialogView.findViewById<com.google.android.material.button.MaterialButton>(R.id.btnSetupAccessibility)
-        val btnDone = dialogView.findViewById<com.google.android.material.button.MaterialButton>(R.id.btnDonePermissions)
-        val btnSkip = dialogView.findViewById<com.google.android.material.button.MaterialButton>(R.id.btnSkipPermissions)
+        val btnSetupOverlay = dialogView.findViewById<TextView>(R.id.btnSetupOverlay)
+        val btnSetupAccessibility = dialogView.findViewById<TextView>(R.id.btnSetupAccessibility)
+        val btnDone = dialogView.findViewById<TextView>(R.id.btnDonePermissions)
+        val btnSkip = dialogView.findViewById<TextView>(R.id.btnSkipPermissions)
 
         fun updatePermButtons() {
             val isOver = isOverlayPermissionGranted()
             val isAcc = isAccessibilityServiceEnabled(KittyAccessibilityService::class.java)
 
-            if (isOver) {
-                btnSetupOverlay.text = "Granted ✓"
-                btnSetupOverlay.backgroundTintList = ColorStateList.valueOf(getColor(R.color.accent_green))
-                btnSetupOverlay.isEnabled = false
-            } else {
-                btnSetupOverlay.text = "Enable"
-                btnSetupOverlay.backgroundTintList = ColorStateList.valueOf(getColor(R.color.primary))
-                btnSetupOverlay.isEnabled = true
-            }
+            if (isLightMode) {
+                if (isOver) {
+                    btnSetupOverlay.text = "Granted ✓"
+                    btnSetupOverlay.setBackgroundResource(R.drawable.bg_sticker_btn_pill_mint)
+                    btnSetupOverlay.setTextColor(getColor(R.color.sticker_ink))
+                    btnSetupOverlay.isEnabled = false
+                } else {
+                    btnSetupOverlay.text = "Enable"
+                    btnSetupOverlay.setBackgroundResource(R.drawable.bg_sticker_card_yellow)
+                    btnSetupOverlay.setTextColor(getColor(R.color.sticker_ink))
+                    btnSetupOverlay.isEnabled = true
+                }
 
-            if (isAcc) {
-                btnSetupAccessibility.text = "Granted ✓"
-                btnSetupAccessibility.backgroundTintList = ColorStateList.valueOf(getColor(R.color.accent_green))
-                btnSetupAccessibility.isEnabled = false
-            } else {
-                btnSetupAccessibility.text = "Enable"
-                btnSetupAccessibility.backgroundTintList = ColorStateList.valueOf(getColor(R.color.primary))
-                btnSetupAccessibility.isEnabled = true
-            }
+                if (isAcc) {
+                    btnSetupAccessibility.text = "Granted ✓"
+                    btnSetupAccessibility.setBackgroundResource(R.drawable.bg_sticker_btn_pill_mint)
+                    btnSetupAccessibility.setTextColor(getColor(R.color.sticker_ink))
+                    btnSetupAccessibility.isEnabled = false
+                } else {
+                    btnSetupAccessibility.text = "Enable"
+                    btnSetupAccessibility.setBackgroundResource(R.drawable.bg_sticker_card_yellow)
+                    btnSetupAccessibility.setTextColor(getColor(R.color.sticker_ink))
+                    btnSetupAccessibility.isEnabled = true
+                }
 
-            if (isOver && isAcc) {
-                btnDone.text = "All Set! Enter Clawse 🐾"
-                btnDone.backgroundTintList = ColorStateList.valueOf(getColor(R.color.accent_green))
+                if (isOver && isAcc) {
+                    btnDone.text = "All Set! Enter Clawse 🐾"
+                    btnDone.setBackgroundResource(R.drawable.bg_sticker_card_mint)
+                    btnDone.setTextColor(getColor(R.color.sticker_ink))
+                } else {
+                    btnDone.text = "Done / Go to Dashboard"
+                    btnDone.setBackgroundResource(R.drawable.bg_sticker_action_dark)
+                    btnDone.setTextColor(getColor(R.color.sticker_paper))
+                }
             } else {
-                btnDone.text = "Done / Go to Dashboard"
-                btnDone.backgroundTintList = ColorStateList.valueOf(getColor(R.color.primary))
+                if (isOver) {
+                    btnSetupOverlay.text = "Granted ✓"
+                    (btnSetupOverlay as? MaterialButton)?.backgroundTintList = ColorStateList.valueOf(getColor(R.color.accent_green))
+                    btnSetupOverlay.isEnabled = false
+                } else {
+                    btnSetupOverlay.text = "Enable"
+                    (btnSetupOverlay as? MaterialButton)?.backgroundTintList = ColorStateList.valueOf(getColor(R.color.primary))
+                    btnSetupOverlay.isEnabled = true
+                }
+
+                if (isAcc) {
+                    btnSetupAccessibility.text = "Granted ✓"
+                    (btnSetupAccessibility as? MaterialButton)?.backgroundTintList = ColorStateList.valueOf(getColor(R.color.accent_green))
+                    btnSetupAccessibility.isEnabled = false
+                } else {
+                    btnSetupAccessibility.text = "Enable"
+                    (btnSetupAccessibility as? MaterialButton)?.backgroundTintList = ColorStateList.valueOf(getColor(R.color.primary))
+                    btnSetupAccessibility.isEnabled = true
+                }
+
+                if (isOver && isAcc) {
+                    btnDone.text = "All Set! Enter Clawse 🐾"
+                    (btnDone as? MaterialButton)?.backgroundTintList = ColorStateList.valueOf(getColor(R.color.accent_green))
+                } else {
+                    btnDone.text = "Done / Go to Dashboard"
+                    (btnDone as? MaterialButton)?.backgroundTintList = ColorStateList.valueOf(getColor(R.color.primary))
+                }
             }
         }
 
@@ -1907,10 +1951,11 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showChangeLimitDialog() {
-        val dialogView = layoutInflater.inflate(R.layout.dialog_change_limit, null)
+        val layoutRes = if (isLightMode) R.layout.dialog_change_limit_light else R.layout.dialog_change_limit
+        val dialogView = layoutInflater.inflate(layoutRes, null)
         val etLimit = dialogView.findViewById<com.google.android.material.textfield.TextInputEditText>(R.id.etChangeLimit)
-        val btnSave = dialogView.findViewById<com.google.android.material.button.MaterialButton>(R.id.btnSaveChangeLimit)
-        val btnCancel = dialogView.findViewById<com.google.android.material.button.MaterialButton>(R.id.btnCancelChangeLimit)
+        val btnSave = dialogView.findViewById<TextView>(R.id.btnSaveChangeLimit)
+        val btnCancel = dialogView.findViewById<TextView>(R.id.btnCancelChangeLimit)
 
         // Empty text so the translucent "Example: 25" placeholder shows cleanly
         etLimit.setText("")

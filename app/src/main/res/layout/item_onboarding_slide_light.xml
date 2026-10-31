@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:gravity="center"
+    android:orientation="vertical"
+    android:paddingStart="20dp"
+    android:paddingEnd="20dp"
+    android:paddingTop="16dp"
+    android:paddingBottom="24dp">
+
+    <!-- Slide Visual Icon with Sticker Border -->
+    <FrameLayout
+        android:layout_width="104dp"
+        android:layout_height="104dp"
+        android:layout_marginBottom="24dp"
+        android:background="@drawable/bg_sticker_circle_btn_yellow">
+
+        <ImageView
+            android:id="@+id/ivSlideImage"
+            android:layout_width="72dp"
+            android:layout_height="72dp"
+            android:layout_gravity="center"
+            android:scaleType="fitCenter"
+            android:src="@mipmap/ic_kitty_launcher"
+            android:contentDescription="Slide Image" />
+    </FrameLayout>
+
+    <!-- Slide Title -->
+    <TextView
+        android:id="@+id/tvSlideTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Welcome to Clawse"
+        android:textColor="@color/sticker_ink"
+        android:textSize="24sp"
+        android:textStyle="bold"
+        android:fontFamily="@font/bricolage_grotesque"
+        android:textAlignment="center"
+        android:layout_marginBottom="12dp" />
+
+    <!-- Slide Description -->
+    <TextView
+        android:id="@+id/tvSlideDesc"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="A calm, gentle companion that quietly watches over your scrolling so you stay present and in control."
+        android:textColor="@color/sticker_ink_soft"
+        android:textSize="14sp"
+        android:lineSpacingExtra="4dp"
+        android:textAlignment="center"
+        android:fontFamily="@font/bricolage_grotesque" />
+
+</LinearLayout>

@@ -175,3 +175,15 @@ It scopes its overlay strictly to video doomscrolling feeds while leaving produc
   - Added theme selection option to the main three-dot sheet menu (`sheet_main_menu.xml`) with instant activity recreation.
   - Synchronized theme preferences via `ScrollDataManager.getUiTheme()` and `setUiTheme()`.
   - Stream-installed debug build directly to connected physical device via ADB after clean uninstall.
+- v1.0.36: Complete Dialogs & Progress Sheet Theming + Normalized Cat Sprite Alignment.
+  - Normalized all 6 cat stickers (Ginger, Tabby, Saturn, Rolex, Salmon, Katrina) onto an identical 420x800 coordinate canvas with paws aligned tightly at top.
+  - Adjusted hero hanging cat (`ivHeroCat`) in `activity_main_light.xml` to 120x228dp with `-6dp` top margin so paws physically hook over the wooden rod across all breeds without shrinking.
+  - Created bespoke Sticker Pop layouts for all startup and modal flows:
+    - `dialog_onboarding_light.xml` and `item_onboarding_slide_light.xml` (paper white card, 3dp ink border, 6dp shadow, Bricolage Grotesque typography, sticker dot pills, yellow CTA).
+    - `dialog_initial_setup_light.xml` (boundary lock-in dialog with clean neobrutalist inputs and switches).
+    - `dialog_permission_setup_light.xml` (step-by-step accessibility and overlay permission setup in Sticker Pop design).
+    - `dialog_change_limit_light.xml` (daily limit editor modal in matching design).
+    - `dialog_progress_history_light.xml` (past 7 days vertical bar chart sheet with paper summary bento, neobrutalist cards, and dark plum CTA).
+  - Upgraded `DailyBarChartView.kt` with dynamic `isLightMode` awareness: lilac slot capsules, mint/yellow/pink bars, dark ink limit dashed lines, and Bricolage Grotesque values.
+  - Upgraded `ProgressHistoryBottomSheetDialog.kt` to dynamically select the Light/Dark sheet layout and clear modal background clipping.
+  - Stream-installed debug build directly to connected phone via ADB.

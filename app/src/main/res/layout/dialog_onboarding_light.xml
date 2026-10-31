@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@drawable/bg_sticker_dialog_paper"
+    android:paddingStart="24dp"
+    android:paddingEnd="24dp"
+    android:paddingTop="22dp"
+    android:paddingBottom="30dp">
+
+    <!-- Top bar with Brand & Skip -->
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentStart="true"
+            android:layout_centerVertical="true"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@mipmap/ic_kitty_launcher"
+                android:contentDescription="Clawse" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:text="Clawse"
+                android:textColor="@color/sticker_ink"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:fontFamily="@font/bricolage_grotesque" />
+        </LinearLayout>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnOnboardingSkip"
+            android:layout_width="wrap_content"
+            android:layout_height="36dp"
+            android:layout_alignParentEnd="true"
+            android:layout_centerVertical="true"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp"
+            android:text="Skip"
+            android:textColor="@color/sticker_ink_muted"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            android:fontFamily="@font/bricolage_grotesque"
+            style="@style/Widget.Material3.Button.TextButton" />
+    </RelativeLayout>
+
+    <!-- ViewPager2 for Slides -->
+    <androidx.viewpager2.widget.ViewPager2
+        android:id="@+id/pagerOnboarding"
+        android:layout_width="match_parent"
+        android:layout_height="320dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="8dp" />
+
+    <!-- Dot Indicators -->
+    <LinearLayout
+        android:id="@+id/layoutDots"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="4dp"
+        android:layout_marginBottom="24dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical" />
+
+    <!-- Action Button (Continue / Get Started) -->
+    <TextView
+        android:id="@+id/btnOnboardingAction"
+        android:layout_width="match_parent"
+        android:layout_height="52dp"
+        android:background="@drawable/bg_sticker_card_yellow"
+        android:gravity="center"
+        android:text="Continue"
+        android:textColor="@color/sticker_ink"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        android:clickable="true"
+        android:focusable="true"
+        android:fontFamily="@font/bricolage_grotesque" />
+
+</LinearLayout>

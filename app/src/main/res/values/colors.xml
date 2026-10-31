@@ -38,4 +38,7 @@
     <color name="sticker_purple">#C4B5FD</color>
     <color name="sticker_orange_stripes">#FF8A1F</color>
     <color name="sticker_orange_light">#FFA64D</color>
+    <color name="sticker_ink_muted">#7C7289</color>
+    <color name="sticker_ink_soft">#554B66</color>
+    <color name="sticker_lilac_slot">#E2D8FA</color>
 </resources>

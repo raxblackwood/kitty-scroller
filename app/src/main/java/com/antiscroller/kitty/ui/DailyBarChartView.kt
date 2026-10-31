@@ -31,15 +31,51 @@ class DailyBarChartView @JvmOverloads constructor(
 
     var onDaySelectedListener: ((ScrollDataManager.DailyHistoryItem) -> Unit)? = null
 
+    var isLightMode: Boolean = false
+        set(value) {
+            field = value
+            updateThemePaints()
+            invalidate()
+        }
+
     // Colors
-    private val colorNormal = context.getColor(R.color.accent_green)
-    private val colorWarning = context.getColor(R.color.kitty_orange)
-    private val colorLimitExceeded = context.getColor(R.color.accent_red)
-    private val colorLimitLine = Color.parseColor("#888888")
-    private val colorTextPrimary = context.getColor(R.color.text_primary)
-    private val colorTextSecondary = context.getColor(R.color.text_secondary)
-    private val colorBarBg = Color.parseColor("#252525")
+    private var colorNormal = context.getColor(R.color.accent_green)
+    private var colorWarning = context.getColor(R.color.kitty_orange)
+    private var colorLimitExceeded = context.getColor(R.color.accent_red)
+    private var colorLimitLine = Color.parseColor("#888888")
+    private var colorTextPrimary = context.getColor(R.color.text_primary)
+    private var colorTextSecondary = context.getColor(R.color.text_secondary)
+    private var colorBarBg = Color.parseColor("#252525")
     private val colorSelectedGlow = Color.parseColor("#44FFFFFF")
+
+    private fun updateThemePaints() {
+        if (isLightMode) {
+            val stickerMint = Color.parseColor("#5FD9A6")
+            val stickerYellow = Color.parseColor("#FFD43B")
+            val stickerPink = Color.parseColor("#FF9AC9")
+            val stickerInk = Color.parseColor("#1A1325")
+            val stickerMuted = Color.parseColor("#7C7289")
+            val stickerLilac = Color.parseColor("#E2D8FA")
+
+            colorBarBg = stickerLilac
+            barBgPaint.color = stickerLilac
+
+            colorNormal = stickerMint
+            colorWarning = stickerYellow
+            colorLimitExceeded = stickerPink
+            colorLimitLine = stickerInk
+            colorTextPrimary = stickerInk
+            colorTextSecondary = stickerMuted
+
+            selectedPaint.color = stickerInk
+            limitLinePaint.color = stickerInk
+
+            val typeface = androidx.core.content.res.ResourcesCompat.getFont(context, R.font.bricolage_grotesque)
+            if (typeface != null) {
+                textPaint.typeface = typeface
+            }
+        }
+    }
 
     // Paints
     private val barPaint = Paint(Paint.ANTI_ALIAS_FLAG)
@@ -143,7 +179,7 @@ class DailyBarChartView @JvmOverloads constructor(
 
             // Determine bar color
             barPaint.color = when {
-                item.count == 0 -> Color.parseColor("#383838")
+                item.count == 0 -> if (isLightMode) Color.parseColor("#D4C7F2") else Color.parseColor("#383838")
                 item.count >= item.limit -> colorLimitExceeded
                 item.count >= (item.limit * 0.85f) -> colorWarning
                 else -> colorNormal
@@ -160,7 +196,7 @@ class DailyBarChartView @JvmOverloads constructor(
             // Value text above the bar
             if (animProgress > 0.6f) {
                 textPaint.textSize = 11f * density
-                textPaint.color = if (i == selectedIndex) Color.WHITE else colorTextPrimary
+                textPaint.color = if (i == selectedIndex) (if (isLightMode) Color.parseColor("#1A1325") else Color.WHITE) else colorTextPrimary
                 textPaint.isFakeBoldText = (i == selectedIndex || item.isToday)
                 val textY = if (item.count == 0) bottomY - (10f * density) else (barTop - (6f * density)).coerceAtLeast(paddingTop - 4f * density)
                 canvas.drawText(item.count.toString(), centerX, textY, textPaint)
@@ -168,7 +204,7 @@ class DailyBarChartView @JvmOverloads constructor(
 
             // Day label below the bar
             textPaint.textSize = 11f * density
-            textPaint.color = if (item.isToday) colorWarning else colorTextSecondary
+            textPaint.color = if (item.isToday) (if (isLightMode) Color.parseColor("#1A1325") else colorWarning) else colorTextSecondary
             textPaint.isFakeBoldText = item.isToday
 
             val dayLabel = when {
