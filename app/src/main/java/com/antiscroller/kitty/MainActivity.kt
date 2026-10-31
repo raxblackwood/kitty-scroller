@@ -265,6 +265,14 @@ class MainActivity : AppCompatActivity() {
         binding.switchYouTube.isChecked = dataManager.isYouTubeMonitored
         binding.switchYouTube.tag = null
 
+        binding.switchSnapchat.tag = "PROGRAMMATIC"
+        binding.switchSnapchat.isChecked = dataManager.isSnapchatMonitored
+        binding.switchSnapchat.tag = null
+
+        binding.switchFacebook.tag = "PROGRAMMATIC"
+        binding.switchFacebook.isChecked = dataManager.isFacebookMonitored
+        binding.switchFacebook.tag = null
+
         updateGuardianChildModeUI()
         updateGuardianUI()
     }
@@ -470,6 +478,94 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+        binding.switchSnapchat.setOnCheckedChangeListener { _, isChecked ->
+            if (binding.switchSnapchat.tag == "PROGRAMMATIC") return@setOnCheckedChangeListener
+            if (isChecked) {
+                dataManager.isSnapchatMonitored = true
+                dataManager.pendingDisableSnapchat = false
+                Toast.makeText(this, "Snapchat Spotlight protection active.", Toast.LENGTH_SHORT).show()
+            } else {
+                if (checkGuardianLocked()) {
+                    binding.switchSnapchat.tag = "PROGRAMMATIC"
+                    binding.switchSnapchat.isChecked = true
+                    binding.switchSnapchat.tag = null
+                    return@setOnCheckedChangeListener
+                }
+                if (dataManager.isMaintenanceModeActive()) {
+                    dataManager.isSnapchatMonitored = false
+                    dataManager.pendingDisableSnapchat = false
+                    Toast.makeText(this, "Snapchat monitoring disabled by Guardian.", Toast.LENGTH_SHORT).show()
+                    return@setOnCheckedChangeListener
+                }
+
+                binding.switchSnapchat.tag = "PROGRAMMATIC"
+                binding.switchSnapchat.isChecked = true
+                binding.switchSnapchat.tag = null
+
+                if (dataManager.isLimitReached()) {
+                    MaterialAlertDialogBuilder(this)
+                        .setTitle("🔒 Today's Limit Reached")
+                        .setMessage("You have completed your daily scroll budget today!\n\nTo break compulsive doomscrolling loops, you cannot turn off app protection to bypass the curtain. Protection stays active until tomorrow at midnight (00:00).")
+                        .setPositiveButton("I'll Respect My Limit", null)
+                        .show()
+                } else {
+                    MaterialAlertDialogBuilder(this)
+                        .setTitle("🛡️ Anti-Doomscroll Cooling-Off")
+                        .setMessage("To stop impulsive binge scrolling, turning off protection for Snapchat Spotlight cannot be done instantly during an active day.\n\nWould you like to schedule turning off protection starting tomorrow at midnight (00:00)?")
+                        .setPositiveButton("Schedule for Tomorrow") { _, _ ->
+                            dataManager.pendingDisableSnapchat = true
+                            Toast.makeText(this, "Protection stays active today and will turn off tomorrow at midnight.", Toast.LENGTH_LONG).show()
+                        }
+                        .setNegativeButton("Keep Active Today", null)
+                        .show()
+                }
+            }
+        }
+
+        binding.switchFacebook.setOnCheckedChangeListener { _, isChecked ->
+            if (binding.switchFacebook.tag == "PROGRAMMATIC") return@setOnCheckedChangeListener
+            if (isChecked) {
+                dataManager.isFacebookMonitored = true
+                dataManager.pendingDisableFacebook = false
+                Toast.makeText(this, "Facebook Reels protection active.", Toast.LENGTH_SHORT).show()
+            } else {
+                if (checkGuardianLocked()) {
+                    binding.switchFacebook.tag = "PROGRAMMATIC"
+                    binding.switchFacebook.isChecked = true
+                    binding.switchFacebook.tag = null
+                    return@setOnCheckedChangeListener
+                }
+                if (dataManager.isMaintenanceModeActive()) {
+                    dataManager.isFacebookMonitored = false
+                    dataManager.pendingDisableFacebook = false
+                    Toast.makeText(this, "Facebook monitoring disabled by Guardian.", Toast.LENGTH_SHORT).show()
+                    return@setOnCheckedChangeListener
+                }
+
+                binding.switchFacebook.tag = "PROGRAMMATIC"
+                binding.switchFacebook.isChecked = true
+                binding.switchFacebook.tag = null
+
+                if (dataManager.isLimitReached()) {
+                    MaterialAlertDialogBuilder(this)
+                        .setTitle("🔒 Today's Limit Reached")
+                        .setMessage("You have completed your daily scroll budget today!\n\nTo break compulsive doomscrolling loops, you cannot turn off app protection to bypass the curtain. Protection stays active until tomorrow at midnight (00:00).")
+                        .setPositiveButton("I'll Respect My Limit", null)
+                        .show()
+                } else {
+                    MaterialAlertDialogBuilder(this)
+                        .setTitle("🛡️ Anti-Doomscroll Cooling-Off")
+                        .setMessage("To stop impulsive binge scrolling, turning off protection for Facebook Reels cannot be done instantly during an active day.\n\nWould you like to schedule turning off protection starting tomorrow at midnight (00:00)?")
+                        .setPositiveButton("Schedule for Tomorrow") { _, _ ->
+                            dataManager.pendingDisableFacebook = true
+                            Toast.makeText(this, "Protection stays active today and will turn off tomorrow at midnight.", Toast.LENGTH_LONG).show()
+                        }
+                        .setNegativeButton("Keep Active Today", null)
+                        .show()
+                }
+            }
+        }
+
         // Guardian PIN Controls
         binding.btnSetGuardianPin.setOnClickListener {
             showSetPinDialog()
@@ -563,6 +659,14 @@ class MainActivity : AppCompatActivity() {
         b.switchYouTube.tag = "PROGRAMMATIC"
         b.switchYouTube.isChecked = dataManager.isYouTubeMonitored
         b.switchYouTube.tag = null
+
+        b.switchSnapchat.tag = "PROGRAMMATIC"
+        b.switchSnapchat.isChecked = dataManager.isSnapchatMonitored
+        b.switchSnapchat.tag = null
+
+        b.switchFacebook.tag = "PROGRAMMATIC"
+        b.switchFacebook.isChecked = dataManager.isFacebookMonitored
+        b.switchFacebook.tag = null
 
         // Start hanging cat gentle sway animation (reproducing CSS @keyframes wiggle)
         b.ivHeroCat.post {
@@ -682,6 +786,94 @@ class MainActivity : AppCompatActivity() {
                         .setMessage("To stop impulsive binge scrolling, turning off protection for YouTube cannot be done instantly during an active day.\n\nWould you like to schedule turning off protection starting tomorrow at midnight (00:00)?")
                         .setPositiveButton("Schedule for Tomorrow") { _, _ ->
                             dataManager.pendingDisableYouTube = true
+                            Toast.makeText(this, "Protection stays active today and will turn off tomorrow at midnight.", Toast.LENGTH_LONG).show()
+                        }
+                        .setNegativeButton("Keep Active Today", null)
+                        .show()
+                }
+            }
+        }
+
+        b.switchSnapchat.setOnCheckedChangeListener { _, isChecked ->
+            if (b.switchSnapchat.tag == "PROGRAMMATIC") return@setOnCheckedChangeListener
+            if (isChecked) {
+                dataManager.isSnapchatMonitored = true
+                dataManager.pendingDisableSnapchat = false
+                Toast.makeText(this, "Snapchat Spotlight protection active.", Toast.LENGTH_SHORT).show()
+            } else {
+                if (checkGuardianLocked()) {
+                    b.switchSnapchat.tag = "PROGRAMMATIC"
+                    b.switchSnapchat.isChecked = true
+                    b.switchSnapchat.tag = null
+                    return@setOnCheckedChangeListener
+                }
+                if (dataManager.isMaintenanceModeActive()) {
+                    dataManager.isSnapchatMonitored = false
+                    dataManager.pendingDisableSnapchat = false
+                    Toast.makeText(this, "Snapchat monitoring disabled by Guardian.", Toast.LENGTH_SHORT).show()
+                    return@setOnCheckedChangeListener
+                }
+
+                b.switchSnapchat.tag = "PROGRAMMATIC"
+                b.switchSnapchat.isChecked = true
+                b.switchSnapchat.tag = null
+
+                if (dataManager.isLimitReached()) {
+                    MaterialAlertDialogBuilder(this)
+                        .setTitle("Today's Limit Reached")
+                        .setMessage("You have completed your daily scroll budget today!\n\nTo break compulsive doomscrolling loops, you cannot turn off app protection to bypass the curtain. Protection stays active until tomorrow at midnight (00:00).")
+                        .setPositiveButton("I'll Respect My Limit", null)
+                        .show()
+                } else {
+                    MaterialAlertDialogBuilder(this)
+                        .setTitle("Anti-Doomscroll Cooling-Off")
+                        .setMessage("To stop impulsive binge scrolling, turning off protection for Snapchat Spotlight cannot be done instantly during an active day.\n\nWould you like to schedule turning off protection starting tomorrow at midnight (00:00)?")
+                        .setPositiveButton("Schedule for Tomorrow") { _, _ ->
+                            dataManager.pendingDisableSnapchat = true
+                            Toast.makeText(this, "Protection stays active today and will turn off tomorrow at midnight.", Toast.LENGTH_LONG).show()
+                        }
+                        .setNegativeButton("Keep Active Today", null)
+                        .show()
+                }
+            }
+        }
+
+        b.switchFacebook.setOnCheckedChangeListener { _, isChecked ->
+            if (b.switchFacebook.tag == "PROGRAMMATIC") return@setOnCheckedChangeListener
+            if (isChecked) {
+                dataManager.isFacebookMonitored = true
+                dataManager.pendingDisableFacebook = false
+                Toast.makeText(this, "Facebook Reels protection active.", Toast.LENGTH_SHORT).show()
+            } else {
+                if (checkGuardianLocked()) {
+                    b.switchFacebook.tag = "PROGRAMMATIC"
+                    b.switchFacebook.isChecked = true
+                    b.switchFacebook.tag = null
+                    return@setOnCheckedChangeListener
+                }
+                if (dataManager.isMaintenanceModeActive()) {
+                    dataManager.isFacebookMonitored = false
+                    dataManager.pendingDisableFacebook = false
+                    Toast.makeText(this, "Facebook monitoring disabled by Guardian.", Toast.LENGTH_SHORT).show()
+                    return@setOnCheckedChangeListener
+                }
+
+                b.switchFacebook.tag = "PROGRAMMATIC"
+                b.switchFacebook.isChecked = true
+                b.switchFacebook.tag = null
+
+                if (dataManager.isLimitReached()) {
+                    MaterialAlertDialogBuilder(this)
+                        .setTitle("Today's Limit Reached")
+                        .setMessage("You have completed your daily scroll budget today!\n\nTo break compulsive doomscrolling loops, you cannot turn off app protection to bypass the curtain. Protection stays active until tomorrow at midnight (00:00).")
+                        .setPositiveButton("I'll Respect My Limit", null)
+                        .show()
+                } else {
+                    MaterialAlertDialogBuilder(this)
+                        .setTitle("Anti-Doomscroll Cooling-Off")
+                        .setMessage("To stop impulsive binge scrolling, turning off protection for Facebook Reels cannot be done instantly during an active day.\n\nWould you like to schedule turning off protection starting tomorrow at midnight (00:00)?")
+                        .setPositiveButton("Schedule for Tomorrow") { _, _ ->
+                            dataManager.pendingDisableFacebook = true
                             Toast.makeText(this, "Protection stays active today and will turn off tomorrow at midnight.", Toast.LENGTH_LONG).show()
                         }
                         .setNegativeButton("Keep Active Today", null)
@@ -917,6 +1109,8 @@ class MainActivity : AppCompatActivity() {
         b.btnSetCustomLimit.isEnabled = !locked
         b.switchInstagram.alpha = alpha
         b.switchYouTube.alpha = alpha
+        b.switchSnapchat.alpha = alpha
+        b.switchFacebook.alpha = alpha
     }
 
     private fun showThemeSelectionDialog() {
@@ -1382,6 +1576,8 @@ class MainActivity : AppCompatActivity() {
                 b.btnSetCustomLimit.isEnabled = !locked
                 b.switchInstagram.alpha = alpha
                 b.switchYouTube.alpha = alpha
+        b.switchSnapchat.alpha = alpha
+        b.switchFacebook.alpha = alpha
             }
         } else {
             binding.tilCustomLimit.alpha = alpha
@@ -1389,6 +1585,8 @@ class MainActivity : AppCompatActivity() {
             binding.btnSetCustomLimit.isEnabled = !locked
             binding.switchInstagram.alpha = alpha
             binding.switchYouTube.alpha = alpha
+            binding.switchSnapchat.alpha = alpha
+            binding.switchFacebook.alpha = alpha
         }
     }
 
@@ -1720,12 +1918,16 @@ class MainActivity : AppCompatActivity() {
         val etLimit = dialogView.findViewById<com.google.android.material.textfield.TextInputEditText>(R.id.etSetupLimit)
         val switchInsta = dialogView.findViewById<com.google.android.material.switchmaterial.SwitchMaterial>(R.id.switchSetupInstagram)
         val switchYt = dialogView.findViewById<com.google.android.material.switchmaterial.SwitchMaterial>(R.id.switchSetupYouTube)
+        val switchSnap = dialogView.findViewById<com.google.android.material.switchmaterial.SwitchMaterial>(R.id.switchSetupSnapchat)
+        val switchFb = dialogView.findViewById<com.google.android.material.switchmaterial.SwitchMaterial>(R.id.switchSetupFacebook)
         val btnLock = dialogView.findViewById<TextView>(R.id.btnLockInSetup)
 
         // Empty text so the translucent "Example: 25" placeholder shows cleanly
         etLimit.setText("")
         switchInsta.isChecked = dataManager.isInstagramMonitored
         switchYt.isChecked = dataManager.isYouTubeMonitored
+        switchSnap?.isChecked = dataManager.isSnapchatMonitored
+        switchFb?.isChecked = dataManager.isFacebookMonitored
 
         val dialog = MaterialAlertDialogBuilder(this)
             .setView(dialogView)
@@ -1749,6 +1951,8 @@ class MainActivity : AppCompatActivity() {
             dataManager.maxDailyScrolls = finalLimit
             dataManager.isInstagramMonitored = switchInsta.isChecked
             dataManager.isYouTubeMonitored = switchYt.isChecked
+            dataManager.isSnapchatMonitored = switchSnap?.isChecked ?: true
+            dataManager.isFacebookMonitored = switchFb?.isChecked ?: true
             dataManager.isInitialSetupDone = true
 
             updateDashboard()

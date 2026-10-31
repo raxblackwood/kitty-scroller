@@ -104,6 +104,28 @@
             android:fontFamily="@font/bricolage_grotesque"
             android:textStyle="bold" />
 
+        <com.google.android.material.switchmaterial.SwitchMaterial
+            android:id="@+id/switchSetupSnapchat"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:checked="true"
+            android:text="Snapchat (Spotlight)"
+            android:textColor="@color/sticker_ink"
+            android:textSize="14.5sp"
+            android:fontFamily="@font/bricolage_grotesque"
+            android:textStyle="bold" />
+
+        <com.google.android.material.switchmaterial.SwitchMaterial
+            android:id="@+id/switchSetupFacebook"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:checked="true"
+            android:text="Facebook (Reels)"
+            android:textColor="@color/sticker_ink"
+            android:textSize="14.5sp"
+            android:fontFamily="@font/bricolage_grotesque"
+            android:textStyle="bold" />
+
         <TextView
             android:id="@+id/btnLockInSetup"
             android:layout_width="match_parent"

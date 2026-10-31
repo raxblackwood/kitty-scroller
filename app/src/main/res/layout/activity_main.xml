@@ -636,6 +636,22 @@
                             android:text="YouTube (Shorts)"
                             android:textColor="@color/text_secondary" />
 
+                        <com.google.android.material.switchmaterial.SwitchMaterial
+                            android:id="@+id/switchSnapchat"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:checked="true"
+                            android:text="Snapchat (Spotlight)"
+                            android:textColor="@color/text_secondary" />
+
+                        <com.google.android.material.switchmaterial.SwitchMaterial
+                            android:id="@+id/switchFacebook"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:checked="true"
+                            android:text="Facebook (Reels)"
+                            android:textColor="@color/text_secondary" />
+
                         <com.google.android.material.button.MaterialButton
                             android:id="@+id/btnGuardianResetToday"
                             android:layout_width="match_parent"

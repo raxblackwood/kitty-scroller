@@ -187,3 +187,13 @@ It scopes its overlay strictly to video doomscrolling feeds while leaving produc
   - Upgraded `DailyBarChartView.kt` with dynamic `isLightMode` awareness: lilac slot capsules, mint/yellow/pink bars, dark ink limit dashed lines, and Bricolage Grotesque values.
   - Upgraded `ProgressHistoryBottomSheetDialog.kt` to dynamically select the Light/Dark sheet layout and clear modal background clipping.
   - Stream-installed debug build directly to connected phone via ADB.
+- v1.0.37: Scope Expansion to Snapchat Spotlight & Facebook Reels + Instagram Refresh Loophole Fix.
+  - Expanded Clawse anti-doomscrolling protection to Snapchat Spotlight (`com.snapchat.android`) and Facebook Reels (`com.facebook.katana`, `com.facebook.lite`).
+  - Implemented strict negative filtering for Snapchat to reject Camera viewfinder, chat messaging, friends feed, snap map, and memories up to 10 ancestor levels.
+  - Implemented strict negative filtering for Facebook to reject Messenger, Marketplace, groups discussion comments, and user profiles.
+  - Added positive view matching for Snapchat (`spotlight`, `opera_view_pager`, `snap_player`, `discover_feed`) and Facebook (`fb_shorts`, `short_form_video`, `reel_viewer`, `reels_tab`, `reel_feed`).
+  - Closed Instagram reel refresh loophole: detected pull-to-refresh and tab tap announcements ("A new reel is loaded") with 2500ms debounce to increment reel counter and reset index tracking at index 0.
+  - Added Snapchat and Facebook monitoring toggles with 24-hour anti-impulse cooling-off dialogs to both Sticker Pop Light and Midnight OLED Dark themes.
+  - Added Snapchat and Facebook switches to initial setup boundary lock-in dialogs.
+  - Stream-installed debug build directly to connected physical device via ADB.
+

@@ -50,6 +50,8 @@ class ScrollDataManager(context: Context) {
         private const val KEY_SMART_FRICTION = "smart_friction_enabled"
         private const val KEY_TARGET_INSTA = "target_instagram"
         private const val KEY_TARGET_YOUTUBE = "target_youtube"
+        private const val KEY_TARGET_SNAPCHAT = "target_snapchat"
+        private const val KEY_TARGET_FACEBOOK = "target_facebook"
         private const val KEY_KITTY_THEME = "kitty_theme"
         private const val KEY_GUARDIAN_PIN = "guardian_pin"
         private const val KEY_MAINTENANCE_EXPIRES = "maintenance_expires_ts"
@@ -60,6 +62,8 @@ class ScrollDataManager(context: Context) {
         private const val KEY_PENDING_MAX_SCROLLS = "pending_max_scrolls"
         private const val KEY_PENDING_DISABLE_INSTA = "pending_disable_insta"
         private const val KEY_PENDING_DISABLE_YOUTUBE = "pending_disable_youtube"
+        private const val KEY_PENDING_DISABLE_SNAPCHAT = "pending_disable_snapchat"
+        private const val KEY_PENDING_DISABLE_FACEBOOK = "pending_disable_facebook"
 
         // Play Store In-App Purchases & Parental Subscriptions
         private const val KEY_COSMETIC_PACK_UNLOCKED = "cosmetic_pack_unlocked"
@@ -90,6 +94,9 @@ class ScrollDataManager(context: Context) {
         const val DEFAULT_MAX_SCROLLS = 25
         const val PKG_INSTAGRAM = "com.instagram.android"
         const val PKG_YOUTUBE = "com.google.android.youtube"
+        const val PKG_SNAPCHAT = "com.snapchat.android"
+        const val PKG_FACEBOOK = "com.facebook.katana"
+        const val PKG_FACEBOOK_LITE = "com.facebook.lite"
 
         @Volatile
         private var instance: ScrollDataManager? = null
@@ -148,6 +155,14 @@ class ScrollDataManager(context: Context) {
             if (prefs.getBoolean(KEY_PENDING_DISABLE_YOUTUBE, false)) {
                 editor.putBoolean(KEY_TARGET_YOUTUBE, false)
                 editor.remove(KEY_PENDING_DISABLE_YOUTUBE)
+            }
+            if (prefs.getBoolean(KEY_PENDING_DISABLE_SNAPCHAT, false)) {
+                editor.putBoolean(KEY_TARGET_SNAPCHAT, false)
+                editor.remove(KEY_PENDING_DISABLE_SNAPCHAT)
+            }
+            if (prefs.getBoolean(KEY_PENDING_DISABLE_FACEBOOK, false)) {
+                editor.putBoolean(KEY_TARGET_FACEBOOK, false)
+                editor.remove(KEY_PENDING_DISABLE_FACEBOOK)
             }
 
             editor.apply()
@@ -213,6 +228,18 @@ class ScrollDataManager(context: Context) {
             prefs.edit().putBoolean(KEY_TARGET_YOUTUBE, value).apply()
         }
 
+    var isSnapchatMonitored: Boolean
+        get() = prefs.getBoolean(KEY_TARGET_SNAPCHAT, true)
+        set(value) {
+            prefs.edit().putBoolean(KEY_TARGET_SNAPCHAT, value).apply()
+        }
+
+    var isFacebookMonitored: Boolean
+        get() = prefs.getBoolean(KEY_TARGET_FACEBOOK, true)
+        set(value) {
+            prefs.edit().putBoolean(KEY_TARGET_FACEBOOK, value).apply()
+        }
+
     var pendingMaxDailyScrolls: Int
         get() = prefs.getInt(KEY_PENDING_MAX_SCROLLS, 0)
         set(value) {
@@ -233,6 +260,18 @@ class ScrollDataManager(context: Context) {
         get() = prefs.getBoolean(KEY_PENDING_DISABLE_YOUTUBE, false)
         set(value) {
             prefs.edit().putBoolean(KEY_PENDING_DISABLE_YOUTUBE, value).apply()
+        }
+
+    var pendingDisableSnapchat: Boolean
+        get() = prefs.getBoolean(KEY_PENDING_DISABLE_SNAPCHAT, false)
+        set(value) {
+            prefs.edit().putBoolean(KEY_PENDING_DISABLE_SNAPCHAT, value).apply()
+        }
+
+    var pendingDisableFacebook: Boolean
+        get() = prefs.getBoolean(KEY_PENDING_DISABLE_FACEBOOK, false)
+        set(value) {
+            prefs.edit().putBoolean(KEY_PENDING_DISABLE_FACEBOOK, value).apply()
         }
 
     var kittyTheme: String
@@ -454,7 +493,9 @@ class ScrollDataManager(context: Context) {
 
     fun isPackageMonitored(packageName: String): Boolean {
         return (isInstagramMonitored && packageName == PKG_INSTAGRAM) ||
-               (isYouTubeMonitored && packageName == PKG_YOUTUBE)
+               (isYouTubeMonitored && packageName == PKG_YOUTUBE) ||
+               (isSnapchatMonitored && packageName == PKG_SNAPCHAT) ||
+               (isFacebookMonitored && (packageName == PKG_FACEBOOK || packageName == PKG_FACEBOOK_LITE))
     }
 
     data class DailyHistoryItem(
