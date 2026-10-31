@@ -450,3 +450,9 @@ It scopes its overlay strictly to video doomscrolling feeds while leaving produc
   - Users without Guardian Lock can now uninstall cleanly via the standard Android confirmation dialog.
   - Re-compiled signed release Android App Bundle (`dist/Clawse-v1.0.36-release.aab`) and release APK (`dist/Clawse-v1.0.36-release.apk`).
   - Stream-installed updated release APK to connected phone via ADB.
+- v1.0.37 Release Bundle (versionCode 38): Production Release App Bundle for Google Play Console.
+  - Bumped release `versionCode` to 38 and `versionName` to "1.0.37" in `app/build.gradle.kts`.
+  - Bundles Instagram Home Feed continuous scroll rate normalization.
+  - Bundles Settings uninstallation confirmation pop-up unblocking (anti-tamper strictly gated to Guardian Lock).
+  - Bundles pure Snapchat Spotlight scoping (excluding friend snaps, chats, and stories).
+  - Compiled signed release Android App Bundle (`dist/Clawse-v1.0.37-release.aab`) and release APK (`dist/Clawse-v1.0.37-release.apk`).
