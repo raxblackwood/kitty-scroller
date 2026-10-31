@@ -164,3 +164,14 @@ It scopes its overlay strictly to video doomscrolling feeds while leaving produc
   - Bumped release version to 1.0.34 (versionCode 35).
   - Built production release APK and App Bundle (`dist/Clawse-v1.0.34-release.aab`).
   - Stream-installed release APK directly to connected physical device via ADB.
+- v1.0.35: Dual Theme Architecture - Default "Sticker Pop" Light Theme & "Midnight OLED" Dark Theme.
+  - Implemented the user-selected neobrutalist/pastel "Sticker Pop" design direction from Claude prototype as the default Light Theme.
+  - Preserved the existing OLED glassmorphism aesthetic as the Dark Theme ("Midnight OLED").
+  - Extracted color palette: Pastel Lilac background (`#EFE9FF`), plum dark ink borders (`#1A1325`), sky blue hero card (`#8EC5FF`), rod/accent yellow (`#FFD43B`), pink card (`#FF9AC9`), mint card (`#5FD9A6`), and paper white cards (`#FFFCF5`).
+  - Integrated custom Bricolage Grotesque typography (`app/src/main/res/font/bricolage_grotesque.ttf`).
+  - Generated white sticker-outlined cat avatar assets using morphological PIL dilation in `drawable-nodpi/` for Ginger, Tabby, Saturn, Rolex, Salmon, and Katrina.
+  - Authored 20+ neobrutalist layer-list XML drawables with 3dp ink borders and hard bottom offset shadows (`bg_sticker_hero.xml`, `bg_sticker_rod.xml`, `bg_sticker_speech.xml`, `bg_sticker_progress_track.xml`, `bg_sticker_progress_fill.xml`, etc.).
+  - Created dedicated layout `activity_main_light.xml` with hero card, hanging cat animation, speech bubble, custom progress bar, chart button, 3x2 cat selection grid, and 3 protection cards.
+  - Added theme selection option to the main three-dot sheet menu (`sheet_main_menu.xml`) with instant activity recreation.
+  - Synchronized theme preferences via `ScrollDataManager.getUiTheme()` and `setUiTheme()`.
+  - Stream-installed debug build directly to connected physical device via ADB after clean uninstall.

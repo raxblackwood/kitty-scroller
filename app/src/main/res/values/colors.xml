@@ -24,4 +24,18 @@
     <color name="accent_green">#00E676</color>
     <color name="accent_red">#FF5252</color>
     <color name="ic_launcher_background">#000000</color>
+
+    <!-- Sticker Pop (Light Theme) Palette -->
+    <color name="sticker_bg">#EFE9FF</color>
+    <color name="sticker_ink">#1A1325</color>
+    <color name="sticker_paper">#FFFCF5</color>
+    <color name="sticker_yellow">#FFD43B</color>
+    <color name="sticker_blue">#8EC5FF</color>
+    <color name="sticker_pink">#FF9AC9</color>
+    <color name="sticker_mint">#5FD9A6</color>
+    <color name="sticker_mint_dark">#0B6B45</color>
+    <color name="sticker_peach">#FFC9A3</color>
+    <color name="sticker_purple">#C4B5FD</color>
+    <color name="sticker_orange_stripes">#FF8A1F</color>
+    <color name="sticker_orange_light">#FFA64D</color>
 </resources>

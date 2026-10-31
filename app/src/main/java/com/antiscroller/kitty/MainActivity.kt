@@ -60,9 +60,19 @@ import com.google.android.material.button.MaterialButton
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.firebase.firestore.ListenerRegistration
 
+import android.animation.ObjectAnimator
+import android.animation.ValueAnimator
+import android.view.animation.AccelerateDecelerateInterpolator
+import androidx.core.content.ContextCompat
+import androidx.core.view.WindowCompat
+import com.antiscroller.kitty.databinding.ActivityMainLightBinding
+
 class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
+    private var bindingLight: ActivityMainLightBinding? = null
+    val isLightMode: Boolean get() = dataManager.getUiTheme() == ScrollDataManager.UI_THEME_LIGHT
+    private var catSwayAnimator: ObjectAnimator? = null
     private lateinit var dataManager: ScrollDataManager
     private lateinit var overlayManager: KittyOverlayManager
     private lateinit var devicePolicyManager: DevicePolicyManager
@@ -88,23 +98,54 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        binding = ActivityMainBinding.inflate(layoutInflater)
-        setContentView(binding.root)
-
-        ViewCompat.setOnApplyWindowInsetsListener(binding.root) { view, windowInsets ->
-            val insets = windowInsets.getInsets(
-                WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout()
-            )
-            view.updatePadding(
-                left = insets.left,
-                top = insets.top,
-                right = insets.right,
-                bottom = insets.bottom
-            )
-            windowInsets
-        }
-
         dataManager = ScrollDataManager.getInstance(this)
+        binding = ActivityMainBinding.inflate(layoutInflater)
+
+        if (isLightMode) {
+            val bLight = ActivityMainLightBinding.inflate(layoutInflater)
+            bindingLight = bLight
+            setContentView(bLight.root)
+
+            window.statusBarColor = ContextCompat.getColor(this, R.color.sticker_bg)
+            window.navigationBarColor = ContextCompat.getColor(this, R.color.sticker_bg)
+            val insetsController = WindowCompat.getInsetsController(window, window.decorView)
+            insetsController.isAppearanceLightStatusBars = true
+            insetsController.isAppearanceLightNavigationBars = true
+
+            ViewCompat.setOnApplyWindowInsetsListener(bLight.root) { view, windowInsets ->
+                val insets = windowInsets.getInsets(
+                    WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout()
+                )
+                view.updatePadding(
+                    left = insets.left,
+                    top = insets.top,
+                    right = insets.right,
+                    bottom = insets.bottom
+                )
+                windowInsets
+            }
+        } else {
+            setContentView(binding.root)
+
+            window.statusBarColor = ContextCompat.getColor(this, R.color.background)
+            window.navigationBarColor = ContextCompat.getColor(this, R.color.background)
+            val insetsController = WindowCompat.getInsetsController(window, window.decorView)
+            insetsController.isAppearanceLightStatusBars = false
+            insetsController.isAppearanceLightNavigationBars = false
+
+            ViewCompat.setOnApplyWindowInsetsListener(binding.root) { view, windowInsets ->
+                val insets = windowInsets.getInsets(
+                    WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout()
+                )
+                view.updatePadding(
+                    left = insets.left,
+                    top = insets.top,
+                    right = insets.right,
+                    bottom = insets.bottom
+                )
+                windowInsets
+            }
+        }
         overlayManager = KittyOverlayManager.getInstance(this)
         devicePolicyManager = getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
         adminComponent = ComponentName(this, KittyAdminReceiver::class.java)
@@ -136,8 +177,12 @@ class MainActivity : AppCompatActivity() {
             Log.w("MainActivity", "Failed to register AppOps watcher", e)
         }
 
-        setupUI()
-        setupListeners()
+        if (isLightMode) {
+            setupLightMode()
+        } else {
+            setupUI()
+            setupListeners()
+        }
     }
 
     override fun onResume() {
@@ -184,8 +229,10 @@ class MainActivity : AppCompatActivity() {
                 Log.w("MainActivity", "Failed to unregister AppOps watcher", e)
             }
         }
+        catSwayAnimator?.cancel()
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            binding.root.setRenderEffect(null)
+            val root = if (isLightMode) bindingLight?.root else binding.root
+            root?.setRenderEffect(null)
         }
         activeBlurCount = 0
         super.onDestroy()
@@ -495,6 +542,411 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+
+    // -------------------------------------------------------------------------
+    // LIGHT THEME (Sticker Pop - Default) Implementation
+    // -------------------------------------------------------------------------
+    private fun setupLightMode() {
+        val b = bindingLight ?: return
+        previewedTheme = dataManager.kittyTheme
+        updateThemeChips()
+        updateEquipButtonState()
+        updateDashboard()
+
+        b.etCustomLimit.setText(dataManager.maxDailyScrolls.toString())
+        b.tvCurrentLimitLabel.text = "Active Cap: ${dataManager.maxDailyScrolls} Reels / day"
+
+        b.switchInstagram.tag = "PROGRAMMATIC"
+        b.switchInstagram.isChecked = dataManager.isInstagramMonitored
+        b.switchInstagram.tag = null
+
+        b.switchYouTube.tag = "PROGRAMMATIC"
+        b.switchYouTube.isChecked = dataManager.isYouTubeMonitored
+        b.switchYouTube.tag = null
+
+        // Start hanging cat gentle sway animation (reproducing CSS @keyframes wiggle)
+        b.ivHeroCat.post {
+            b.ivHeroCat.pivotX = b.ivHeroCat.width / 2f
+            b.ivHeroCat.pivotY = 0f
+            catSwayAnimator?.cancel()
+            val sway = ObjectAnimator.ofFloat(b.ivHeroCat, View.ROTATION, -3f, 3f).apply {
+                duration = 1600
+                repeatMode = ValueAnimator.REVERSE
+                repeatCount = ValueAnimator.INFINITE
+                interpolator = AccelerateDecelerateInterpolator()
+            }
+            catSwayAnimator = sway
+            sway.start()
+        }
+
+        b.badgeHeaderStatus.setOnClickListener { showPermissionSetupDialog() }
+        b.btnMenu.setOnClickListener { showMainMenuSheet() }
+
+        b.cardPermissionFloater.setOnClickListener { showPermissionSetupDialog() }
+        b.btnEnablePermissionsFloater.setOnClickListener { showPermissionSetupDialog() }
+
+        b.btnViewProgress.setOnClickListener {
+            ProgressHistoryBottomSheetDialog.newInstance()
+                .show(supportFragmentManager, ProgressHistoryBottomSheetDialog.TAG)
+        }
+
+        b.btnSetCustomLimit.setOnClickListener {
+            val textLimit = b.etCustomLimit.text?.toString()?.trim() ?: ""
+            val parsed = textLimit.toIntOrNull()
+            if (parsed == null) {
+                Toast.makeText(this, "Please type a valid number of reels.", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+            attemptChangeDailyLimit(parsed)
+        }
+
+                b.switchInstagram.setOnCheckedChangeListener { _, isChecked ->
+            if (b.switchInstagram.tag == "PROGRAMMATIC") return@setOnCheckedChangeListener
+            if (isChecked) {
+                dataManager.isInstagramMonitored = true
+                dataManager.pendingDisableInstagram = false
+                Toast.makeText(this, "Instagram Reels protection active.", Toast.LENGTH_SHORT).show()
+            } else {
+                if (checkGuardianLocked()) {
+                    b.switchInstagram.tag = "PROGRAMMATIC"
+                    b.switchInstagram.isChecked = true
+                    b.switchInstagram.tag = null
+                    return@setOnCheckedChangeListener
+                }
+                if (dataManager.isMaintenanceModeActive()) {
+                    dataManager.isInstagramMonitored = false
+                    dataManager.pendingDisableInstagram = false
+                    Toast.makeText(this, "Instagram monitoring disabled by Guardian.", Toast.LENGTH_SHORT).show()
+                    return@setOnCheckedChangeListener
+                }
+
+                // Solo mode: Revert switch back to ON and offer cooling-off schedule
+                b.switchInstagram.tag = "PROGRAMMATIC"
+                b.switchInstagram.isChecked = true
+                b.switchInstagram.tag = null
+
+                if (dataManager.isLimitReached()) {
+                    MaterialAlertDialogBuilder(this)
+                        .setTitle("Today's Limit Reached")
+                        .setMessage("You have completed your daily scroll budget today!\n\nTo break compulsive doomscrolling loops, you cannot turn off app protection to bypass the curtain. Protection stays active until tomorrow at midnight (00:00).")
+                        .setPositiveButton("I'll Respect My Limit", null)
+                        .show()
+                } else {
+                    MaterialAlertDialogBuilder(this)
+                        .setTitle("Anti-Doomscroll Cooling-Off")
+                        .setMessage("To stop impulsive binge scrolling, turning off protection for Instagram cannot be done instantly during an active day.\n\nWould you like to schedule turning off protection starting tomorrow at midnight (00:00)?")
+                        .setPositiveButton("Schedule for Tomorrow") { _, _ ->
+                            dataManager.pendingDisableInstagram = true
+                            Toast.makeText(this, "Protection stays active today and will turn off tomorrow at midnight.", Toast.LENGTH_LONG).show()
+                        }
+                        .setNegativeButton("Keep Active Today", null)
+                        .show()
+                }
+            }
+        }
+
+        b.switchYouTube.setOnCheckedChangeListener { _, isChecked ->
+            if (b.switchYouTube.tag == "PROGRAMMATIC") return@setOnCheckedChangeListener
+            if (isChecked) {
+                dataManager.isYouTubeMonitored = true
+                dataManager.pendingDisableYouTube = false
+                Toast.makeText(this, "YouTube Shorts protection active.", Toast.LENGTH_SHORT).show()
+            } else {
+                if (checkGuardianLocked()) {
+                    b.switchYouTube.tag = "PROGRAMMATIC"
+                    b.switchYouTube.isChecked = true
+                    b.switchYouTube.tag = null
+                    return@setOnCheckedChangeListener
+                }
+                if (dataManager.isMaintenanceModeActive()) {
+                    dataManager.isYouTubeMonitored = false
+                    dataManager.pendingDisableYouTube = false
+                    Toast.makeText(this, "YouTube monitoring disabled by Guardian.", Toast.LENGTH_SHORT).show()
+                    return@setOnCheckedChangeListener
+                }
+
+                // Solo mode: Revert switch back to ON and offer cooling-off schedule
+                b.switchYouTube.tag = "PROGRAMMATIC"
+                b.switchYouTube.isChecked = true
+                b.switchYouTube.tag = null
+
+                if (dataManager.isLimitReached()) {
+                    MaterialAlertDialogBuilder(this)
+                        .setTitle("Today's Limit Reached")
+                        .setMessage("You have completed your daily scroll budget today!\n\nTo break compulsive doomscrolling loops, you cannot turn off app protection to bypass the curtain. Protection stays active until tomorrow at midnight (00:00).")
+                        .setPositiveButton("I'll Respect My Limit", null)
+                        .show()
+                } else {
+                    MaterialAlertDialogBuilder(this)
+                        .setTitle("Anti-Doomscroll Cooling-Off")
+                        .setMessage("To stop impulsive binge scrolling, turning off protection for YouTube cannot be done instantly during an active day.\n\nWould you like to schedule turning off protection starting tomorrow at midnight (00:00)?")
+                        .setPositiveButton("Schedule for Tomorrow") { _, _ ->
+                            dataManager.pendingDisableYouTube = true
+                            Toast.makeText(this, "Protection stays active today and will turn off tomorrow at midnight.", Toast.LENGTH_LONG).show()
+                        }
+                        .setNegativeButton("Keep Active Today", null)
+                        .show()
+                }
+            }
+        }
+
+        b.btnGuardianResetToday.setOnClickListener {
+            dataManager.resetDailyCount()
+            updateDashboard()
+            Toast.makeText(this, "Today's scroll counter reset by Guardian.", Toast.LENGTH_SHORT).show()
+        }
+
+        b.btnSetGuardianPin.setOnClickListener {
+            if (!dataManager.isGuardianLockEnabled) {
+                showSetPinDialog()
+            } else if (dataManager.isMaintenanceModeActive()) {
+                dataManager.lockMaintenanceNow()
+                updateGuardianUI()
+                Toast.makeText(this, "Settings locked now.", Toast.LENGTH_SHORT).show()
+            } else {
+                showUnlockPinDialog()
+            }
+        }
+
+        b.btnConfigGuardianEndpoint.setOnClickListener {
+            showConfigureGuardianEndpointDialog()
+        }
+
+                b.btnDeviceOwnerAdb.setOnClickListener {
+            val adbCmd = "adb shell dpm set-device-owner " + packageName + "/com.antiscroller.kitty.admin.KittyAdminReceiver"
+            val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+            val clip = ClipData.newPlainText("Clawse ADB Command", adbCmd)
+            clipboard.setPrimaryClip(clip)
+            Toast.makeText(this, "ADB command copied to clipboard!", Toast.LENGTH_SHORT).show()
+
+            MaterialAlertDialogBuilder(this)
+                .setTitle("Hardcore Un-uninstallable Mode")
+                .setMessage(
+                    "Command copied to clipboard!\n\n" +
+                    "To activate OS-level uninstallation block via ADB:\n\n" +
+                    "1. Connect phone to PC with USB Debugging enabled.\n" +
+                    "2. Run in terminal:\n" + adbCmd + "\n\n" +
+                    "Note: Ensure no other secondary work profiles exist before running."
+                )
+                .setPositiveButton("Got It", null)
+                .show()
+        }
+
+        b.btnUnlockCosmeticsBanner.setOnClickListener {
+            showPaywallDialog()
+        }
+
+        // Cat Card clicks in 3x2 grid
+        b.cardCatGinger.setOnClickListener { selectLightCat(ScrollDataManager.THEME_GINGER) }
+        b.cardCatTabby.setOnClickListener { selectLightCat(ScrollDataManager.THEME_TABBY) }
+        b.cardCatSaturn.setOnClickListener { selectLightCat(ScrollDataManager.THEME_SATURN) }
+        b.cardCatRolex.setOnClickListener { selectLightCat(ScrollDataManager.THEME_ROLEX) }
+        b.cardCatSalmon.setOnClickListener { selectLightCat(ScrollDataManager.THEME_SALMON) }
+        b.cardCatKatrina.setOnClickListener { selectLightCat(ScrollDataManager.THEME_KATRINA) }
+
+        b.btnEquipOrUnlock.setOnClickListener {
+            val isEquipped = (previewedTheme == dataManager.kittyTheme)
+            val isUnlocked = dataManager.isThemeUnlocked(previewedTheme)
+            val breedName = getBreedDisplayName(previewedTheme)
+            if (isEquipped) {
+                Toast.makeText(this, "$breedName is already on duty! 🐾", Toast.LENGTH_SHORT).show()
+            } else if (isUnlocked) {
+                dataManager.kittyTheme = previewedTheme
+                Toast.makeText(this, "$breedName equipped! 🐾", Toast.LENGTH_SHORT).show()
+                updateThemeChips()
+                updateEquipButtonState()
+            } else {
+                showPaywallDialog()
+            }
+        }
+    }
+
+    private fun selectLightCat(theme: String) {
+        previewedTheme = theme
+        updateThemeChips()
+        updateEquipButtonState()
+    }
+
+    private fun updateLightDashboard(count: Int, max: Int, pct: Float) {
+        val b = bindingLight ?: return
+        b.tvScrollCount.text = count.toString()
+        b.tvMaxScrolls.text = "/ $max"
+        b.tvDropPercentage.text = "${(pct * 100).toInt()}% covered"
+
+        val remaining = (max - count).coerceAtLeast(0)
+        b.tvSpeechBubble.text = when {
+            count == 0 -> "A fresh day! Ready when you are."
+            remaining > 0 -> "$remaining left, then it's nap o'clock!"
+            else -> "All $max reels watched! Nap o'clock 😴"
+        }
+
+        b.frameProgressContainer.post {
+            val containerWidth = b.frameProgressContainer.width
+            val progressFraction = (count.toFloat() / max.toFloat()).coerceIn(0f, 1f)
+            val fillWidth = (containerWidth * progressFraction).toInt()
+            val lp = b.viewStickerProgressFill.layoutParams
+            lp.width = fillWidth
+            b.viewStickerProgressFill.layoutParams = lp
+        }
+
+        val pending = dataManager.pendingMaxDailyScrolls
+        if (pending > 0) {
+            b.tvCurrentLimitLabel.text = "Active Cap: $max Reels / day (Tomorrow: $pending Reels)"
+        } else {
+            b.tvCurrentLimitLabel.text = "Active Cap: $max Reels / day"
+        }
+
+        val currentInput = b.etCustomLimit.text?.toString()?.trim()
+        if (currentInput.isNullOrEmpty() || currentInput.toIntOrNull() != max) {
+            b.etCustomLimit.setText(max.toString())
+        }
+    }
+
+    private fun updateLightPermissions(isAccessibilityEnabled: Boolean, isOverlayEnabled: Boolean) {
+        val b = bindingLight ?: return
+        if (isOverlayEnabled && isAccessibilityEnabled) {
+            b.badgeHeaderStatus.setBackgroundResource(R.drawable.bg_sticker_active_pill)
+            b.dotHeaderStatus.setBackgroundResource(R.drawable.dot_green)
+            b.tvHeaderStatus.text = "Active"
+            b.tvHeaderStatus.setTextColor(getColor(R.color.sticker_ink))
+            b.cardPermissionFloater.visibility = View.GONE
+        } else {
+            b.badgeHeaderStatus.setBackgroundResource(R.drawable.bg_sticker_circle_btn_yellow)
+            b.dotHeaderStatus.setBackgroundResource(R.drawable.dot_orange)
+            b.tvHeaderStatus.text = "Setup"
+            b.tvHeaderStatus.setTextColor(getColor(R.color.sticker_ink))
+            b.cardPermissionFloater.visibility = View.VISIBLE
+        }
+    }
+
+    private fun updateLightModeCatUI() {
+        val b = bindingLight ?: return
+        val isUnlocked = dataManager.isCosmeticPackUnlocked
+        b.btnUnlockCosmeticsBanner.visibility = if (isUnlocked) View.GONE else View.VISIBLE
+
+        val stickerRes = when (previewedTheme) {
+            ScrollDataManager.THEME_TABBY, ScrollDataManager.THEME_BLACK -> R.drawable.kitty_tabby_sticker
+            ScrollDataManager.THEME_SATURN -> R.drawable.kitty_saturn_sticker
+            ScrollDataManager.THEME_ROLEX -> R.drawable.kitty_rolex_sticker
+            ScrollDataManager.THEME_SALMON -> R.drawable.kitty_salmon_sticker
+            ScrollDataManager.THEME_KATRINA -> R.drawable.kitty_katrina_sticker
+            else -> R.drawable.kitty_ginger_sticker
+        }
+        b.ivHeroCat.setImageResource(stickerRes)
+
+        val equippedTheme = dataManager.kittyTheme
+        updateLightCardBadge(b.badgeCatGinger, ScrollDataManager.THEME_GINGER, equippedTheme)
+        updateLightCardBadge(b.badgeCatTabby, ScrollDataManager.THEME_TABBY, equippedTheme)
+        updateLightCardBadge(b.badgeCatSaturn, ScrollDataManager.THEME_SATURN, equippedTheme)
+        updateLightCardBadge(b.badgeCatRolex, ScrollDataManager.THEME_ROLEX, equippedTheme)
+        updateLightCardBadge(b.badgeCatSalmon, ScrollDataManager.THEME_SALMON, equippedTheme)
+        updateLightCardBadge(b.badgeCatKatrina, ScrollDataManager.THEME_KATRINA, equippedTheme)
+
+        updateLightModeEquipState()
+    }
+
+    private fun updateLightCardBadge(badgeView: ImageView, breedTheme: String, equippedTheme: String) {
+        val isEquipped = (breedTheme == equippedTheme)
+        val isUnlocked = dataManager.isThemeUnlocked(breedTheme)
+
+        if (isEquipped) {
+            badgeView.visibility = View.VISIBLE
+            badgeView.setBackgroundResource(R.drawable.bg_sticker_cat_badge_equipped)
+            badgeView.setImageResource(R.drawable.ic_check_24)
+            badgeView.imageTintList = ColorStateList.valueOf(getColor(R.color.sticker_mint))
+        } else if (isUnlocked) {
+            badgeView.visibility = View.GONE
+        } else {
+            badgeView.visibility = View.VISIBLE
+            badgeView.setBackgroundResource(R.drawable.bg_sticker_cat_badge_locked)
+            badgeView.setImageResource(R.drawable.ic_sec_lock)
+            badgeView.imageTintList = ColorStateList.valueOf(getColor(R.color.sticker_ink))
+        }
+    }
+
+    private fun updateLightModeEquipState() {
+        val b = bindingLight ?: return
+        val isEquipped = (previewedTheme == dataManager.kittyTheme)
+        val isUnlocked = dataManager.isThemeUnlocked(previewedTheme)
+        val breedName = getBreedDisplayName(previewedTheme)
+
+        when {
+            isEquipped -> {
+                b.btnEquipOrUnlock.text = "✓ $breedName's on duty"
+                b.btnEquipOrUnlock.alpha = 1.0f
+            }
+            isUnlocked -> {
+                b.btnEquipOrUnlock.text = "Equip $breedName"
+                b.btnEquipOrUnlock.alpha = 1.0f
+            }
+            else -> {
+                b.btnEquipOrUnlock.text = "✨ Unlock $breedName"
+                b.btnEquipOrUnlock.alpha = 1.0f
+            }
+        }
+    }
+
+    private fun updateLightGuardianUI() {
+        val b = bindingLight ?: return
+        val isUnlocked = dataManager.isMaintenanceModeActive()
+        b.llGuardianProtectedSettings.visibility = if (isUnlocked) View.VISIBLE else View.GONE
+
+        if (!dataManager.isGuardianLockEnabled) {
+            b.tvGuardianStatus.text = "Locks your settings behind a PIN."
+            b.btnSetGuardianPin.text = "Set up"
+            setLightSettingsLocked(false)
+        } else {
+            if (isUnlocked) {
+                val mins = (dataManager.getRemainingMaintenanceSeconds() / 60) + 1
+                b.tvGuardianStatus.text = "🔓 Unlocked by Parent/Partner (${mins}m remaining)"
+                b.btnSetGuardianPin.text = "Lock Now"
+                setLightSettingsLocked(false)
+            } else {
+                b.tvGuardianStatus.text = "🔒 Locked by Guardian PIN"
+                b.btnSetGuardianPin.text = "Unlock (5m)"
+                setLightSettingsLocked(true)
+            }
+        }
+    }
+
+    private fun setLightSettingsLocked(locked: Boolean) {
+        val b = bindingLight ?: return
+        val alpha = if (locked) 0.55f else 1.0f
+        b.etCustomLimit.alpha = alpha
+        b.btnSetCustomLimit.alpha = alpha
+        b.btnSetCustomLimit.isEnabled = !locked
+        b.switchInstagram.alpha = alpha
+        b.switchYouTube.alpha = alpha
+    }
+
+    private fun showThemeSelectionDialog() {
+        val themes = arrayOf(
+            "Sticker Pop (Light - Default)",
+            "Midnight OLED (Dark)"
+        )
+        val currentTheme = dataManager.getUiTheme()
+        val currentIndex = if (currentTheme == ScrollDataManager.UI_THEME_LIGHT) 0 else 1
+
+        MaterialAlertDialogBuilder(this)
+            .setTitle("Theme & Appearance")
+            .setSingleChoiceItems(themes, currentIndex) { dialog, which ->
+                val chosenTheme = if (which == 0) {
+                    ScrollDataManager.UI_THEME_LIGHT
+                } else {
+                    ScrollDataManager.UI_THEME_DARK
+                }
+                if (chosenTheme != currentTheme) {
+                    dataManager.setUiTheme(chosenTheme)
+                    dialog.dismiss()
+                    recreate()
+                } else {
+                    dialog.dismiss()
+                }
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
     private fun checkGuardianLocked(): Boolean {
         if (dataManager.isGuardianLockEnabled && !dataManager.isMaintenanceModeActive()) {
             Toast.makeText(
@@ -527,6 +979,10 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun updateEquipButtonState() {
+        if (isLightMode) {
+            updateLightModeEquipState()
+            return
+        }
         val isEquipped = (previewedTheme == dataManager.kittyTheme)
         val isUnlocked = dataManager.isThemeUnlocked(previewedTheme)
         val breedName = getBreedDisplayName(previewedTheme)
@@ -555,6 +1011,10 @@ class MainActivity : AppCompatActivity() {
 
     private fun updateThemeChips() {
         val isUnlocked = dataManager.isCosmeticPackUnlocked
+        if (isLightMode) {
+            updateLightModeCatUI()
+            return
+        }
         binding.btnUnlockCosmeticsBanner.visibility = if (isUnlocked) View.GONE else View.VISIBLE
 
         binding.chipThemeGinger.text = if (isUnlocked) "🍊 Ginger" else "🍊 Ginger (Free)"
@@ -878,6 +1338,10 @@ class MainActivity : AppCompatActivity() {
 
     private fun updateGuardianUI() {
         val isUnlocked = dataManager.isMaintenanceModeActive()
+        if (isLightMode) {
+            updateLightGuardianUI()
+            return
+        }
         binding.llGuardianProtectedSettings.visibility = if (isUnlocked) View.VISIBLE else View.GONE
 
         if (!dataManager.isGuardianLockEnabled) {
@@ -911,11 +1375,21 @@ class MainActivity : AppCompatActivity() {
 
     private fun setSettingsLocked(locked: Boolean) {
         val alpha = if (locked) 0.55f else 1.0f
-        binding.tilCustomLimit.alpha = alpha
-        binding.btnSetCustomLimit.alpha = alpha
-        binding.btnSetCustomLimit.isEnabled = !locked
-        binding.switchInstagram.alpha = alpha
-        binding.switchYouTube.alpha = alpha
+        if (isLightMode) {
+            bindingLight?.let { b ->
+                b.etCustomLimit.alpha = alpha
+                b.btnSetCustomLimit.alpha = alpha
+                b.btnSetCustomLimit.isEnabled = !locked
+                b.switchInstagram.alpha = alpha
+                b.switchYouTube.alpha = alpha
+            }
+        } else {
+            binding.tilCustomLimit.alpha = alpha
+            binding.btnSetCustomLimit.alpha = alpha
+            binding.btnSetCustomLimit.isEnabled = !locked
+            binding.switchInstagram.alpha = alpha
+            binding.switchYouTube.alpha = alpha
+        }
     }
 
     private fun showSetPinDialog() {
@@ -983,6 +1457,11 @@ class MainActivity : AppCompatActivity() {
         val max = dataManager.maxDailyScrolls
         val screenHeight = resources.displayMetrics.heightPixels
         val pct = dataManager.getDropPercentage(screenHeight)
+
+        if (isLightMode) {
+            updateLightDashboard(count, max, pct)
+            return
+        }
 
         binding.tvScrollCount.text = count.toString()
         binding.tvMaxScrolls.text = "/ $max reels"
@@ -1409,6 +1888,21 @@ class MainActivity : AppCompatActivity() {
             showOnboardingCarousel(canDismiss = true)
         }
 
+        val itemThemeMode = sheetView.findViewById<View>(R.id.menuItemThemeMode)
+        val tvCurrentThemeValue = sheetView.findViewById<TextView>(R.id.tvCurrentThemeValue)
+
+        val currentTheme = dataManager.getUiTheme()
+        tvCurrentThemeValue?.text = if (currentTheme == ScrollDataManager.UI_THEME_LIGHT) {
+            "Sticker Pop (Light)"
+        } else {
+            "Midnight OLED (Dark)"
+        }
+
+        itemThemeMode?.setOnClickListener {
+            sheet.dismiss()
+            showThemeSelectionDialog()
+        }
+
         sheet.show()
     }
 
@@ -1467,7 +1961,7 @@ class MainActivity : AppCompatActivity() {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 activeBlurCount = (activeBlurCount - 1).coerceAtLeast(0)
                 if (activeBlurCount == 0) {
-                    binding.root.setRenderEffect(null)
+                    (if (isLightMode) bindingLight?.root else binding.root)?.setRenderEffect(null)
                 }
             }
         }
@@ -1476,6 +1970,11 @@ class MainActivity : AppCompatActivity() {
     private fun checkPermissions() {
         val isAccessibilityEnabled = isAccessibilityServiceEnabled(KittyAccessibilityService::class.java)
         val isOverlayEnabled = isOverlayPermissionGranted()
+
+        if (isLightMode) {
+            updateLightPermissions(isAccessibilityEnabled, isOverlayEnabled)
+            return
+        }
 
         // Header active status badge & floating permission notification
         if (isOverlayEnabled && isAccessibilityEnabled) {

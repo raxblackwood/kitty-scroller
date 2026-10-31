@@ -78,6 +78,11 @@ class ScrollDataManager(context: Context) {
         const val THEME_SALMON = "salmon"
         const val THEME_KATRINA = "katrina"
 
+        // Overall App UI Theme (Light Sticker Pop vs Dark OLED)
+        const val UI_THEME_LIGHT = "light"
+        const val UI_THEME_DARK = "dark"
+        private const val KEY_UI_THEME = "key_ui_theme_mode"
+
         // Backward compatibility mappings
         const val THEME_ORANGE = "orange"
         const val THEME_BLACK = "black"
@@ -531,4 +536,12 @@ class ScrollDataManager(context: Context) {
         return result
     }
 
+
+    fun getUiTheme(): String {
+        return prefs.getString(KEY_UI_THEME, UI_THEME_LIGHT) ?: UI_THEME_LIGHT
+    }
+
+    fun setUiTheme(theme: String) {
+        prefs.edit().putString(KEY_UI_THEME, theme).apply()
+    }
 }

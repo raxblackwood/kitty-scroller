@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:top="3dp">
+        <shape android:shape="oval">
+            <solid android:color="@color/sticker_ink" />
+        </shape>
+    </item>
+    <item android:bottom="3dp">
+        <shape android:shape="oval">
+            <solid android:color="@color/sticker_yellow" />
+            <stroke android:width="3dp" android:color="@color/sticker_ink" />
+        </shape>
+    </item>
+</layer-list>

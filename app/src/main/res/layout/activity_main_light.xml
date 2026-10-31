@@ -1,0 +1,1131 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/coordinatorLayoutLight"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/sticker_bg">
+
+    <androidx.core.widget.NestedScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:fillViewport="true">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:paddingTop="12dp"
+            android:paddingBottom="36dp">
+
+            <!-- 1. Header -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingTop="8dp"
+                android:paddingBottom="12dp">
+
+                <FrameLayout
+                    android:layout_width="46dp"
+                    android:layout_height="46dp"
+                    android:background="@drawable/bg_sticker_avatar_circle">
+
+                    <com.google.android.material.imageview.ShapeableImageView
+                        android:id="@+id/ivAppIcon"
+                        android:layout_width="38dp"
+                        android:layout_height="38dp"
+                        android:layout_gravity="center"
+                        android:src="@mipmap/ic_kitty_launcher"
+                        android:contentDescription="@string/app_name"
+                        app:shapeAppearanceOverlay="@style/ShapeAppearance.Material3.Corner.Full" />
+                </FrameLayout>
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="10dp"
+                    android:layout_weight="1"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Clawse"
+                        android:textColor="@color/sticker_ink"
+                        android:textSize="28sp"
+                        android:textStyle="bold"
+                        android:fontFamily="@font/bricolage_grotesque" />
+
+                    <!-- Live Active / Setup Status Badge -->
+                    <LinearLayout
+                        android:id="@+id/badgeHeaderStatus"
+                        android:layout_width="wrap_content"
+                        android:layout_height="28dp"
+                        android:layout_marginStart="10dp"
+                        android:paddingStart="12dp"
+                        android:paddingEnd="12dp"
+                        android:gravity="center_vertical"
+                        android:background="@drawable/bg_sticker_active_pill"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:rotation="-4"
+                        android:orientation="horizontal">
+
+                        <View
+                            android:id="@+id/dotHeaderStatus"
+                            android:layout_width="8dp"
+                            android:layout_height="8dp"
+                            android:background="@drawable/dot_green" />
+
+                        <TextView
+                            android:id="@+id/tvHeaderStatus"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="6dp"
+                            android:text="Active"
+                            android:textColor="@color/sticker_ink"
+                            android:textSize="13sp"
+                            android:textStyle="bold"
+                            android:fontFamily="@font/bricolage_grotesque" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <!-- Hamburger menu button -->
+                <ImageView
+                    android:id="@+id/btnMenu"
+                    android:layout_width="46dp"
+                    android:layout_height="46dp"
+                    android:padding="12dp"
+                    android:background="@drawable/bg_sticker_circle_btn_white"
+                    android:contentDescription="Menu"
+                    android:src="@drawable/ic_menu_hamburger"
+                    app:tint="@color/sticker_ink" />
+            </LinearLayout>
+
+            <!-- 2. Floating Permission Warning (Visible when permissions missing) -->
+            <LinearLayout
+                android:id="@+id/cardPermissionFloater"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:layout_marginBottom="16dp"
+                android:background="@drawable/bg_sticker_card_yellow"
+                android:orientation="vertical"
+                android:padding="16dp"
+                android:visibility="gone">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="🛡️"
+                        android:textSize="22sp" />
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="10dp"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Permissions Needed to Run"
+                            android:textColor="@color/sticker_ink"
+                            android:textSize="15sp"
+                            android:textStyle="bold"
+                            android:fontFamily="@font/bricolage_grotesque" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:text="Clawse is inactive because Accessibility or Overlay permissions are not granted."
+                            android:textColor="@color/sticker_ink"
+                            android:textSize="12.5sp"
+                            android:fontFamily="@font/bricolage_grotesque" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/btnEnablePermissionsFloater"
+                    android:layout_width="match_parent"
+                    android:layout_height="44dp"
+                    android:layout_marginTop="12dp"
+                    android:gravity="center"
+                    android:text="Enable Permissions"
+                    android:textColor="@color/sticker_paper"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    android:background="@drawable/bg_sticker_pill_dark"
+                    android:fontFamily="@font/bricolage_grotesque"
+                    android:clickable="true"
+                    android:focusable="true" />
+            </LinearLayout>
+
+            <!-- 3. Hero Card: The Cat hangs off the rod, talks, and counts -->
+            <RelativeLayout
+                android:id="@+id/cardHeroFocus"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:minHeight="360dp"
+                android:layout_marginTop="18dp"
+                android:background="@drawable/bg_sticker_hero"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
+                android:paddingTop="20dp"
+                android:paddingBottom="20dp">
+
+                <!-- Yellow Rod extending across top -->
+                <View
+                    android:id="@+id/viewYellowRod"
+                    android:layout_width="match_parent"
+                    android:layout_height="20dp"
+                    android:layout_alignParentTop="true"
+                    android:layout_marginStart="-8dp"
+                    android:layout_marginEnd="-8dp"
+                    android:layout_marginTop="-8dp"
+                    android:background="@drawable/bg_sticker_rod" />
+
+                <!-- Hanging Cat Sticker (anchored to rod) -->
+                <ImageView
+                    android:id="@+id/ivHeroCat"
+                    android:layout_width="120dp"
+                    android:layout_height="175dp"
+                    android:layout_alignParentEnd="true"
+                    android:layout_alignParentTop="true"
+                    android:layout_marginTop="2dp"
+                    android:layout_marginEnd="6dp"
+                    android:src="@drawable/kitty_ginger_sticker"
+                    android:scaleType="fitCenter"
+                    android:contentDescription="Hanging Cat" />
+
+                <!-- "TODAY'S FOCUS" black pill tag -->
+                <TextView
+                    android:id="@+id/badgeTodaysFocus"
+                    android:layout_width="wrap_content"
+                    android:layout_height="28dp"
+                    android:layout_alignParentStart="true"
+                    android:layout_alignParentTop="true"
+                    android:layout_marginTop="24dp"
+                    android:paddingStart="12dp"
+                    android:paddingEnd="12dp"
+                    android:gravity="center"
+                    android:text="TODAY'S FOCUS"
+                    android:textColor="@color/sticker_paper"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    android:letterSpacing="0.08"
+                    android:rotation="-2"
+                    android:background="@drawable/bg_sticker_badge_focus"
+                    android:fontFamily="@font/bricolage_grotesque" />
+
+                <!-- Large Counter Row: 6 /25 -->
+                <LinearLayout
+                    android:id="@+id/layoutCounterRow"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@id/badgeTodaysFocus"
+                    android:layout_alignParentStart="true"
+                    android:layout_marginTop="6dp"
+                    android:gravity="bottom"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:id="@+id/tvScrollCount"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="0"
+                        android:textColor="@color/sticker_ink"
+                        android:textSize="80sp"
+                        android:textStyle="bold"
+                        android:fontFamily="@font/bricolage_grotesque"
+                        android:includeFontPadding="false" />
+
+                    <TextView
+                        android:id="@+id/tvMaxScrolls"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="4dp"
+                        android:text="/ 100"
+                        android:textColor="@color/sticker_ink"
+                        android:textSize="28sp"
+                        android:textStyle="bold"
+                        android:fontFamily="@font/bricolage_grotesque" />
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/tvHeroSubtitle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@id/layoutCounterRow"
+                    android:layout_alignParentStart="true"
+                    android:text="reels watched"
+                    android:textColor="@color/sticker_ink"
+                    android:textSize="17sp"
+                    android:textStyle="bold"
+                    android:fontFamily="@font/bricolage_grotesque" />
+
+                <!-- Speech Bubble -->
+                <LinearLayout
+                    android:id="@+id/layoutSpeechBubble"
+                    android:layout_width="210dp"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@id/tvHeroSubtitle"
+                    android:layout_alignParentStart="true"
+                    android:layout_marginTop="12dp"
+                    android:background="@drawable/bg_sticker_speech"
+                    android:paddingStart="12dp"
+                    android:paddingEnd="12dp"
+                    android:paddingTop="10dp"
+                    android:paddingBottom="10dp"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:id="@+id/tvSpeechBubble"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="100 left, then it's nap o'clock!"
+                        android:textColor="@color/sticker_ink"
+                        android:textSize="14sp"
+                        android:textStyle="bold"
+                        android:lineSpacingExtra="2dp"
+                        android:fontFamily="@font/bricolage_grotesque" />
+                </LinearLayout>
+
+                <!-- Bottom Progress & Chart Row -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@id/layoutSpeechBubble"
+                    android:layout_marginTop="16dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <!-- Custom Track & Fill Frame -->
+                    <FrameLayout
+                        android:id="@+id/frameProgressContainer"
+                        android:layout_width="0dp"
+                        android:layout_height="36dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/bg_sticker_progress_track">
+
+                        <!-- Striped progress fill bar -->
+                        <View
+                            android:id="@+id/viewStickerProgressFill"
+                            android:layout_width="0dp"
+                            android:layout_height="match_parent"
+                            android:background="@drawable/bg_sticker_progress_fill" />
+
+                        <!-- Covered percentage text -->
+                        <TextView
+                            android:id="@+id/tvDropPercentage"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="center"
+                            android:text="0% covered"
+                            android:textColor="@color/sticker_ink"
+                            android:textSize="13sp"
+                            android:textStyle="bold"
+                            android:fontFamily="@font/bricolage_grotesque" />
+                    </FrameLayout>
+
+                    <!-- Circular Chart Progress Button -->
+                    <ImageView
+                        android:id="@+id/btnViewProgress"
+                        android:layout_width="44dp"
+                        android:layout_height="44dp"
+                        android:layout_marginStart="10dp"
+                        android:padding="11dp"
+                        android:background="@drawable/bg_sticker_circle_btn_yellow"
+                        android:src="@drawable/ic_chart_progress"
+                        android:contentDescription="View Progress"
+                        app:tint="@color/sticker_ink" />
+                </LinearLayout>
+            </RelativeLayout>
+
+            <!-- 4. Pick Your Cat Section -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="32dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Pick your cat"
+                    android:textColor="@color/sticker_ink"
+                    android:textSize="24sp"
+                    android:textStyle="bold"
+                    android:fontFamily="@font/bricolage_grotesque" />
+
+                <!-- "Unlock breeds" pill -->
+                <TextView
+                    android:id="@+id/btnUnlockCosmeticsBanner"
+                    android:layout_width="wrap_content"
+                    android:layout_height="38dp"
+                    android:paddingStart="14dp"
+                    android:paddingEnd="14dp"
+                    android:gravity="center"
+                    android:text="✨ Unlock breeds"
+                    android:textColor="@color/sticker_ink"
+                    android:textSize="13sp"
+                    android:textStyle="bold"
+                    android:rotation="1.5"
+                    android:background="@drawable/bg_sticker_pill_yellow"
+                    android:fontFamily="@font/bricolage_grotesque"
+                    android:clickable="true"
+                    android:focusable="true" />
+            </LinearLayout>
+
+            <!-- 3x2 Grid of Cat Cards -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:orientation="vertical">
+
+                <!-- Row 1: Ginger, Tabby, Saturn -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <!-- Ginger Card -->
+                    <RelativeLayout
+                        android:id="@+id/cardCatGinger"
+                        android:layout_width="0dp"
+                        android:layout_height="136dp"
+                        android:layout_weight="1"
+                        android:layout_marginEnd="6dp"
+                        android:background="@drawable/bg_sticker_cat_ginger"
+                        android:clickable="true"
+                        android:focusable="true">
+
+                        <FrameLayout
+                            android:layout_width="60dp"
+                            android:layout_height="60dp"
+                            android:layout_centerHorizontal="true"
+                            android:layout_marginTop="10dp"
+                            android:background="@drawable/bg_sticker_cat_inner_circle">
+
+                            <ImageView
+                                android:layout_width="48dp"
+                                android:layout_height="48dp"
+                                android:layout_gravity="center"
+                                android:src="@drawable/kitty_ginger_loaf"
+                                android:scaleType="fitCenter" />
+                        </FrameLayout>
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_alignParentBottom="true"
+                            android:layout_centerHorizontal="true"
+                            android:layout_marginBottom="14dp"
+                            android:text="Ginger"
+                            android:textColor="@color/sticker_ink"
+                            android:textSize="15sp"
+                            android:textStyle="bold"
+                            android:fontFamily="@font/bricolage_grotesque" />
+
+                        <!-- Top-right badge -->
+                        <ImageView
+                            android:id="@+id/badgeCatGinger"
+                            android:layout_width="26dp"
+                            android:layout_height="26dp"
+                            android:layout_alignParentEnd="true"
+                            android:layout_alignParentTop="true"
+                            android:layout_marginTop="6dp"
+                            android:layout_marginEnd="6dp"
+                            android:padding="5dp"
+                            android:background="@drawable/bg_sticker_cat_badge_equipped"
+                            android:src="@drawable/ic_check_24"
+                            app:tint="@color/sticker_mint" />
+                    </RelativeLayout>
+
+                    <!-- Tabby Card -->
+                    <RelativeLayout
+                        android:id="@+id/cardCatTabby"
+                        android:layout_width="0dp"
+                        android:layout_height="136dp"
+                        android:layout_weight="1"
+                        android:layout_marginStart="3dp"
+                        android:layout_marginEnd="3dp"
+                        android:background="@drawable/bg_sticker_cat_tabby"
+                        android:clickable="true"
+                        android:focusable="true">
+
+                        <FrameLayout
+                            android:layout_width="60dp"
+                            android:layout_height="60dp"
+                            android:layout_centerHorizontal="true"
+                            android:layout_marginTop="10dp"
+                            android:background="@drawable/bg_sticker_cat_inner_circle">
+
+                            <ImageView
+                                android:layout_width="48dp"
+                                android:layout_height="48dp"
+                                android:layout_gravity="center"
+                                android:src="@drawable/kitty_tabby_loaf"
+                                android:scaleType="fitCenter" />
+                        </FrameLayout>
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_alignParentBottom="true"
+                            android:layout_centerHorizontal="true"
+                            android:layout_marginBottom="14dp"
+                            android:text="Tabby"
+                            android:textColor="@color/sticker_ink"
+                            android:textSize="15sp"
+                            android:textStyle="bold"
+                            android:fontFamily="@font/bricolage_grotesque" />
+
+                        <ImageView
+                            android:id="@+id/badgeCatTabby"
+                            android:layout_width="26dp"
+                            android:layout_height="26dp"
+                            android:layout_alignParentEnd="true"
+                            android:layout_alignParentTop="true"
+                            android:layout_marginTop="6dp"
+                            android:layout_marginEnd="6dp"
+                            android:padding="6dp"
+                            android:background="@drawable/bg_sticker_cat_badge_locked"
+                            android:src="@drawable/ic_sec_lock"
+                            app:tint="@color/sticker_ink" />
+                    </RelativeLayout>
+
+                    <!-- Saturn Card -->
+                    <RelativeLayout
+                        android:id="@+id/cardCatSaturn"
+                        android:layout_width="0dp"
+                        android:layout_height="136dp"
+                        android:layout_weight="1"
+                        android:layout_marginStart="6dp"
+                        android:background="@drawable/bg_sticker_cat_saturn"
+                        android:clickable="true"
+                        android:focusable="true">
+
+                        <FrameLayout
+                            android:layout_width="60dp"
+                            android:layout_height="60dp"
+                            android:layout_centerHorizontal="true"
+                            android:layout_marginTop="10dp"
+                            android:background="@drawable/bg_sticker_cat_inner_circle">
+
+                            <ImageView
+                                android:layout_width="48dp"
+                                android:layout_height="48dp"
+                                android:layout_gravity="center"
+                                android:src="@drawable/kitty_saturn_loaf"
+                                android:scaleType="fitCenter" />
+                        </FrameLayout>
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_alignParentBottom="true"
+                            android:layout_centerHorizontal="true"
+                            android:layout_marginBottom="14dp"
+                            android:text="Saturn"
+                            android:textColor="@color/sticker_ink"
+                            android:textSize="15sp"
+                            android:textStyle="bold"
+                            android:fontFamily="@font/bricolage_grotesque" />
+
+                        <ImageView
+                            android:id="@+id/badgeCatSaturn"
+                            android:layout_width="26dp"
+                            android:layout_height="26dp"
+                            android:layout_alignParentEnd="true"
+                            android:layout_alignParentTop="true"
+                            android:layout_marginTop="6dp"
+                            android:layout_marginEnd="6dp"
+                            android:padding="6dp"
+                            android:background="@drawable/bg_sticker_cat_badge_locked"
+                            android:src="@drawable/ic_sec_lock"
+                            app:tint="@color/sticker_ink" />
+                    </RelativeLayout>
+                </LinearLayout>
+
+                <!-- Row 2: Rolex, Salmon, Katrina -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:orientation="horizontal">
+
+                    <!-- Rolex Card -->
+                    <RelativeLayout
+                        android:id="@+id/cardCatRolex"
+                        android:layout_width="0dp"
+                        android:layout_height="136dp"
+                        android:layout_weight="1"
+                        android:layout_marginEnd="6dp"
+                        android:background="@drawable/bg_sticker_cat_rolex"
+                        android:clickable="true"
+                        android:focusable="true">
+
+                        <FrameLayout
+                            android:layout_width="60dp"
+                            android:layout_height="60dp"
+                            android:layout_centerHorizontal="true"
+                            android:layout_marginTop="10dp"
+                            android:background="@drawable/bg_sticker_cat_inner_circle">
+
+                            <ImageView
+                                android:layout_width="48dp"
+                                android:layout_height="48dp"
+                                android:layout_gravity="center"
+                                android:src="@drawable/kitty_rolex_loaf"
+                                android:scaleType="fitCenter" />
+                        </FrameLayout>
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_alignParentBottom="true"
+                            android:layout_centerHorizontal="true"
+                            android:layout_marginBottom="14dp"
+                            android:text="Rolex"
+                            android:textColor="@color/sticker_ink"
+                            android:textSize="15sp"
+                            android:textStyle="bold"
+                            android:fontFamily="@font/bricolage_grotesque" />
+
+                        <ImageView
+                            android:id="@+id/badgeCatRolex"
+                            android:layout_width="26dp"
+                            android:layout_height="26dp"
+                            android:layout_alignParentEnd="true"
+                            android:layout_alignParentTop="true"
+                            android:layout_marginTop="6dp"
+                            android:layout_marginEnd="6dp"
+                            android:padding="6dp"
+                            android:background="@drawable/bg_sticker_cat_badge_locked"
+                            android:src="@drawable/ic_sec_lock"
+                            app:tint="@color/sticker_ink" />
+                    </RelativeLayout>
+
+                    <!-- Salmon Card -->
+                    <RelativeLayout
+                        android:id="@+id/cardCatSalmon"
+                        android:layout_width="0dp"
+                        android:layout_height="136dp"
+                        android:layout_weight="1"
+                        android:layout_marginStart="3dp"
+                        android:layout_marginEnd="3dp"
+                        android:background="@drawable/bg_sticker_cat_salmon"
+                        android:clickable="true"
+                        android:focusable="true">
+
+                        <FrameLayout
+                            android:layout_width="60dp"
+                            android:layout_height="60dp"
+                            android:layout_centerHorizontal="true"
+                            android:layout_marginTop="10dp"
+                            android:background="@drawable/bg_sticker_cat_inner_circle">
+
+                            <ImageView
+                                android:layout_width="48dp"
+                                android:layout_height="48dp"
+                                android:layout_gravity="center"
+                                android:src="@drawable/kitty_salmon_loaf"
+                                android:scaleType="fitCenter" />
+                        </FrameLayout>
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_alignParentBottom="true"
+                            android:layout_centerHorizontal="true"
+                            android:layout_marginBottom="14dp"
+                            android:text="Salmon"
+                            android:textColor="@color/sticker_ink"
+                            android:textSize="15sp"
+                            android:textStyle="bold"
+                            android:fontFamily="@font/bricolage_grotesque" />
+
+                        <ImageView
+                            android:id="@+id/badgeCatSalmon"
+                            android:layout_width="26dp"
+                            android:layout_height="26dp"
+                            android:layout_alignParentEnd="true"
+                            android:layout_alignParentTop="true"
+                            android:layout_marginTop="6dp"
+                            android:layout_marginEnd="6dp"
+                            android:padding="6dp"
+                            android:background="@drawable/bg_sticker_cat_badge_locked"
+                            android:src="@drawable/ic_sec_lock"
+                            app:tint="@color/sticker_ink" />
+                    </RelativeLayout>
+
+                    <!-- Katrina Card -->
+                    <RelativeLayout
+                        android:id="@+id/cardCatKatrina"
+                        android:layout_width="0dp"
+                        android:layout_height="136dp"
+                        android:layout_weight="1"
+                        android:layout_marginStart="6dp"
+                        android:background="@drawable/bg_sticker_cat_katrina"
+                        android:clickable="true"
+                        android:focusable="true">
+
+                        <FrameLayout
+                            android:layout_width="60dp"
+                            android:layout_height="60dp"
+                            android:layout_centerHorizontal="true"
+                            android:layout_marginTop="10dp"
+                            android:background="@drawable/bg_sticker_cat_inner_circle">
+
+                            <ImageView
+                                android:layout_width="48dp"
+                                android:layout_height="48dp"
+                                android:layout_gravity="center"
+                                android:src="@drawable/kitty_katrina_loaf"
+                                android:scaleType="fitCenter" />
+                        </FrameLayout>
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_alignParentBottom="true"
+                            android:layout_centerHorizontal="true"
+                            android:layout_marginBottom="14dp"
+                            android:text="Katrina"
+                            android:textColor="@color/sticker_ink"
+                            android:textSize="15sp"
+                            android:textStyle="bold"
+                            android:fontFamily="@font/bricolage_grotesque" />
+
+                        <ImageView
+                            android:id="@+id/badgeCatKatrina"
+                            android:layout_width="26dp"
+                            android:layout_height="26dp"
+                            android:layout_alignParentEnd="true"
+                            android:layout_alignParentTop="true"
+                            android:layout_marginTop="6dp"
+                            android:layout_marginEnd="6dp"
+                            android:padding="6dp"
+                            android:background="@drawable/bg_sticker_cat_badge_locked"
+                            android:src="@drawable/ic_sec_lock"
+                            app:tint="@color/sticker_ink" />
+                    </RelativeLayout>
+                </LinearLayout>
+            </LinearLayout>
+
+            <!-- Big Bottom Action Button: Ginger's on duty -->
+            <TextView
+                android:id="@+id/btnEquipOrUnlock"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:layout_marginTop="20dp"
+                android:gravity="center"
+                android:text="✓ Ginger's on duty"
+                android:textColor="@color/sticker_paper"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:background="@drawable/bg_sticker_action_dark"
+                android:fontFamily="@font/bricolage_grotesque"
+                android:clickable="true"
+                android:focusable="true" />
+
+            <!-- 5. Protection Section -->
+            <TextView
+                android:id="@+id/tvProtectionHeader"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="36dp"
+                android:text="Protection"
+                android:textColor="@color/sticker_ink"
+                android:textSize="24sp"
+                android:textStyle="bold"
+                android:fontFamily="@font/bricolage_grotesque" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:orientation="vertical">
+
+                <!-- 1. PIN Security -->
+                <LinearLayout
+                    android:id="@+id/cardPinSecurity"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/bg_sticker_card_yellow"
+                    android:orientation="vertical"
+                    android:padding="14dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <FrameLayout
+                            android:layout_width="48dp"
+                            android:layout_height="48dp"
+                            android:background="@drawable/bg_sticker_icon_circle">
+
+                            <ImageView
+                                android:layout_width="22dp"
+                                android:layout_height="22dp"
+                                android:layout_gravity="center"
+                                android:src="@drawable/ic_sec_lock"
+                                app:tint="@color/sticker_ink" />
+                        </FrameLayout>
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="12dp"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="PIN Security"
+                                android:textColor="@color/sticker_ink"
+                                android:textSize="17sp"
+                                android:textStyle="bold"
+                                android:fontFamily="@font/bricolage_grotesque" />
+
+                            <TextView
+                                android:id="@+id/tvGuardianStatus"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:text="Locks your settings behind a PIN."
+                                android:textColor="@color/sticker_ink"
+                                android:textSize="13sp"
+                                android:lineSpacingExtra="1dp"
+                                android:fontFamily="@font/bricolage_grotesque" />
+                        </LinearLayout>
+
+                        <TextView
+                            android:id="@+id/btnSetGuardianPin"
+                            android:layout_width="wrap_content"
+                            android:layout_height="42dp"
+                            android:paddingStart="16dp"
+                            android:paddingEnd="16dp"
+                            android:gravity="center"
+                            android:text="Set up"
+                            android:textColor="@color/sticker_paper"
+                            android:textSize="14sp"
+                            android:textStyle="bold"
+                            android:background="@drawable/bg_sticker_pill_dark"
+                            android:fontFamily="@font/bricolage_grotesque"
+                            android:clickable="true"
+                            android:focusable="true" />
+                    </LinearLayout>
+
+                    <!-- Hidden Guardian-Only Controls Container (unlocked with PIN) -->
+                    <LinearLayout
+                        android:id="@+id/llGuardianProtectedSettings"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:orientation="vertical"
+                        android:visibility="gone">
+
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="2dp"
+                            android:layout_marginTop="4dp"
+                            android:layout_marginBottom="10dp"
+                            android:background="@color/sticker_ink" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Guardian Reel Limit"
+                            android:textColor="@color/sticker_ink"
+                            android:textSize="13sp"
+                            android:textStyle="bold"
+                            android:fontFamily="@font/bricolage_grotesque" />
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="6dp"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
+
+                            <EditText
+                                android:id="@+id/etCustomLimit"
+                                android:layout_width="0dp"
+                                android:layout_height="44dp"
+                                android:layout_weight="1"
+                                android:layout_marginEnd="8dp"
+                                android:background="@drawable/bg_sticker_speech"
+                                android:hint="Daily reel limit"
+                                android:paddingStart="12dp"
+                                android:paddingEnd="12dp"
+                                android:inputType="number"
+                                android:maxLength="4"
+                                android:textColor="@color/sticker_ink"
+                                android:fontFamily="@font/bricolage_grotesque" />
+
+                            <TextView
+                                android:id="@+id/btnSetCustomLimit"
+                                android:layout_width="wrap_content"
+                                android:layout_height="44dp"
+                                android:paddingStart="16dp"
+                                android:paddingEnd="16dp"
+                                android:gravity="center"
+                                android:text="Set Cap"
+                                android:textColor="@color/sticker_paper"
+                                android:background="@drawable/bg_sticker_pill_dark"
+                                android:textStyle="bold"
+                                android:fontFamily="@font/bricolage_grotesque"
+                                android:clickable="true"
+                                android:focusable="true" />
+                        </LinearLayout>
+
+                        <TextView
+                            android:id="@+id/tvCurrentLimitLabel"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="6dp"
+                            android:text="Active Cap: 100 Reels / day"
+                            android:textColor="@color/sticker_ink"
+                            android:textSize="13sp"
+                            android:textStyle="bold"
+                            android:fontFamily="@font/bricolage_grotesque" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="10dp"
+                            android:text="MONITORED APPS"
+                            android:textColor="@color/sticker_ink"
+                            android:textSize="11sp"
+                            android:letterSpacing="0.08"
+                            android:textStyle="bold"
+                            android:fontFamily="@font/bricolage_grotesque" />
+
+                        <com.google.android.material.switchmaterial.SwitchMaterial
+                            android:id="@+id/switchInstagram"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:checked="true"
+                            android:text="Instagram (Reels &amp; Feed)"
+                            android:textColor="@color/sticker_ink" />
+
+                        <com.google.android.material.switchmaterial.SwitchMaterial
+                            android:id="@+id/switchYouTube"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:checked="true"
+                            android:text="YouTube (Shorts)"
+                            android:textColor="@color/sticker_ink" />
+
+                        <TextView
+                            android:id="@+id/btnGuardianResetToday"
+                            android:layout_width="match_parent"
+                            android:layout_height="44dp"
+                            android:layout_marginTop="8dp"
+                            android:gravity="center"
+                            android:text="🔄 Reset Today's Scrolls"
+                            android:textColor="@color/sticker_paper"
+                            android:background="@drawable/bg_sticker_action_dark"
+                            android:textStyle="bold"
+                            android:fontFamily="@font/bricolage_grotesque"
+                            android:clickable="true"
+                            android:focusable="true" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <!-- 2. Guardian Alerts -->
+                <LinearLayout
+                    android:id="@+id/cardGuardianProtection"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="14dp"
+                    android:background="@drawable/bg_sticker_card_pink"
+                    android:orientation="vertical"
+                    android:padding="14dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <FrameLayout
+                            android:layout_width="48dp"
+                            android:layout_height="48dp"
+                            android:background="@drawable/bg_sticker_icon_circle">
+
+                            <ImageView
+                                android:layout_width="22dp"
+                                android:layout_height="22dp"
+                                android:layout_gravity="center"
+                                android:src="@drawable/ic_sec_bell"
+                                app:tint="@color/sticker_ink" />
+                        </FrameLayout>
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="12dp"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Guardian Alerts"
+                                android:textColor="@color/sticker_ink"
+                                android:textSize="17sp"
+                                android:textStyle="bold"
+                                android:fontFamily="@font/bricolage_grotesque" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:text="A parent or partner gets a ping if Clawse is removed."
+                                android:textColor="@color/sticker_ink"
+                                android:textSize="13sp"
+                                android:lineSpacingExtra="1dp"
+                                android:fontFamily="@font/bricolage_grotesque" />
+                        </LinearLayout>
+
+                        <TextView
+                            android:id="@+id/btnConfigGuardianEndpoint"
+                            android:layout_width="wrap_content"
+                            android:layout_height="42dp"
+                            android:paddingStart="16dp"
+                            android:paddingEnd="16dp"
+                            android:gravity="center"
+                            android:text="Link"
+                            android:textColor="@color/sticker_paper"
+                            android:textSize="14sp"
+                            android:textStyle="bold"
+                            android:background="@drawable/bg_sticker_pill_dark"
+                            android:fontFamily="@font/bricolage_grotesque"
+                            android:clickable="true"
+                            android:focusable="true" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <!-- 3. Device Owner -->
+                <LinearLayout
+                    android:id="@+id/cardDeviceOwner"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="14dp"
+                    android:background="@drawable/bg_sticker_card_mint"
+                    android:orientation="vertical"
+                    android:padding="14dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <FrameLayout
+                            android:layout_width="48dp"
+                            android:layout_height="48dp"
+                            android:background="@drawable/bg_sticker_icon_circle">
+
+                            <ImageView
+                                android:layout_width="22dp"
+                                android:layout_height="22dp"
+                                android:layout_gravity="center"
+                                android:src="@drawable/ic_sec_shield"
+                                app:tint="@color/sticker_ink" />
+                        </FrameLayout>
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="12dp"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Device Owner"
+                                android:textColor="@color/sticker_ink"
+                                android:textSize="17sp"
+                                android:textStyle="bold"
+                                android:fontFamily="@font/bricolage_grotesque" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:text="Blocks uninstalling, even through ADB."
+                                android:textColor="@color/sticker_ink"
+                                android:textSize="13sp"
+                                android:lineSpacingExtra="1dp"
+                                android:fontFamily="@font/bricolage_grotesque" />
+                        </LinearLayout>
+
+                        <TextView
+                            android:id="@+id/btnDeviceOwnerAdb"
+                            android:layout_width="wrap_content"
+                            android:layout_height="42dp"
+                            android:paddingStart="16dp"
+                            android:paddingEnd="16dp"
+                            android:gravity="center"
+                            android:text="Enable"
+                            android:textColor="@color/sticker_paper"
+                            android:textSize="14sp"
+                            android:textStyle="bold"
+                            android:background="@drawable/bg_sticker_pill_dark"
+                            android:fontFamily="@font/bricolage_grotesque"
+                            android:clickable="true"
+                            android:focusable="true" />
+                    </LinearLayout>
+                </LinearLayout>
+            </LinearLayout>
+
+            <!-- 6. Ad Banner Placeholder -->
+            <FrameLayout
+                android:id="@+id/layoutAdContainer"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:layout_marginTop="28dp"
+                android:layout_marginBottom="16dp"
+                android:background="@drawable/bg_sticker_ad_banner">
+
+                <TextView
+                    android:id="@+id/tvAdPlaceholder"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:text="AD BANNER"
+                    android:textColor="#4A3F5C"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    android:letterSpacing="0.14"
+                    android:fontFamily="@font/bricolage_grotesque" />
+            </FrameLayout>
+
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+</androidx.coordinatorlayout.widget.CoordinatorLayout>
