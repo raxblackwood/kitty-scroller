@@ -212,5 +212,9 @@ It scopes its overlay strictly to video doomscrolling feeds while leaving produc
   - Clicking the Reels navigation tab now strictly updates the index marker to 0 without dropping the curtain.
   - Refined Reels pull-to-refresh: strictly requires `(lastInstagramIndex == 0 || fromIndex == 0) && isReels` or explicit refresh containers (`refresh`, `swipe`), preventing normal backward scroll navigation from triggering refreshes.
   - Allowed `refresh` and `swipe` container view IDs in `isInstagramTargetScroll`.
-  - Stream-installed debug build to device via ADB and reset daily scroll count and accumulated pixels to zero.
+  - Stream-installed debug build to device via ADB and reset daily scroll count and accumulated pixels to zero.
+- v1.0.35 Release Bundle (versionCode 36): Production Release App Bundle for Google Play Console.
+  - Bumped release `versionCode` to 36 and `versionName` to "1.0.35" in `app/build.gradle.kts`.
+  - Compiled signed release Android App Bundle (`dist/Clawse-v1.0.35-release.aab`) and release APK (`dist/Clawse-v1.0.35-release.apk`).
+  - Bundled the Dual Theme architecture (Sticker Pop Light and Midnight OLED Dark), Snapchat Spotlight and Facebook Reels protection, ViewPager settle bounce suppression, and zero-lag accessibility architecture into production.
 
