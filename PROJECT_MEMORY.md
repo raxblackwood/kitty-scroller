@@ -216,5 +216,12 @@ It scopes its overlay strictly to video doomscrolling feeds while leaving produc
 - v1.0.35 Release Bundle (versionCode 36): Production Release App Bundle for Google Play Console.
   - Bumped release `versionCode` to 36 and `versionName` to "1.0.35" in `app/build.gradle.kts`.
   - Compiled signed release Android App Bundle (`dist/Clawse-v1.0.35-release.aab`) and release APK (`dist/Clawse-v1.0.35-release.apk`).
-  - Bundled the Dual Theme architecture (Sticker Pop Light and Midnight OLED Dark), Snapchat Spotlight and Facebook Reels protection, ViewPager settle bounce suppression, and zero-lag accessibility architecture into production.
+  - Bundled the Dual Theme architecture (Sticker Pop Light and Midnight OLED Dark), Snapchat Spotlight and Facebook Reels protection, ViewPager settle bounce suppression, and zero-lag accessibility architecture into production.
+- v1.0.35 Update: Strict Snapchat Curtain Scoping to Spotlight Reels Exclusively.
+  - Restricted the curtain overlay in Snapchat to show exclusively when viewing Spotlight (Snapchat Reels).
+  - Kept camera viewfinder, chats, friends messages, snap map, and stories completely free of the curtain overlay.
+  - In `handleWindowStateChanged`, checks `isSnapchatSpotlightActive()` and immediately hides the overlay if user is on camera or other screens upon switching to Snapchat.
+  - In `handleViewClicked`, immediately hides the overlay when tapping Camera, Chat, Map, or Stories tabs, and only shows when tapping Spotlight.
+  - In `handleViewScrolled`, detects horizontal tab swipes across main tabs to hide or show the overlay based on whether Spotlight is active, and immediately hides overlay if scrolling on non-spotlight screens.
+  - Re-compiled signed release Android App Bundle (`dist/Clawse-v1.0.35-release.aab`) and release APK (`dist/Clawse-v1.0.35-release.apk`).
 

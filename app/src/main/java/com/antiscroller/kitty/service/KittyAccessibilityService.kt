@@ -969,6 +969,16 @@ class KittyAccessibilityService : AccessibilityService() {
 
             }
 
+            val snapPlayerNodes = root.findAccessibilityNodeInfosByViewId("com.snapchat.android:id/snap_player")
+
+            if (snapPlayerNodes != null && snapPlayerNodes.isNotEmpty()) {
+
+                for (node in snapPlayerNodes) { node.recycle() }
+
+                return true
+
+            }
+
         } catch (_: Exception) {
 
             // ignore
@@ -1311,7 +1321,7 @@ class KittyAccessibilityService : AccessibilityService() {
 
 
 
-        return isSnapchatSpotlightActive()
+        return false
 
     }
 
@@ -1537,11 +1547,39 @@ class KittyAccessibilityService : AccessibilityService() {
 
             } else {
 
-                mainHandler.post {
+                if (packageName == ScrollDataManager.PKG_SNAPCHAT) {
 
-                    // Position statically on resume/window switch; never animate down from 0
+                    // For Snapchat specifically: ONLY show curtain if currently on Spotlight (Reels)!
 
-                    overlayManager.showOrUpdateOverlay(dropPercentage, animate = false)
+                    val isSpotlight = isSnapchatSpotlightActive()
+
+                    if (isSpotlight) {
+
+                        mainHandler.post {
+
+                            overlayManager.showOrUpdateOverlay(dropPercentage, animate = false)
+
+                        }
+
+                    } else {
+
+                        mainHandler.post {
+
+                            overlayManager.hideOverlay()
+
+                        }
+
+                    }
+
+                } else {
+
+                    mainHandler.post {
+
+                        // Position statically on resume/window switch; never animate down from 0
+
+                        overlayManager.showOrUpdateOverlay(dropPercentage, animate = false)
+
+                    }
 
                 }
 
@@ -1699,6 +1737,14 @@ class KittyAccessibilityService : AccessibilityService() {
 
             if (!isAllowed) {
 
+                if (packageName == ScrollDataManager.PKG_SNAPCHAT) {
+
+                    // For Snapchat: if scrolling on a non-spotlight screen (Chat, Stories list, Camera), ensure overlay is hidden
+
+                    mainHandler.post { overlayManager.hideOverlay() }
+
+                }
+
                 Log.i(TAG, "Scroll ignored: Not on allowed target screen (pkg=$packageName)")
 
                 return
@@ -1716,6 +1762,32 @@ class KittyAccessibilityService : AccessibilityService() {
             // Filter out horizontal swipes (e.g. story carousels, tab swiping)
 
             if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 20) {
+
+                if (packageName == ScrollDataManager.PKG_SNAPCHAT) {
+
+                    // For Snapchat: horizontal swipe between tabs (Camera <-> Chat <-> Stories <-> Spotlight)
+
+                    mainHandler.postDelayed({
+
+                        val isSpotlight = isSnapchatSpotlightActive()
+
+                        val screenHeight = resources.displayMetrics.heightPixels
+
+                        val drop = dataManager.getDropPercentage(screenHeight)
+
+                        if (isSpotlight && drop > 0.0001f) {
+
+                            overlayManager.showOrUpdateOverlay(drop, animate = false)
+
+                        } else {
+
+                            overlayManager.hideOverlay()
+
+                        }
+
+                    }, 150L)
+
+                }
 
                 return
 
@@ -1893,13 +1965,49 @@ class KittyAccessibilityService : AccessibilityService() {
             return
         }
 
-        // 2. Snapchat Spotlight tab tap -> seed index
+        // 2. Snapchat tab navigation -> show curtain strictly on Spotlight (Reels), hide everywhere else
 
         if (packageName == ScrollDataManager.PKG_SNAPCHAT) {
 
-            if (viewId.contains("spotlight") || contentDesc.contains("spotlight")) {
+            val entryId = getEntryName(source)
+
+            val desc = contentDesc.ifEmpty { source.contentDescription?.toString()?.lowercase() ?: "" }
+
+            val isSpotlightTap = entryId.contains("spotlight") || desc.contains("spotlight") || desc.contains("reels")
+
+            val isOtherSnapchatTab = entryId.contains("camera") || entryId.contains("chat") || entryId.contains("map") ||
+
+                                     entryId.contains("stories") || entryId.contains("friend") ||
+
+                                     desc.contains("camera") || desc.contains("chat") || desc.contains("map") || desc.contains("stories")
+
+
+
+            if (isSpotlightTap) {
 
                 lastSnapchatIndex = 0
+
+                val screenHeight = resources.displayMetrics.heightPixels
+
+                val dropPercentage = dataManager.getDropPercentage(screenHeight)
+
+                if (dropPercentage > 0.0001f) {
+
+                    mainHandler.post {
+
+                        overlayManager.showOrUpdateOverlay(dropPercentage, animate = false)
+
+                    }
+
+                }
+
+            } else if (isOtherSnapchatTab) {
+
+                mainHandler.post {
+
+                    overlayManager.hideOverlay()
+
+                }
 
             }
 
