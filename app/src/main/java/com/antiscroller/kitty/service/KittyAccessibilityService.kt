@@ -244,7 +244,10 @@ class KittyAccessibilityService : AccessibilityService() {
 
             if (eventPkg == ScrollDataManager.PKG_INSTAGRAM) {
 
-                checkInstagramReelRefreshEvent(event)
+                if (event.eventType == AccessibilityEvent.TYPE_ANNOUNCEMENT ||
+                    event.eventType == AccessibilityEvent.TYPE_NOTIFICATION_STATE_CHANGED) {
+                    checkInstagramRefreshAnnouncement(event)
+                }
 
             }
 
@@ -844,7 +847,11 @@ class KittyAccessibilityService : AccessibilityService() {
 
                 viewId.contains("vertical_view_pager") ||
 
-                viewId.contains("sticky_header_list")) {
+                viewId.contains("sticky_header_list") ||
+
+                viewId.contains("refresh") ||
+
+                viewId.contains("swipe")) {
 
                 isFeedOrReels = true
 
@@ -891,7 +898,7 @@ class KittyAccessibilityService : AccessibilityService() {
 
 
     private fun isInstagramReels(sourceNode: AccessibilityNodeInfo?): Boolean {
-        if (sourceNode == null) return isInstagramReelsActive()
+        if (sourceNode == null) return false
         var current: AccessibilityNodeInfo? = sourceNode
         var depth = 0
         while (current != null && depth < 10) {
@@ -906,45 +913,6 @@ class KittyAccessibilityService : AccessibilityService() {
             if (current != sourceNode) current.recycle()
             current = next
             depth++
-        }
-        return isInstagramReelsActive()
-    }
-
-    private fun isInstagramReelsActive(): Boolean {
-        val root = try { rootInActiveWindow } catch (_: Exception) { null } ?: return false
-        try {
-            val clipsTabs = root.findAccessibilityNodeInfosByViewId("com.instagram.android:id/clips_tab")
-            if (clipsTabs != null && clipsTabs.isNotEmpty()) {
-                for (tab in clipsTabs) {
-                    val sel = tab.isSelected
-                    tab.recycle()
-                    if (sel) return true
-                }
-            }
-            val reelsViewers = root.findAccessibilityNodeInfosByViewId("com.instagram.android:id/reels_viewer_root")
-            if (reelsViewers != null && reelsViewers.isNotEmpty()) {
-                for (v in reelsViewers) { v.recycle() }
-                return true
-            }
-            val clipsBars = root.findAccessibilityNodeInfosByViewId("com.instagram.android:id/clips_action_bar")
-            if (clipsBars != null && clipsBars.isNotEmpty()) {
-                for (v in clipsBars) { v.recycle() }
-                return true
-            }
-            val reelsText = root.findAccessibilityNodeInfosByText("Reels")
-            if (reelsText != null && reelsText.isNotEmpty()) {
-                for (v in reelsText) {
-                    val p = v.parent
-                    val isSel = v.isSelected || (p != null && p.isSelected)
-                    p?.recycle()
-                    v.recycle()
-                    if (isSel) return true
-                }
-            }
-        } catch (_: Exception) {
-            // ignore
-        } finally {
-            root.recycle()
         }
         return false
     }
@@ -1487,38 +1455,11 @@ class KittyAccessibilityService : AccessibilityService() {
 
      */
 
-    private fun checkInstagramReelRefreshEvent(event: AccessibilityEvent) {
-        val now = System.currentTimeMillis()
-        if (now - lastInstagramReelRefreshTs < REEL_REFRESH_DEBOUNCE_MS) return
-
+    private fun checkInstagramRefreshAnnouncement(event: AccessibilityEvent) {
         val texts = mutableListOf<String>()
         event.text?.forEach { t -> if (t != null) texts.add(t.toString().lowercase()) }
         val desc = event.contentDescription?.toString()?.lowercase() ?: ""
         if (desc.isNotEmpty()) texts.add(desc)
-
-        val src = try { event.source } catch (_: Exception) { null }
-        if (src != null) {
-            try {
-                val srcText = src.text?.toString()?.lowercase() ?: ""
-                if (srcText.isNotEmpty()) texts.add(srcText)
-                val srcDesc = src.contentDescription?.toString()?.lowercase() ?: ""
-                if (srcDesc.isNotEmpty()) texts.add(srcDesc)
-
-                val count = src.childCount.coerceAtMost(6)
-                for (i in 0 until count) {
-                    val child = src.getChild(i)
-                    if (child != null) {
-                        val cText = child.text?.toString()?.lowercase() ?: ""
-                        if (cText.isNotEmpty()) texts.add(cText)
-                        val cDesc = child.contentDescription?.toString()?.lowercase() ?: ""
-                        if (cDesc.isNotEmpty()) texts.add(cDesc)
-                        child.recycle()
-                    }
-                }
-            } finally {
-                src.recycle()
-            }
-        }
 
         fun matchesRefresh(txt: String): Boolean {
             return (txt.contains("loaded") && (txt.contains("reel") || txt.contains("release") || txt.contains("new") || txt.contains("clip"))) ||
@@ -1530,37 +1471,9 @@ class KittyAccessibilityService : AccessibilityService() {
                 (txt.contains("release") && txt.contains("loaded"))
         }
 
-        var matchedText: String? = texts.firstOrNull { matchesRefresh(it) }
-
-        // If not found in event, scan active window nodes
-        if (matchedText == null) {
-            val root = try { rootInActiveWindow } catch (_: Exception) { null }
-            if (root != null) {
-                try {
-                    val searchTerms = arrayOf("loaded", "new reel", "new release", "new clips", "refresh")
-                    for (term in searchTerms) {
-                        val nodes = root.findAccessibilityNodeInfosByText(term)
-                        if (nodes != null && nodes.isNotEmpty()) {
-                            for (n in nodes) {
-                                val nt = n.text?.toString()?.lowercase() ?: ""
-                                val nd = n.contentDescription?.toString()?.lowercase() ?: ""
-                                n.recycle()
-                                if (matchesRefresh(nt)) { matchedText = nt; break }
-                                if (matchesRefresh(nd)) { matchedText = nd; break }
-                            }
-                            if (matchedText != null) break
-                        }
-                    }
-                } catch (_: Exception) {
-                    // ignore
-                } finally {
-                    root.recycle()
-                }
-            }
-        }
-
+        val matchedText = texts.firstOrNull { matchesRefresh(it) }
         if (matchedText != null) {
-            triggerInstagramReelRefresh("Announcement/Toast: '$matchedText'")
+            triggerInstagramReelRefresh("Announcement: '$matchedText'")
         }
     }
 
@@ -1857,12 +1770,23 @@ class KittyAccessibilityService : AccessibilityService() {
             val lastIndex = getPkgIndex()
 
             // 1. PULL-TO-REFRESH ON INSTAGRAM REELS:
-            // When user pulls down on Instagram Reels, deltaY is negative (dy < -20).
-            // If on reel 0 or Reels tab is active, count this immediately as a reel refresh and pull curtain down!
-            if (packageName == ScrollDataManager.PKG_INSTAGRAM && deltaY < -20 && (lastInstagramIndex <= 0 || fromIndex <= 0 || isInstagramReelsActive())) {
-                Log.i(TAG, "Pull-to-refresh detected on Instagram Reels (dy=$deltaY, idx=$fromIndex)")
-                triggerInstagramReelRefresh("Pull-to-refresh on Reels (dy=$deltaY)")
-                return
+            // When user pulls down on Instagram Reels, deltaY is negative (dy < -15).
+            // This is ONLY a refresh if user is at the top reel (lastInstagramIndex == 0 || fromIndex == 0) and in Reels,
+            // OR if the scrolling view has "refresh" or "swipe" in its ID/class.
+            // Backward navigation from reel 2 -> 1 (where lastInstagramIndex > 0 or fromIndex > 0) is NEVER a refresh!
+            if (packageName == ScrollDataManager.PKG_INSTAGRAM && deltaY < -15) {
+                val entryId = getEntryName(source)
+                val cls = source?.className?.toString()?.lowercase() ?: ""
+                val isExplicitRefresh = entryId.contains("refresh") || entryId.contains("swipe") ||
+                                        cls.contains("refresh") || cls.contains("swipe")
+                val isReels = isInstagramReels(source)
+                val isAtTopReel = (lastInstagramIndex == 0 || fromIndex == 0) && isReels
+
+                if (isExplicitRefresh || isAtTopReel) {
+                    Log.i(TAG, "Pull-to-refresh on Instagram Reels (dy=$deltaY, idx=$fromIndex)")
+                    triggerInstagramReelRefresh("Pull-to-refresh on Reels (dy=$deltaY)")
+                    return
+                }
             }
 
             // 2. CRITICAL: SCROLLING UP (backwards/upward swipe to previous content) MUST NEVER PULL CURTAIN DOWN!
@@ -1959,30 +1883,12 @@ class KittyAccessibilityService : AccessibilityService() {
 
 
 
-        // 1. Instagram Reels tab tap or in-feed refresh tap -> count reel
+        // 1. Instagram Reels tab navigation -> reset index to 0, NEVER pull curtain down!
         if (packageName == ScrollDataManager.PKG_INSTAGRAM) {
-            val isReelsTabRefresh = viewId.contains("clips") || viewId.contains("reel") ||
-                                    contentDesc.contains("reels") || contentDesc.contains("clips") ||
-                                    viewId.contains("new_posts") || viewId.contains("refresh") ||
-                                    text.contains("reels")
-            if (isReelsTabRefresh) {
-                triggerInstagramReelRefresh("Reels tab or refresh tapped")
-                return
-            }
-            var p = source.parent
-            var d = 0
-            while (p != null && d < 4) {
-                val pDesc = p.contentDescription?.toString()?.lowercase() ?: ""
-                val pId = getEntryName(p)
-                if (pDesc.contains("reels") || pDesc.contains("clips") || pId.contains("clips_tab") || pId.contains("reels_tab")) {
-                    p.recycle()
-                    triggerInstagramReelRefresh("Reels tab parent tapped")
-                    return
-                }
-                val next = p.parent
-                p.recycle()
-                p = next
-                d++
+            val entryId = getEntryName(source)
+            if (entryId.contains("clips_tab") || viewId.contains("clips_tab") || contentDesc == "reels") {
+                lastInstagramIndex = 0
+                Log.i(TAG, "Navigated to Reels tab (index set to 0, no curtain drop)")
             }
             return
         }

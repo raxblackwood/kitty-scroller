@@ -205,7 +205,12 @@ It scopes its overlay strictly to video doomscrolling feeds while leaving produc
   - Implemented `lastUpwardScrollTs` timestamp and a 1200ms upward scroll cooldown period (`UPWARD_SCROLL_COOLDOWN_MS`).
   - Discarded any positive scroll delta arriving within the cooldown period as an uncalculated settle rebound.
   - Added index regression validation (`fromIndex <= lastIndex`) to prevent upward navigation from advancing the reel counter.
-  - Fortified Instagram Reels refresh detection with `isInstagramReelsActive()` querying root window tab markers (`clips_tab`, `reels_viewer_root`).
-  - Swiping down to refresh (`deltaY < -20`) immediately registers as a fresh reel scroll and drops the curtain with a 2500ms debounce window.
-  - Assembled and stream-installed debug APK onto connected physical device via ADB without launching.
+- v1.0.39: Elimination of Accessibility Main-Thread Scroll Lag & Tab Navigation False Positives.
+  - Completely eradicated main-thread UI lag during scrolls by removing all synchronous `rootInActiveWindow` IPC queries from event dispatch loops.
+  - Replaced heavy tree-crawling in `checkInstagramReelRefreshEvent` with lightweight `checkInstagramRefreshAnnouncement` scoped strictly to `TYPE_ANNOUNCEMENT` and `TYPE_NOTIFICATION_STATE_CHANGED`.
+  - Removed false curtain drop on Home-to-Reels navigation by eliminating `triggerInstagramReelRefresh` from `handleViewClicked`.
+  - Clicking the Reels navigation tab now strictly updates the index marker to 0 without dropping the curtain.
+  - Refined Reels pull-to-refresh: strictly requires `(lastInstagramIndex == 0 || fromIndex == 0) && isReels` or explicit refresh containers (`refresh`, `swipe`), preventing normal backward scroll navigation from triggering refreshes.
+  - Allowed `refresh` and `swipe` container view IDs in `isInstagramTargetScroll`.
+  - Stream-installed debug build to device via ADB and reset daily scroll count and accumulated pixels to zero.
 
