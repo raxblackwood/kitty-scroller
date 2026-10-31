@@ -959,21 +959,21 @@ class KittyAccessibilityService : AccessibilityService() {
 
             }
 
-            val operaNodes = root.findAccessibilityNodeInfosByViewId("com.snapchat.android:id/opera_viewer")
+            val spotlightPlayerNodes = root.findAccessibilityNodeInfosByViewId("com.snapchat.android:id/spotlight_fullscreen_player")
 
-            if (operaNodes != null && operaNodes.isNotEmpty()) {
+            if (spotlightPlayerNodes != null && spotlightPlayerNodes.isNotEmpty()) {
 
-                for (node in operaNodes) { node.recycle() }
+                for (node in spotlightPlayerNodes) { node.recycle() }
 
                 return true
 
             }
 
-            val snapPlayerNodes = root.findAccessibilityNodeInfosByViewId("com.snapchat.android:id/snap_player")
+            val spotlightFeedNodes = root.findAccessibilityNodeInfosByViewId("com.snapchat.android:id/spotlight_feed")
 
-            if (snapPlayerNodes != null && snapPlayerNodes.isNotEmpty()) {
+            if (spotlightFeedNodes != null && spotlightFeedNodes.isNotEmpty()) {
 
-                for (node in snapPlayerNodes) { node.recycle() }
+                for (node in spotlightFeedNodes) { node.recycle() }
 
                 return true
 
@@ -1059,7 +1059,7 @@ class KittyAccessibilityService : AccessibilityService() {
 
             id.contains("clips") || id.contains("reel") || id.contains("shorts") ||
 
-            id.contains("spotlight") || id.contains("opera") || id.contains("fb_shorts")) {
+            id.contains("spotlight") || id.contains("fb_shorts")) {
 
             return true
 
@@ -1079,7 +1079,7 @@ class KittyAccessibilityService : AccessibilityService() {
 
                 pId.contains("clips") || pId.contains("reel") || pId.contains("shorts") ||
 
-                pId.contains("spotlight") || pId.contains("opera") || pId.contains("fb_shorts")) {
+                pId.contains("spotlight") || pId.contains("fb_shorts")) {
 
                 current.recycle()
 
@@ -1223,7 +1223,7 @@ class KittyAccessibilityService : AccessibilityService() {
 
             "input_bar", "map_view", "snap_map", "profile", "avatar", "settings",
 
-            "memories", "gallery", "camera_roll"
+            "memories", "gallery", "camera_roll", "snap_preview", "direct_snap", "story", "opera"
 
         )
 
@@ -1247,11 +1247,7 @@ class KittyAccessibilityService : AccessibilityService() {
 
         val spotlightKeywords = arrayOf(
 
-            "spotlight", "opera", "story_viewer", "snap_player",
-
-            "discover_feed", "playback_view", "vertical_view_pager",
-
-            "opera_page_view", "spotlight_carousel", "opera_viewer", "ngs_spotlight"
+            "spotlight", "ngs_spotlight"
 
         )
 

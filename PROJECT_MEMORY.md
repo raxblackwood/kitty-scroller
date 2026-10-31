@@ -223,5 +223,12 @@ It scopes its overlay strictly to video doomscrolling feeds while leaving produc
   - In `handleWindowStateChanged`, checks `isSnapchatSpotlightActive()` and immediately hides the overlay if user is on camera or other screens upon switching to Snapchat.
   - In `handleViewClicked`, immediately hides the overlay when tapping Camera, Chat, Map, or Stories tabs, and only shows when tapping Spotlight.
   - In `handleViewScrolled`, detects horizontal tab swipes across main tabs to hide or show the overlay based on whether Spotlight is active, and immediately hides overlay if scrolling on non-spotlight screens.
+  - Re-compiled signed release Android App Bundle (`dist/Clawse-v1.0.35-release.aab`) and release APK (`dist/Clawse-v1.0.35-release.apk`).
+- v1.0.35 Update 2: Elimination of Friend Snap Viewing False Triggers in Snapchat.
+  - Resolved personal snaps received in chat triggering the curtain drop when opened.
+  - Root cause: Snapchat uses its internal `opera_viewer` and `snap_player` multimedia engine for all snaps, which previously matched generic keywords in `spotlightKeywords` and `isSnapchatSpotlightActive`.
+  - Removed `opera`, `story_viewer`, `snap_player`, and `playback_view` from `spotlightKeywords` and `isViewPagerScroll`.
+  - Restricted Spotlight detection exclusively to explicit `spotlight` identifiers and selected `ngs_spotlight_icon_container` navigation tab.
+  - Added explicit rejection for direct snaps, snap previews, and friend stories.
   - Re-compiled signed release Android App Bundle (`dist/Clawse-v1.0.35-release.aab`) and release APK (`dist/Clawse-v1.0.35-release.apk`).
 
