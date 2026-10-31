@@ -439,3 +439,14 @@ It scopes its overlay strictly to video doomscrolling feeds while leaving produc
   - Bundled strict Snapchat Spotlight scoping (friend snaps, stories, and chats completely excluded).
   - Bundled zero-lag accessibility loop and settle rebound filtering.
   - Compiled signed release Android App Bundle (`dist/Clawse-v1.0.36-release.aab`) and release APK (`dist/Clawse-v1.0.36-release.apk`).
+- v1.0.36 Update: Fix Instagram Home Feed Scroll Rate & Unblock Settings Uninstall Pop-up.
+  - Resolved Instagram Home Feed dropping the curtain too fast.
+  - Root cause: `cls.contains("recycler")` in `isViewPagerScroll` falsely treated Instagram Home Feed `RecyclerView` as a full-screen discrete ViewPager, adding full screen height units (~2000px) on every post instead of finger scroll delta.
+  - Removed generic `recycler` from `isViewPagerScroll`.
+  - Strictly differentiated continuous scrolling on Instagram Home Feed (`pixelsToAdd = deltaY.toFloat()`) from discrete pagination on Instagram Reels (`screenHeight * diff * 0.85f`).
+  - Resolved screen freeze and missing pop-up when tapping "Uninstall" in Android Settings.
+  - Root cause: `checkAndApplyUninstallProtection` ran unconditionally when Guardian Lock was not enabled, immediately clicking `Cancel` and sending `GLOBAL_ACTION_BACK` which killed the system uninstallation dialog and froze Settings.
+  - Gated anti-tamper interception strictly behind `isGuardianLockEnabled`.
+  - Users without Guardian Lock can now uninstall cleanly via the standard Android confirmation dialog.
+  - Re-compiled signed release Android App Bundle (`dist/Clawse-v1.0.36-release.aab`) and release APK (`dist/Clawse-v1.0.36-release.apk`).
+  - Stream-installed updated release APK to connected phone via ADB.

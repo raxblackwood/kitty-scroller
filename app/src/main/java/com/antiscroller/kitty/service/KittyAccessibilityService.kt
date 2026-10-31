@@ -1055,7 +1055,7 @@ class KittyAccessibilityService : AccessibilityService() {
 
         val id = getEntryName(sourceNode)
 
-        if (cls.contains("viewpager") || cls.contains("recycler") || id.contains("view_pager") ||
+        if (cls.contains("viewpager") || id.contains("view_pager") ||
 
             id.contains("clips") || id.contains("reel") || id.contains("shorts") ||
 
@@ -1075,7 +1075,7 @@ class KittyAccessibilityService : AccessibilityService() {
 
             val pCls = current.className?.toString()?.lowercase() ?: ""
 
-            if (pCls.contains("viewpager") || pCls.contains("recycler") || pId.contains("view_pager") ||
+            if (pCls.contains("viewpager") || pId.contains("view_pager") ||
 
                 pId.contains("clips") || pId.contains("reel") || pId.contains("shorts") ||
 
@@ -1879,44 +1879,59 @@ class KittyAccessibilityService : AccessibilityService() {
                 return
             }
 
-            // 4. CRITICAL: INDEX REGRESSION OR NON-ADVANCEMENT CHECK
-            // If fromIndex is reported and did not strictly increase, user navigated backward or stayed in place!
-            if (fromIndex >= 0 && lastIndex >= 0 && fromIndex <= lastIndex) {
-                updatePkgIndex(fromIndex)
-                Log.i(TAG, "Scroll ignored: Page did not advance forward ($lastIndex -> $fromIndex, dy=$deltaY)")
-                return
-            }
+            val isInstagram = packageName == ScrollDataManager.PKG_INSTAGRAM
+            val isInstagramHomeFeed = isInstagram && !isInstagramReels(source)
 
             val pixelsToAdd: Float
-            if (fromIndex >= 0 && isViewPagerScroll(source)) {
-                if (lastIndex < 0) {
-                    updatePkgIndex(fromIndex)
-                    return
-                }
-                if (fromIndex > lastIndex) {
-                    val diff = (fromIndex - lastIndex).coerceAtMost(3)
-                    updatePkgIndex(fromIndex)
-                    pixelsToAdd = screenHeight * diff * 0.85f
-                    Log.i(TAG, "Reel page advanced: $lastIndex -> $fromIndex (+$pixelsToAdd px)")
-                } else {
-                    updatePkgIndex(fromIndex)
-                    return
-                }
-            } else if (deltaY > 15) {
-                pixelsToAdd = deltaY.toFloat()
-                if (fromIndex >= 0) {
-                    updatePkgIndex(fromIndex)
-                }
-            } else if (packageName == ScrollDataManager.PKG_SNAPCHAT || packageName == ScrollDataManager.PKG_FACEBOOK || packageName == ScrollDataManager.PKG_FACEBOOK_LITE) {
-                // Discrete page snap fallback: only if deltaY >= 0 and not in upward cooldown
-                if (deltaY >= 0) {
-                    pixelsToAdd = screenHeight * 0.75f
-                    Log.i(TAG, "Discrete page advance on $packageName (+$pixelsToAdd px)")
+            if (isInstagramHomeFeed) {
+                // Continuous scrolling on Instagram Home Feed: add actual finger scroll distance
+                if (deltaY > 15) {
+                    pixelsToAdd = deltaY.toFloat()
+                    if (fromIndex >= 0) {
+                        updatePkgIndex(fromIndex)
+                    }
                 } else {
                     return
                 }
             } else {
-                return
+                // Discrete full-screen reel / shorts pagers (Instagram Reels, YouTube Shorts, Snapchat Spotlight, FB Reels)
+                // 4. CRITICAL: INDEX REGRESSION OR NON-ADVANCEMENT CHECK for discrete pagers
+                if (fromIndex >= 0 && lastIndex >= 0 && fromIndex <= lastIndex) {
+                    updatePkgIndex(fromIndex)
+                    Log.i(TAG, "Scroll ignored: Page did not advance forward ($lastIndex -> $fromIndex, dy=$deltaY)")
+                    return
+                }
+
+                if (fromIndex >= 0 && isViewPagerScroll(source)) {
+                    if (lastIndex < 0) {
+                        updatePkgIndex(fromIndex)
+                        return
+                    }
+                    if (fromIndex > lastIndex) {
+                        val diff = (fromIndex - lastIndex).coerceAtMost(3)
+                        updatePkgIndex(fromIndex)
+                        pixelsToAdd = screenHeight * diff * 0.85f
+                        Log.i(TAG, "Reel page advanced: $lastIndex -> $fromIndex (+$pixelsToAdd px)")
+                    } else {
+                        updatePkgIndex(fromIndex)
+                        return
+                    }
+                } else if (deltaY > 15) {
+                    pixelsToAdd = deltaY.toFloat()
+                    if (fromIndex >= 0) {
+                        updatePkgIndex(fromIndex)
+                    }
+                } else if (packageName == ScrollDataManager.PKG_SNAPCHAT || packageName == ScrollDataManager.PKG_FACEBOOK || packageName == ScrollDataManager.PKG_FACEBOOK_LITE) {
+                    // Discrete page snap fallback: only if deltaY >= 0 and not in upward cooldown
+                    if (deltaY >= 0) {
+                        pixelsToAdd = screenHeight * 0.75f
+                        Log.i(TAG, "Discrete page advance on $packageName (+$pixelsToAdd px)")
+                    } else {
+                        return
+                    }
+                } else {
+                    return
+                }
             }
 
             Log.i(TAG, "Forward scroll applied on $packageName: +$pixelsToAdd px (dy=$deltaY, dx=$deltaX)")
@@ -2333,6 +2348,10 @@ class KittyAccessibilityService : AccessibilityService() {
 
         if (dataManager.isMaintenanceModeActive()) return
 
+        // Anti-tamper/uninstall protection is strictly gated by Guardian Lock.
+        // If Guardian Lock is NOT active, user is fully permitted to modify settings or uninstall normally.
+        if (!dataManager.isGuardianLockEnabled) return
+
 
 
         val now = System.currentTimeMillis()
@@ -2553,57 +2572,27 @@ class KittyAccessibilityService : AccessibilityService() {
 
 
 
-            // Send Back to dismiss dangerous prompt
-
-            performGlobalAction(GLOBAL_ACTION_BACK)
-
-
-
             mainHandler.postDelayed({
 
-                if (dataManager.isGuardianLockEnabled) {
+                Toast.makeText(
 
-                    Toast.makeText(
+                    applicationContext,
 
-                        applicationContext,
+                    "🛡️ Protected by Guardian PIN! Parent / partner must enter PIN to modify or delete.",
 
-                        "🛡️ Protected by Guardian PIN! Parent / partner must enter PIN to modify or delete.",
+                    Toast.LENGTH_LONG
 
-                        Toast.LENGTH_LONG
+                ).show()
 
-                    ).show()
+                val intent = Intent(applicationContext, GuardianUnlockActivity::class.java).apply {
 
-                    val intent = Intent(applicationContext, GuardianUnlockActivity::class.java).apply {
-
-                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_CLEAR_TASK)
-
-                    }
-
-                    startActivity(intent)
-
-                } else {
-
-                    Toast.makeText(
-
-                        applicationContext,
-
-                        "🌿 60-Second Cooling-Off Period: Pause and take a breath.",
-
-                        Toast.LENGTH_LONG
-
-                    ).show()
-
-                    val intent = Intent(applicationContext, BreathingFrictionActivity::class.java).apply {
-
-                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_CLEAR_TASK)
-
-                    }
-
-                    startActivity(intent)
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_CLEAR_TASK)
 
                 }
 
-            }, 80L)
+                startActivity(intent)
+
+            }, 100L)
 
         } catch (e: Exception) {
 
