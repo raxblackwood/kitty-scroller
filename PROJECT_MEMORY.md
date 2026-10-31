@@ -198,5 +198,14 @@ It scopes its overlay strictly to video doomscrolling feeds while leaving produc
   - Upgraded `isViewPagerScroll` to support `RecyclerView` and increased traversal depth for discrete snap pagination.
   - Added Snapchat and Facebook monitoring toggles with 24-hour anti-impulse cooling-off dialogs to both Sticker Pop Light and Midnight OLED Dark themes.
   - Added Snapchat and Facebook switches to initial setup boundary lock-in dialogs.
-  - Built debug APK ready for device installation.
+  - Built debug APK ready for device installation.
+- v1.0.38: ViewPager Settle Bounce Filtering & Instagram Reels Refresh Enforcement.
+  - Eliminated upward scroll curtain drops caused by ViewPager/RecyclerView snap settle animations.
+  - Swiping up (`deltaY < -10`) previously generated an opposite rebound event (`deltaY > 0`) 100-250ms later that falsely advanced the curtain.
+  - Implemented `lastUpwardScrollTs` timestamp and a 1200ms upward scroll cooldown period (`UPWARD_SCROLL_COOLDOWN_MS`).
+  - Discarded any positive scroll delta arriving within the cooldown period as an uncalculated settle rebound.
+  - Added index regression validation (`fromIndex <= lastIndex`) to prevent upward navigation from advancing the reel counter.
+  - Fortified Instagram Reels refresh detection with `isInstagramReelsActive()` querying root window tab markers (`clips_tab`, `reels_viewer_root`).
+  - Swiping down to refresh (`deltaY < -20`) immediately registers as a fresh reel scroll and drops the curtain with a 2500ms debounce window.
+  - Assembled and stream-installed debug APK onto connected physical device via ADB without launching.
 
