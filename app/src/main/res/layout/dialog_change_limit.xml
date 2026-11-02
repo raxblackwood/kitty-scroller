@@ -4,68 +4,74 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:background="@drawable/bg_dialog_glass"
-    android:padding="24dp">
+    android:background="@drawable/bg_pixel_dark_dialog"
+    android:padding="22dp">
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Change Daily Reel Limit 🎯"
-        android:textColor="@color/text_primary"
-        android:textSize="20sp"
-        android:textStyle="bold" />
+        android:textColor="@color/pixel_dark_ink_bright"
+        android:textSize="18sp"
+        android:fontFamily="@font/silkscreen_bold" />
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="6dp"
         android:text="Tightening your limit takes effect immediately. Increasing your limit takes effect tomorrow at midnight to prevent binge scrolling."
-        android:textColor="@color/text_secondary"
+        android:textColor="@color/pixel_dark_ink_muted"
         android:textSize="13sp"
-        android:lineSpacingExtra="2dp" />
+        android:lineSpacingExtra="2dp"
+        android:fontFamily="@font/bricolage_grotesque" />
 
-    <com.google.android.material.textfield.TextInputLayout
+    <FrameLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="50dp"
         android:layout_marginTop="16dp"
-        app:hintEnabled="false"
-        app:boxCornerRadiusBottomEnd="10dp"
-        app:boxCornerRadiusBottomStart="10dp"
-        app:boxCornerRadiusTopEnd="10dp"
-        app:boxCornerRadiusTopStart="10dp"
-        style="@style/Widget.Material3.TextInputLayout.OutlinedBox">
+        android:background="@drawable/bg_pixel_dark_input_box">
 
         <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/etChangeLimit"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="match_parent"
+            android:background="@null"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
             android:inputType="number"
             android:maxLength="4"
             android:hint="Example: 25"
-            android:textColorHint="#4DFFFFFF"
-            android:textColor="@color/text_primary" />
-    </com.google.android.material.textfield.TextInputLayout>
+            android:textColorHint="@color/pixel_dark_ink_muted"
+            android:textColor="@color/pixel_dark_ink_bright"
+            android:textSize="15sp"
+            android:fontFamily="@font/silkscreen_regular" />
+    </FrameLayout>
 
-    <com.google.android.material.button.MaterialButton
+    <TextView
         android:id="@+id/btnSaveChangeLimit"
         android:layout_width="match_parent"
-        android:layout_height="50dp"
+        android:layout_height="48dp"
         android:layout_marginTop="20dp"
+        android:gravity="center"
         android:text="Update Daily Boundary 🔒"
-        android:backgroundTint="@color/primary"
-        android:textColor="@color/on_primary"
-        android:textSize="14sp"
-        android:textStyle="bold"
-        app:cornerRadius="10dp" />
+        android:textColor="@color/pixel_dark_bg"
+        android:textSize="13sp"
+        android:background="@drawable/bg_pixel_dark_btn_action"
+        android:fontFamily="@font/silkscreen_bold"
+        android:clickable="true"
+        android:focusable="true" />
 
-    <com.google.android.material.button.MaterialButton
+    <TextView
         android:id="@+id/btnCancelChangeLimit"
         android:layout_width="match_parent"
-        android:layout_height="40dp"
+        android:layout_height="38dp"
         android:layout_marginTop="6dp"
+        android:gravity="center"
         android:text="Cancel"
-        style="@style/Widget.Material3.Button.TextButton"
-        android:textColor="@color/text_secondary"
-        android:textSize="13sp" />
+        android:textColor="@color/pixel_dark_ink_muted"
+        android:textSize="13sp"
+        android:fontFamily="@font/bricolage_grotesque"
+        android:clickable="true"
+        android:focusable="true" />
 
 </LinearLayout>

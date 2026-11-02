@@ -12,8 +12,8 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="24dp"
-        android:background="@drawable/bg_dialog_glass">
+        android:padding="22dp"
+        android:background="@drawable/bg_pixel_dark_dialog">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -26,9 +26,9 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:text="Enable Kitty Curtain 🐾"
-                android:textColor="@color/text_primary"
-                android:textSize="20sp"
-                android:textStyle="bold" />
+                android:textColor="@color/pixel_dark_ink_bright"
+                android:textSize="18sp"
+                android:fontFamily="@font/silkscreen_bold" />
 
             <ImageView
                 android:id="@+id/btnClosePermDialog"
@@ -38,7 +38,7 @@
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:contentDescription="Close"
                 android:src="@android:drawable/ic_menu_close_clear_cancel"
-                app:tint="@color/text_secondary" />
+                app:tint="@color/pixel_dark_ink_muted" />
         </LinearLayout>
 
         <TextView
@@ -46,9 +46,10 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="6dp"
             android:text="To count reels and lower the curtain when your limit is reached, please enable these 2 Android permissions:"
-            android:textColor="@color/text_secondary"
+            android:textColor="@color/pixel_dark_ink_muted"
             android:textSize="13sp"
-            android:lineSpacingExtra="2dp" />
+            android:lineSpacingExtra="2dp"
+            android:fontFamily="@font/bricolage_grotesque" />
 
         <!-- 1. Display Over Other Apps -->
         <LinearLayout
@@ -68,28 +69,35 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="1. Display Over Other Apps"
-                    android:textColor="@color/text_primary"
+                    android:textColor="@color/pixel_dark_ink_bright"
                     android:textSize="14sp"
-                    android:textStyle="bold" />
+                    android:textStyle="bold"
+                    android:fontFamily="@font/bricolage_grotesque" />
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="2dp"
                     android:text="Lowers the Kitty Curtain over reels"
-                    android:textColor="@color/text_secondary"
-                    android:textSize="11sp" />
+                    android:textColor="@color/pixel_dark_ink_muted"
+                    android:textSize="12sp"
+                    android:fontFamily="@font/bricolage_grotesque" />
             </LinearLayout>
 
-            <com.google.android.material.button.MaterialButton
+            <TextView
                 android:id="@+id/btnSetupOverlay"
                 android:layout_width="wrap_content"
-                android:layout_height="38dp"
+                android:layout_height="36dp"
+                android:paddingStart="14dp"
+                android:paddingEnd="14dp"
+                android:gravity="center"
                 android:text="Enable"
                 android:textSize="12sp"
-                android:backgroundTint="@color/primary"
-                android:textColor="@color/on_primary"
-                app:cornerRadius="8dp" />
+                android:textColor="@color/pixel_dark_bg"
+                android:background="@drawable/bg_pixel_dark_btn_action"
+                android:fontFamily="@font/silkscreen_bold"
+                android:clickable="true"
+                android:focusable="true" />
         </LinearLayout>
 
         <!-- 2. Accessibility Service -->
@@ -110,52 +118,64 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="2. Accessibility Service"
-                    android:textColor="@color/text_primary"
+                    android:textColor="@color/pixel_dark_ink_bright"
                     android:textSize="14sp"
-                    android:textStyle="bold" />
+                    android:textStyle="bold"
+                    android:fontFamily="@font/bricolage_grotesque" />
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="2dp"
                     android:text="Tracks reels &amp; stops uninstalls"
-                    android:textColor="@color/text_secondary"
-                    android:textSize="11sp" />
+                    android:textColor="@color/pixel_dark_ink_muted"
+                    android:textSize="12sp"
+                    android:fontFamily="@font/bricolage_grotesque" />
             </LinearLayout>
 
-            <com.google.android.material.button.MaterialButton
+            <TextView
                 android:id="@+id/btnSetupAccessibility"
                 android:layout_width="wrap_content"
-                android:layout_height="38dp"
+                android:layout_height="36dp"
+                android:paddingStart="14dp"
+                android:paddingEnd="14dp"
+                android:gravity="center"
                 android:text="Enable"
                 android:textSize="12sp"
-                android:backgroundTint="@color/primary"
-                android:textColor="@color/on_primary"
-                app:cornerRadius="8dp" />
+                android:textColor="@color/pixel_dark_bg"
+                android:background="@drawable/bg_pixel_dark_btn_action"
+                android:fontFamily="@font/silkscreen_bold"
+                android:clickable="true"
+                android:focusable="true" />
         </LinearLayout>
 
         <!-- Actions -->
-        <com.google.android.material.button.MaterialButton
+        <TextView
             android:id="@+id/btnDonePermissions"
             android:layout_width="match_parent"
-            android:layout_height="50dp"
-            android:layout_marginTop="24dp"
+            android:layout_height="48dp"
+            android:layout_marginTop="22dp"
+            android:background="@drawable/bg_pixel_dark_btn_action"
+            android:gravity="center"
             android:text="Done / Go to Dashboard"
-            android:backgroundTint="@color/primary"
-            android:textColor="@color/on_primary"
-            android:textSize="14sp"
-            android:textStyle="bold"
-            app:cornerRadius="10dp" />
+            android:textColor="@color/pixel_dark_bg"
+            android:textSize="13sp"
+            android:fontFamily="@font/silkscreen_bold"
+            android:clickable="true"
+            android:focusable="true" />
 
-        <com.google.android.material.button.MaterialButton
+        <TextView
             android:id="@+id/btnSkipPermissions"
             android:layout_width="match_parent"
-            android:layout_height="40dp"
+            android:layout_height="38dp"
             android:layout_marginTop="6dp"
+            android:gravity="center"
             android:text="I'll Enable Later"
-            style="@style/Widget.Material3.Button.TextButton"
-            android:textColor="@color/text_secondary"
-            android:textSize="13sp" />
+            android:textColor="@color/pixel_dark_ink_muted"
+            android:textSize="13sp"
+            android:fontFamily="@font/bricolage_grotesque"
+            android:clickable="true"
+            android:focusable="true" />
 
     </LinearLayout>
 </ScrollView>

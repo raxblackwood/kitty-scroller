@@ -698,21 +698,7 @@ class MainActivity : AppCompatActivity() {
         b.cardCatKatrina.setOnClickListener { selectDarkCat(ScrollDataManager.THEME_KATRINA) }
         b.cardCatCasper.setOnClickListener { selectDarkCat(ScrollDataManager.THEME_CASPER) }
 
-        b.btnEquipOrUnlock.setOnClickListener {
-            val isEquipped = (previewedTheme == dataManager.kittyTheme)
-            val isUnlocked = dataManager.isThemeUnlocked(previewedTheme)
-            val breedName = getBreedDisplayName(previewedTheme)
-            if (isEquipped) {
-                Toast.makeText(this, "$breedName is already on duty! 🐾", Toast.LENGTH_SHORT).show()
-            } else if (isUnlocked) {
-                dataManager.kittyTheme = previewedTheme
-                Toast.makeText(this, "$breedName equipped! 🐾", Toast.LENGTH_SHORT).show()
-                updateDarkModeCatUI()
-                updateDashboard()
-            } else {
-                showPaywallDialog(BillingManager.PRODUCT_COSMETIC_PACK)
-            }
-        }
+
 
         // Idle sway animation on the peeking cat companion
         b.ivHeroCatPreview.post {
@@ -913,8 +899,23 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun selectDarkCat(theme: String) {
+        val wasPreviewing = (previewedTheme == theme)
         previewedTheme = theme
         updateDarkModeCatUI()
+
+        val isUnlocked = dataManager.isThemeUnlocked(theme)
+        val breedName = getBreedDisplayName(theme)
+        if (isUnlocked) {
+            dataManager.kittyTheme = theme
+            Toast.makeText(this, "$breedName equipped! 🐾", Toast.LENGTH_SHORT).show()
+            updateDashboard()
+        } else {
+            if (wasPreviewing) {
+                showPaywallDialog(BillingManager.PRODUCT_COSMETIC_PACK)
+            } else {
+                Toast.makeText(this, "Previewing $breedName. Tap again or tap 'Unlock breeds' to unlock! ✨", Toast.LENGTH_SHORT).show()
+            }
+        }
     }
 
     private fun updateDarkDashboard(count: Int, max: Int, pct: Float) {
@@ -947,8 +948,8 @@ class MainActivity : AppCompatActivity() {
     private fun updateDarkModeCatUI() {
         val b = bindingDark ?: return
 
-        // 1. Prominently show previewed cat on the hero card
-        b.ivHeroCatPreview.setImageResource(getBreedLoafRes(previewedTheme))
+        // 1. Prominently show previewed cat on the hero card (hanging sprite!)
+        b.ivHeroCatPreview.setImageResource(getCatStickerRes(previewedTheme))
 
         // 2. Personality speech bubble
         b.tvSpeechBubble.text = when (previewedTheme) {
@@ -974,58 +975,16 @@ class MainActivity : AppCompatActivity() {
         b.cardCatSalmon.setBackgroundResource(if (previewedTheme == ScrollDataManager.THEME_SALMON) R.drawable.bg_pixel_dark_cat_card_selected else R.drawable.bg_pixel_dark_cat_card_unselected)
         b.cardCatKatrina.setBackgroundResource(if (previewedTheme == ScrollDataManager.THEME_KATRINA) R.drawable.bg_pixel_dark_cat_card_selected else R.drawable.bg_pixel_dark_cat_card_unselected)
         b.cardCatCasper.setBackgroundResource(if (previewedTheme == ScrollDataManager.THEME_CASPER) R.drawable.bg_pixel_dark_cat_card_selected else R.drawable.bg_pixel_dark_cat_card_unselected)
-
-        // 4. Update status badges on cards
-        updateDarkCardBadge(b.badgeCatGinger, ScrollDataManager.THEME_GINGER)
-        updateDarkCardBadge(b.badgeCatTabby, ScrollDataManager.THEME_TABBY)
-        updateDarkCardBadge(b.badgeCatSaturn, ScrollDataManager.THEME_SATURN)
-        updateDarkCardBadge(b.badgeCatRolex, ScrollDataManager.THEME_ROLEX)
-        updateDarkCardBadge(b.badgeCatSalmon, ScrollDataManager.THEME_SALMON)
-        updateDarkCardBadge(b.badgeCatKatrina, ScrollDataManager.THEME_KATRINA)
-        updateDarkCardBadge(b.badgeCatCasper, ScrollDataManager.THEME_CASPER)
-
-        // 5. Update main action button
-        val isEquipped = (previewedTheme == dataManager.kittyTheme)
-        val isUnlocked = dataManager.isThemeUnlocked(previewedTheme)
-        val breedName = getBreedDisplayName(previewedTheme)
-        when {
-            isEquipped -> {
-                b.btnEquipOrUnlock.text = "✓ $breedName on duty"
-                b.btnEquipOrUnlock.isEnabled = false
-                b.btnEquipOrUnlock.setBackgroundResource(R.drawable.bg_pixel_dark_btn_equipped)
-                b.btnEquipOrUnlock.setTextColor(getColor(R.color.pixel_dark_ink_muted))
-            }
-            isUnlocked -> {
-                b.btnEquipOrUnlock.text = "Equip $breedName"
-                b.btnEquipOrUnlock.isEnabled = true
-                b.btnEquipOrUnlock.setBackgroundResource(R.drawable.bg_pixel_dark_btn_equip)
-                b.btnEquipOrUnlock.setTextColor(getColor(R.color.pixel_dark_bg))
-            }
-            else -> {
-                b.btnEquipOrUnlock.text = "✨ Unlock $breedName"
-                b.btnEquipOrUnlock.isEnabled = true
-                b.btnEquipOrUnlock.setBackgroundResource(R.drawable.bg_pixel_dark_btn_unlock)
-                b.btnEquipOrUnlock.setTextColor(getColor(R.color.pixel_dark_ink_bright))
-            }
-        }
     }
 
-    private fun updateDarkCardBadge(badgeView: ImageView, breedTheme: String) {
-        val isEquipped = (breedTheme == dataManager.kittyTheme)
-        val isUnlocked = dataManager.isThemeUnlocked(breedTheme)
-        if (isEquipped) {
-            badgeView.visibility = View.VISIBLE
-            badgeView.setBackgroundResource(R.drawable.bg_pixel_dark_badge_equipped)
-            badgeView.setImageResource(R.drawable.ic_check_24)
-            badgeView.imageTintList = ColorStateList.valueOf(getColor(R.color.pixel_dark_accent_mint))
-        } else if (isUnlocked) {
-            badgeView.visibility = View.GONE
-        } else {
-            badgeView.visibility = View.VISIBLE
-            badgeView.setBackgroundResource(R.drawable.bg_pixel_dark_badge_locked)
-            badgeView.setImageResource(R.drawable.ic_sec_lock)
-            badgeView.imageTintList = ColorStateList.valueOf(getColor(R.color.pixel_dark_awning_yellow))
-        }
+    private fun getCatStickerRes(theme: String): Int = when (theme) {
+        ScrollDataManager.THEME_TABBY, ScrollDataManager.THEME_BLACK -> R.drawable.kitty_tabby_sticker
+        ScrollDataManager.THEME_SATURN -> R.drawable.kitty_saturn_sticker
+        ScrollDataManager.THEME_ROLEX -> R.drawable.kitty_rolex_sticker
+        ScrollDataManager.THEME_SALMON -> R.drawable.kitty_salmon_sticker
+        ScrollDataManager.THEME_KATRINA -> R.drawable.kitty_katrina_sticker
+        ScrollDataManager.THEME_CASPER -> R.drawable.kitty_casper_sticker
+        else -> R.drawable.kitty_ginger_sticker
     }
 
     private fun updateDarkGuardianUI() {

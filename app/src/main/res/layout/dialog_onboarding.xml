@@ -4,18 +4,17 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:background="@drawable/bg_dialog_glass"
-    android:paddingStart="24dp"
-    android:paddingEnd="24dp"
+    android:background="@drawable/bg_pixel_dark_dialog"
+    android:paddingStart="22dp"
+    android:paddingEnd="22dp"
     android:paddingTop="20dp"
-    android:paddingBottom="28dp">
+    android:paddingBottom="24dp">
 
-    <!-- Top bar with Skip button -->
+    <!-- Top bar with Brand & Skip -->
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
 
-        <!-- App Brand Watermark -->
         <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -25,8 +24,8 @@
             android:orientation="horizontal">
 
             <ImageView
-                android:layout_width="20dp"
-                android:layout_height="20dp"
+                android:layout_width="22dp"
+                android:layout_height="22dp"
                 android:src="@mipmap/ic_kitty_launcher"
                 android:contentDescription="Clawse" />
 
@@ -35,26 +34,26 @@
                 android:layout_height="wrap_content"
                 android:layout_marginStart="8dp"
                 android:text="Clawse"
-                android:textColor="@color/text_secondary"
-                android:textSize="13sp"
-                android:fontFamily="sans-serif-medium" />
+                android:textColor="@color/pixel_dark_ink_bright"
+                android:textSize="18sp"
+                android:fontFamily="@font/silkscreen_bold" />
         </LinearLayout>
 
-        <!-- Skip button -->
-        <com.google.android.material.button.MaterialButton
+        <TextView
             android:id="@+id/btnOnboardingSkip"
             android:layout_width="wrap_content"
             android:layout_height="36dp"
             android:layout_alignParentEnd="true"
             android:layout_centerVertical="true"
-            android:paddingStart="12dp"
-            android:paddingEnd="12dp"
-            android:paddingTop="0dp"
-            android:paddingBottom="0dp"
+            android:paddingStart="10dp"
+            android:paddingEnd="10dp"
+            android:gravity="center"
             android:text="Skip"
-            android:textColor="@color/text_secondary"
+            android:textColor="@color/pixel_dark_ink_muted"
             android:textSize="13sp"
-            style="@style/Widget.Material3.Button.TextButton" />
+            android:fontFamily="@font/bricolage_grotesque"
+            android:clickable="true"
+            android:focusable="true" />
     </RelativeLayout>
 
     <!-- ViewPager2 for Slides -->
@@ -72,20 +71,21 @@
         android:layout_height="wrap_content"
         android:layout_gravity="center_horizontal"
         android:layout_marginTop="4dp"
-        android:layout_marginBottom="24dp"
+        android:layout_marginBottom="20dp"
         android:orientation="horizontal"
         android:gravity="center_vertical" />
 
     <!-- Action Button (Continue / Get Started) -->
-    <com.google.android.material.button.MaterialButton
+    <TextView
         android:id="@+id/btnOnboardingAction"
         android:layout_width="match_parent"
-        android:layout_height="52dp"
+        android:layout_height="48dp"
+        android:background="@drawable/bg_pixel_dark_btn_action"
+        android:gravity="center"
         android:text="Continue"
-        android:textColor="#120A05"
-        android:textSize="15sp"
-        android:textStyle="bold"
-        android:backgroundTint="@color/primary"
-        app:cornerRadius="26dp" />
-
+        android:textColor="@color/pixel_dark_bg"
+        android:textSize="14sp"
+        android:fontFamily="@font/silkscreen_bold"
+        android:clickable="true"
+        android:focusable="true" />
 </LinearLayout>

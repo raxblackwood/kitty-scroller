@@ -12,25 +12,27 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="24dp"
-        android:background="@drawable/bg_dialog_glass">
+        android:padding="22dp"
+        android:background="@drawable/bg_pixel_dark_dialog">
 
+        <!-- Header -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Welcome to Clawse 🐾"
-            android:textColor="@color/text_primary"
+            android:textColor="@color/pixel_dark_ink_bright"
             android:textSize="20sp"
-            android:textStyle="bold" />
+            android:fontFamily="@font/silkscreen_bold" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="6dp"
             android:text="Choose your daily reel boundary before you start. Once locked in, this budget protects your focus."
-            android:textColor="@color/text_secondary"
+            android:textColor="@color/pixel_dark_ink_muted"
             android:textSize="13sp"
-            android:lineSpacingExtra="2dp" />
+            android:lineSpacingExtra="2dp"
+            android:fontFamily="@font/bricolage_grotesque" />
 
         <!-- 1. Limit -->
         <TextView
@@ -38,52 +40,54 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
             android:text="1. DAILY REEL LIMIT"
-            android:textColor="@color/kitty_peach"
-            android:textSize="12sp"
-            android:letterSpacing="0.08"
-            android:textStyle="bold" />
+            android:textColor="@color/pixel_dark_awning_yellow"
+            android:textSize="11.5sp"
+            android:letterSpacing="0.06"
+            android:fontFamily="@font/silkscreen_bold" />
 
-        <com.google.android.material.textfield.TextInputLayout
-            android:id="@+id/tilSetupLimit"
+        <FrameLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="50dp"
             android:layout_marginTop="8dp"
-            app:hintEnabled="false"
-            app:boxCornerRadiusBottomEnd="10dp"
-            app:boxCornerRadiusBottomStart="10dp"
-            app:boxCornerRadiusTopEnd="10dp"
-            app:boxCornerRadiusTopStart="10dp"
-            style="@style/Widget.Material3.TextInputLayout.OutlinedBox">
+            android:background="@drawable/bg_pixel_dark_input_box">
 
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/etSetupLimit"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_height="match_parent"
+                android:background="@null"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
                 android:inputType="number"
                 android:maxLength="4"
                 android:hint="Example: 25"
-                android:textColorHint="#4DFFFFFF"
-                android:textColor="@color/text_primary" />
-        </com.google.android.material.textfield.TextInputLayout>
+                android:textColorHint="@color/pixel_dark_ink_muted"
+                android:textColor="@color/pixel_dark_ink_bright"
+                android:textSize="15sp"
+                android:fontFamily="@font/silkscreen_regular" />
+        </FrameLayout>
 
         <!-- 2. Protected Apps -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
+            android:layout_marginTop="18dp"
             android:text="2. PROTECTED APPS"
-            android:textColor="@color/secondary"
-            android:textSize="12sp"
-            android:letterSpacing="0.08"
-            android:textStyle="bold" />
+            android:textColor="@color/pixel_dark_awning_yellow"
+            android:textSize="11.5sp"
+            android:letterSpacing="0.06"
+            android:fontFamily="@font/silkscreen_bold" />
 
         <com.google.android.material.switchmaterial.SwitchMaterial
             android:id="@+id/switchSetupInstagram"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
             android:checked="true"
             android:text="Instagram (Reels &amp; Feed)"
-            android:textColor="@color/text_primary" />
+            android:textColor="@color/pixel_dark_ink_bright"
+            android:textSize="14sp"
+            android:fontFamily="@font/bricolage_grotesque" />
 
         <com.google.android.material.switchmaterial.SwitchMaterial
             android:id="@+id/switchSetupYouTube"
@@ -91,7 +95,9 @@
             android:layout_height="wrap_content"
             android:checked="true"
             android:text="YouTube (Shorts)"
-            android:textColor="@color/text_primary" />
+            android:textColor="@color/pixel_dark_ink_bright"
+            android:textSize="14sp"
+            android:fontFamily="@font/bricolage_grotesque" />
 
         <com.google.android.material.switchmaterial.SwitchMaterial
             android:id="@+id/switchSetupSnapchat"
@@ -99,7 +105,9 @@
             android:layout_height="wrap_content"
             android:checked="true"
             android:text="Snapchat (Spotlight)"
-            android:textColor="@color/text_primary" />
+            android:textColor="@color/pixel_dark_ink_bright"
+            android:textSize="14sp"
+            android:fontFamily="@font/bricolage_grotesque" />
 
         <com.google.android.material.switchmaterial.SwitchMaterial
             android:id="@+id/switchSetupFacebook"
@@ -107,19 +115,24 @@
             android:layout_height="wrap_content"
             android:checked="true"
             android:text="Facebook (Reels)"
-            android:textColor="@color/text_primary" />
+            android:textColor="@color/pixel_dark_ink_bright"
+            android:textSize="14sp"
+            android:fontFamily="@font/bricolage_grotesque" />
 
-        <com.google.android.material.button.MaterialButton
+        <!-- Lock In Button -->
+        <TextView
             android:id="@+id/btnLockInSetup"
             android:layout_width="match_parent"
-            android:layout_height="50dp"
+            android:layout_height="48dp"
             android:layout_marginTop="20dp"
+            android:gravity="center"
             android:text="Lock In Daily Boundary 🔒"
-            android:backgroundTint="@color/primary"
-            android:textColor="@color/on_primary"
-            android:textSize="14sp"
-            android:textStyle="bold"
-            app:cornerRadius="10dp" />
+            android:textColor="@color/pixel_dark_bg"
+            android:textSize="13sp"
+            android:background="@drawable/bg_pixel_dark_btn_action"
+            android:fontFamily="@font/silkscreen_bold"
+            android:clickable="true"
+            android:focusable="true" />
 
     </LinearLayout>
 </ScrollView>

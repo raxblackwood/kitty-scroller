@@ -516,15 +516,35 @@ Anti-doomscrolling Android app dropping an animated kitten curtain over Instagra
   - If Guardian Lock is active with a PIN, opening Clawse settings routes directly to `GuardianUnlockActivity` for PIN verification.
   - Initial setup permission flows (Accessibility and Overlay granting) are explicitly whitelisted so first-time onboarding is never blocked.
   - Built and installed the updated build directly to the connected phone via ADB.
-
-- v1.0.39 Release Bundle (versionCode 40): 8-Bit Arcade Official Dark Theme & Interactive Cat Preview.
-  - Transformed the 8-Bit Arcade theme into the official Dark theme of Clawse, sunsetting the legacy OLED theme.
-  - Clawse now presents two canonical app themes: "Sticker Pop (Light)" (default) and "8-Bit Arcade (Dark)".
-  - Built a rich dark arcade color palette: deep background (`#12111A`), card surfaces (`#1C1A27`), stroke boundaries (`#37334D`), honey-gold awning stripes (`#F2B723`), and Silkscreen pixel typography.
-  - Resolved hero card cat visibility by separating the canopy awning (`PixelAwningView` 64dp) and companion preview (`ImageView` `ivHeroCatPreview` 86x86dp with gentle idle rotation sway) into an overlapping layout, eliminating canvas stripe clipping.
-  - Resolved cat card click behavior: tapping any cat card in the 3x2 grid or Casper row now immediately previews the cat on the hero card and updates speech bubble quotes without popping open paywall modals prematurely.
-  - Added dynamic action button (`btnEquipOrUnlock`) supporting "✓ [Breed] on duty", "Equip [Breed]", and "✨ Unlock [Breed]" states (paywall is triggered only when tapping the explicit unlock button).
-  - Repointed modal glass blur hardware GPU effect to target the active layout root (`bDark.root` or `bLight.root`) rather than unattached legacy bindings.
-  - Bumped release `versionCode` to 40 and `versionName` to "1.0.39" in `app/build.gradle.kts`.
-  - Compiled signed release Android App Bundle (`dist/Clawse-v1.0.39-release.aab`) and release APK (`dist/Clawse-v1.0.39-release.apk`).
-  - Stream-installed updated debug APK to connected phone (`000693485000641`) via ADB.
+
+
+- v1.0.39 Release Bundle (versionCode 40): 8-Bit Arcade Official Dark Theme & Interactive Cat Preview.
+
+  - Transformed the 8-Bit Arcade theme into the official Dark theme of Clawse, sunsetting the legacy OLED theme.
+
+  - Clawse now presents two canonical app themes: "Sticker Pop (Light)" (default) and "8-Bit Arcade (Dark)".
+
+  - Built a rich dark arcade color palette: deep background (`#12111A`), card surfaces (`#1C1A27`), stroke boundaries (`#37334D`), honey-gold awning stripes (`#F2B723`), and Silkscreen pixel typography.
+
+  - Resolved hero card cat visibility by separating the canopy awning (`PixelAwningView` 64dp) and companion preview (`ImageView` `ivHeroCatPreview` 86x86dp with gentle idle rotation sway) into an overlapping layout, eliminating canvas stripe clipping.
+
+  - Resolved cat card click behavior: tapping any cat card in the 3x2 grid or Casper row now immediately previews the cat on the hero card and updates speech bubble quotes without popping open paywall modals prematurely.
+
+  - Added dynamic action button (`btnEquipOrUnlock`) supporting "✓ [Breed] on duty", "Equip [Breed]", and "✨ Unlock [Breed]" states (paywall is triggered only when tapping the explicit unlock button).
+
+  - Repointed modal glass blur hardware GPU effect to target the active layout root (`bDark.root` or `bLight.root`) rather than unattached legacy bindings.
+
+  - Bumped release `versionCode` to 40 and `versionName` to "1.0.39" in `app/build.gradle.kts`.
+
+  - Compiled signed release Android App Bundle (`dist/Clawse-v1.0.39-release.aab`) and release APK (`dist/Clawse-v1.0.39-release.apk`).
+
+  - Stream-installed updated debug APK to connected phone (`000693485000641`) via ADB.
+
+- v1.0.40 Release Bundle (versionCode 41): Restored Clean 8-Bit Dark Design, Hanging Cat Companion & Retro Dialogs.
+  - Reverted deviations from the reference design to restore clean 3x2 cat grid and Casper row without bottom equip button or card badge clutter.
+  - Implemented direct tap-to-equip for unlocked cats and tap-to-preview for locked cats (tapping a previewed locked cat or "Unlock breeds" triggers cosmetic paywall).
+  - Fixed hero card companion preview to display the hanging cat sticker (`kitty_{breed}_sticker`) peeking from the awning canopy rather than the sleeping loaf icon shown after curtain drop.
+  - Redesigned all 5 dark mode dialogs (`dialog_initial_setup`, `dialog_permission_setup`, `dialog_onboarding`, `dialog_change_limit`, and `dialog_progress_history`) with Silkscreen headings, retro input boxes (`#12111A`), and honey-gold action buttons (`#F2B723`).
+  - Bumped release `versionCode` to 41 and `versionName` to "1.0.40" in `app/build.gradle.kts`.
+  - Compiled signed release Android App Bundle (`dist/Clawse-v1.0.40-release.aab`) and release APK (`dist/Clawse-v1.0.40-release.apk`).
+  - Stream-installed updated debug APK to connected phone (`000693485000641`) via ADB.
