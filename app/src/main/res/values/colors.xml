@@ -41,4 +41,17 @@
     <color name="sticker_ink_muted">#7C7289</color>
     <color name="sticker_ink_soft">#554B66</color>
     <color name="sticker_lilac_slot">#E2D8FA</color>
+
+    <!-- 8-Bit Arcade (Pixel Retro Theme) Palette -->
+    <color name="pixel_bg">#F5EFEB</color>
+    <color name="pixel_card_bg">#ECE5D8</color>
+    <color name="pixel_card_surface">#FAF6F0</color>
+    <color name="pixel_ink">#1E1C2E</color>
+    <color name="pixel_ink_muted">#5A524A</color>
+    <color name="pixel_ink_light">#8C847B</color>
+    <color name="pixel_awning_yellow">#F2B723</color>
+    <color name="pixel_awning_dark">#DE9C18</color>
+    <color name="pixel_tally_filled">#1E1C2E</color>
+    <color name="pixel_tally_empty">#C5BEB3</color>
+    <color name="pixel_card_selected">#EAE0D0</color>
 </resources>

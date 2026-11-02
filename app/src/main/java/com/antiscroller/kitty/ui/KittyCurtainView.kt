@@ -161,6 +161,25 @@ class KittyCurtainView @JvmOverloads constructor(
             speechTextColor = Color.parseColor("#C2185B"),
             poleWoodColor = Color.parseColor("#76513A"),
             poleOutlineColor = Color.parseColor("#140C08")
+        ),
+        CASPER(
+            key = "casper",
+            displayName = "Casper",
+            furColor = Color.parseColor("#E6953B"),
+            furDarkColor = Color.parseColor("#995420"),
+            innerEarColor = Color.parseColor("#FFAB91"),
+            pawColor = Color.parseColor("#FBE9E7"),
+            pawPadColor = Color.parseColor("#FF8A80"),
+            curtainBodyColor = Color.parseColor("#F2B723"),
+            curtainStripeColor = Color.parseColor("#33DE9C18"),
+            eyeColor = Color.parseColor("#26140A"),
+            eyeHighlightColor = Color.WHITE,
+            noseColor = Color.parseColor("#FF80AB"),
+            strokeColor = Color.parseColor("#26140A"),
+            speechBubbleBg = Color.parseColor("#FAF6F0"),
+            speechTextColor = Color.parseColor("#1E1C2E"),
+            poleWoodColor = Color.parseColor("#76513A"),
+            poleOutlineColor = Color.parseColor("#1E1C2E")
         )
     }
 
@@ -190,6 +209,7 @@ class KittyCurtainView @JvmOverloads constructor(
     private var rolexBitmap: Bitmap? = null
     private var salmonBitmap: Bitmap? = null
     private var katrinaBitmap: Bitmap? = null
+    private var casperBitmap: Bitmap? = null
 
     // Loaf bitmap for full curtain lock (custom per-breed pixel-art cat loaf)
     private var loafBitmap: Bitmap? = null
@@ -257,6 +277,7 @@ class KittyCurtainView @JvmOverloads constructor(
             "rolex" -> CatBreed.ROLEX
             "salmon" -> CatBreed.SALMON
             "katrina" -> CatBreed.KATRINA
+            "casper" -> CatBreed.CASPER
             else -> CatBreed.GINGER
         }
 
@@ -266,7 +287,8 @@ class KittyCurtainView @JvmOverloads constructor(
             (newBreed == CatBreed.ROLEX && rolexBitmap == null) ||
             (newBreed == CatBreed.SALMON && salmonBitmap == null) ||
             (newBreed == CatBreed.KATRINA && katrinaBitmap == null) ||
-            (newBreed != CatBreed.SATURN && newBreed != CatBreed.ROLEX && newBreed != CatBreed.SALMON && newBreed != CatBreed.KATRINA && bodyBitmap == null)
+            (newBreed == CatBreed.CASPER && casperBitmap == null) ||
+            (newBreed != CatBreed.SATURN && newBreed != CatBreed.ROLEX && newBreed != CatBreed.SALMON && newBreed != CatBreed.KATRINA && newBreed != CatBreed.CASPER && bodyBitmap == null)
 
         currentBreed = newBreed
 
@@ -318,6 +340,8 @@ class KittyCurtainView @JvmOverloads constructor(
             salmonBitmap = BitmapFactory.decodeResource(resources, R.drawable.kitty_salmon_0, options)
         } else if (currentBreed == CatBreed.KATRINA) {
             katrinaBitmap = BitmapFactory.decodeResource(resources, R.drawable.kitty_katrina_0, options)
+        } else if (currentBreed == CatBreed.CASPER) {
+            casperBitmap = BitmapFactory.decodeResource(resources, R.drawable.kitty_casper_0, options)
         } else {
             val isTabby = currentBreed == CatBreed.TABBY
             val bodyRes = if (isTabby) R.drawable.kitty_black_body else R.drawable.kitty_orange_body
@@ -335,6 +359,7 @@ class KittyCurtainView @JvmOverloads constructor(
             CatBreed.ROLEX -> R.drawable.kitty_rolex_loaf
             CatBreed.SALMON -> R.drawable.kitty_salmon_loaf
             CatBreed.KATRINA -> R.drawable.kitty_katrina_loaf
+            CatBreed.CASPER -> R.drawable.kitty_casper_loaf
         }
         loafBitmap = BitmapFactory.decodeResource(resources, loafRes, options)
     }
@@ -449,6 +474,7 @@ class KittyCurtainView @JvmOverloads constructor(
         val isRolex = currentBreed == CatBreed.ROLEX
         val isSalmon = currentBreed == CatBreed.SALMON
         val isKatrina = currentBreed == CatBreed.KATRINA
+        val isCasper = currentBreed == CatBreed.CASPER
         val catW = if (isSaturn) (totalW * 0.28f).coerceIn(240f, 320f) else (totalW * 0.22f).coerceIn(210f, 270f)
         // Aspect ratio:
         // Saturn is 588x587 (~1.0)
@@ -471,12 +497,14 @@ class KittyCurtainView @JvmOverloads constructor(
             isSaturn -> (18f / 587f)
             isRolex -> (30f / 475f)
             isSalmon || isKatrina -> (30f / 510f)
+            isCasper -> (14f / 622f)
             else -> (28f / 1162f)
         }
         val stickBotRatio = when {
             isSaturn -> (58f / 587f)
             isRolex -> (47f / 475f)
             isSalmon || isKatrina -> (47f / 510f)
+            isCasper -> (56f / 622f)
             else -> (76f / 1162f)
         }
 
@@ -582,10 +610,11 @@ class KittyCurtainView @JvmOverloads constructor(
             CatBreed.ROLEX -> rolexBitmap
             CatBreed.SALMON -> salmonBitmap
             CatBreed.KATRINA -> katrinaBitmap
+            CatBreed.CASPER -> casperBitmap
             else -> bodyBitmap
         } ?: return
 
-        val isFullArtBreed = (currentBreed == CatBreed.ROLEX || currentBreed == CatBreed.SALMON || currentBreed == CatBreed.KATRINA)
+        val isFullArtBreed = (currentBreed == CatBreed.ROLEX || currentBreed == CatBreed.SALMON || currentBreed == CatBreed.KATRINA || currentBreed == CatBreed.CASPER)
 
         // Body gentle sway & tail wagging:
         // Paws stay 100% rock-solid and stationary at the wooden pole (swayFactor = 0 for yRatio <= 0.086f).
@@ -625,6 +654,7 @@ class KittyCurtainView @JvmOverloads constructor(
             CatBreed.SATURN -> saturnFullBitmap
             CatBreed.SALMON -> salmonBitmap
             CatBreed.KATRINA -> katrinaBitmap
+            CatBreed.CASPER -> casperBitmap
             else -> bodyBitmap
         }
         if (bmp != null) {

@@ -456,3 +456,15 @@ It scopes its overlay strictly to video doomscrolling feeds while leaving produc
   - Bundles Settings uninstallation confirmation pop-up unblocking (anti-tamper strictly gated to Guardian Lock).
   - Bundles pure Snapchat Spotlight scoping (excluding friend snaps, chats, and stories).
   - Compiled signed release Android App Bundle (`dist/Clawse-v1.0.37-release.aab`) and release APK (`dist/Clawse-v1.0.37-release.apk`).
+
+- v1.0.38 Release Bundle (versionCode 39): 8-Bit Arcade (Retro Pixel) Theme & Casper Breed Integration.
+  - Implemented third app theme: "8-Bit Arcade (Retro Pixel)" alongside "Sticker Pop (Light)" and "Midnight OLED (Dark)".
+  - Built custom `PixelAwningView` rendering a striped honey-gold awning canopy with semicircular scalloped hem and a dynamic peeking cat companion.
+  - Built custom `SegmentedProgressBar` drawing an 18-tick chunky retro tally bar for daily reel limit tracking.
+  - Integrated open-source Google Silkscreen pixel typography (`silkscreen_bold.ttf`, `silkscreen_regular.ttf`) for headings, badges, and big pixel counters.
+  - Added the 7th companion cat breed: "Casper" (ghostly pixel cat), extracted and normalized from `Cats/casper.png`.
+  - Processed transparent animation loop frames `kitty_casper_0.png` through `kitty_casper_11.png` for curtain sway, loaf icon `kitty_casper_loaf.png`, and sticker asset `kitty_casper_sticker.png`.
+  - Integrated Casper across all 3 themes in `activity_main_pixel.xml`, `activity_main_light.xml`, and `activity_main.xml`.
+  - Added theme selection options in `showThemeSelectionDialog()` and `showMainMenuSheet()`.
+  - Bumped release `versionCode` to 39 and `versionName` to "1.0.38" in `app/build.gradle.kts`.
+  - Compiled signed release Android App Bundle (`dist/Clawse-v1.0.38-release.aab`) and release APK (`dist/Clawse-v1.0.38-release.apk`).

@@ -81,10 +81,12 @@ class ScrollDataManager(context: Context) {
         const val THEME_ROLEX = "rolex"
         const val THEME_SALMON = "salmon"
         const val THEME_KATRINA = "katrina"
+        const val THEME_CASPER = "casper"
 
         // Overall App UI Theme (Light Sticker Pop vs Dark OLED)
         const val UI_THEME_LIGHT = "light"
         const val UI_THEME_DARK = "dark"
+        const val UI_THEME_PIXEL = "pixel"
         private const val KEY_UI_THEME = "key_ui_theme_mode"
 
         // Backward compatibility mappings
@@ -283,6 +285,7 @@ class ScrollDataManager(context: Context) {
                 THEME_ROLEX -> THEME_ROLEX
                 THEME_SALMON -> THEME_SALMON
                 THEME_KATRINA -> THEME_KATRINA
+                THEME_CASPER -> THEME_CASPER
                 else -> THEME_GINGER
             }
         }
@@ -310,7 +313,7 @@ class ScrollDataManager(context: Context) {
 
     fun isThemeUnlocked(theme: String): Boolean {
         return when (theme.lowercase()) {
-            THEME_GINGER, THEME_ORANGE -> true
+            THEME_GINGER, THEME_ORANGE, THEME_CASPER -> true
             else -> isCosmeticPackUnlocked
         }
     }

@@ -729,6 +729,77 @@
                             app:tint="@color/sticker_ink" />
                     </RelativeLayout>
                 </LinearLayout>
+
+                <!-- Row 3: Casper -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:orientation="horizontal">
+
+                    <!-- Casper -->
+                    <RelativeLayout
+                        android:id="@+id/cardCatCasper"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="@drawable/bg_sticker_cat_casper"
+                        android:padding="12dp"
+                        android:clickable="true"
+                        android:focusable="true">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical">
+
+                            <ImageView
+                                android:layout_width="48dp"
+                                android:layout_height="48dp"
+                                android:src="@drawable/kitty_casper_loaf"
+                                android:contentDescription="Casper" />
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="14dp"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Casper"
+                                    android:textColor="@color/sticker_ink"
+                                    android:textSize="15sp"
+                                    android:textStyle="bold"
+                                    android:fontFamily="@font/bricolage_grotesque" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="1dp"
+                                    android:text="Spooks the doomscroll feed"
+                                    android:textColor="@color/sticker_ink_muted"
+                                    android:textSize="12sp"
+                                    android:fontFamily="@font/bricolage_grotesque" />
+                            </LinearLayout>
+                        </LinearLayout>
+
+                        <ImageView
+                            android:id="@+id/badgeCatCasper"
+                            android:layout_width="26dp"
+                            android:layout_height="26dp"
+                            android:layout_alignParentEnd="true"
+                            android:layout_centerVertical="true"
+                            android:layout_marginEnd="6dp"
+                            android:padding="6dp"
+                            android:background="@drawable/bg_sticker_cat_badge_equipped"
+                            android:src="@drawable/ic_check_24"
+                            app:tint="@color/sticker_mint"
+                            android:visibility="gone" />
+                    </RelativeLayout>
+                </LinearLayout>
             </LinearLayout>
 
             <!-- Big Bottom Action Button: Ginger's on duty -->

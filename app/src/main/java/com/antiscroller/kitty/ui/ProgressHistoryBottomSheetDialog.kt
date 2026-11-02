@@ -44,7 +44,8 @@ class ProgressHistoryBottomSheetDialog : BottomSheetDialogFragment() {
     ): View {
         val context = requireContext()
         dataManager = ScrollDataManager.getInstance(context)
-        isLightMode = (dataManager.getUiTheme() == ScrollDataManager.UI_THEME_LIGHT)
+        isLightMode = (dataManager.getUiTheme() == ScrollDataManager.UI_THEME_LIGHT ||
+                dataManager.getUiTheme() == ScrollDataManager.UI_THEME_PIXEL)
 
         val layoutRes = if (isLightMode) R.layout.dialog_progress_history_light else R.layout.dialog_progress_history
         val view = inflater.inflate(layoutRes, container, false)
