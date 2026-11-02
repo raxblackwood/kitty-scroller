@@ -468,3 +468,13 @@ It scopes its overlay strictly to video doomscrolling feeds while leaving produc
   - Added theme selection options in `showThemeSelectionDialog()` and `showMainMenuSheet()`.
   - Bumped release `versionCode` to 39 and `versionName` to "1.0.38" in `app/build.gradle.kts`.
   - Compiled signed release Android App Bundle (`dist/Clawse-v1.0.38-release.aab`) and release APK (`dist/Clawse-v1.0.38-release.apk`).
+
+- v1.0.38 Update: App Info Anti-Tamper & 60-Second Cognitive Friction Timer.
+  - Closed the force stop and data-clearing bypass loophole by enforcing anti-tamper directly upon opening App Info or Storage settings for Clawse.
+  - When a user without a Guardian PIN opens Clawse settings in Android Settings, the 60-second cooling-off period (`BreathingFrictionActivity`) launches immediately to break impulsive dopamine cravings.
+  - Prevented bypassing the friction screen via gesture or button back navigation by intercepting back presses to safely return to the home screen.
+  - When the 60-second timer completes, users can tap "Proceed to Settings (5m Access)" which grants 5 minutes of unrestricted maintenance mode.
+  - During active maintenance mode, users can freely modify permissions, clear storage, force stop, or uninstall without friction.
+  - If Guardian Lock is active with a PIN, opening Clawse settings routes directly to `GuardianUnlockActivity` for PIN verification.
+  - Initial setup permission flows (Accessibility and Overlay granting) are explicitly whitelisted so first-time onboarding is never blocked.
+  - Built and installed the updated build directly to the connected phone via ADB.

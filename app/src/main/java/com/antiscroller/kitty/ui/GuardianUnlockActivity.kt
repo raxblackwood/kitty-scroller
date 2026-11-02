@@ -1,9 +1,11 @@
 package com.antiscroller.kitty.ui
 
 import android.app.Activity
+import android.content.Intent
 import android.os.Bundle
 import android.view.View
 import android.widget.Toast
+import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
@@ -59,8 +61,22 @@ class GuardianUnlockActivity : AppCompatActivity() {
         }
 
         binding.btnCancel.setOnClickListener {
-            setResult(Activity.RESULT_CANCELED)
-            finish()
+            returnToHome()
         }
+
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                returnToHome()
+            }
+        })
+    }
+
+    private fun returnToHome() {
+        val homeIntent = Intent(Intent.ACTION_MAIN).apply {
+            addCategory(Intent.CATEGORY_HOME)
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK
+        }
+        startActivity(homeIntent)
+        finish()
     }
 }

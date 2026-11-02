@@ -2294,7 +2294,11 @@ class KittyAccessibilityService : AccessibilityService() {
 
         try {
 
-            val setupPhrases = listOf("allow clawse", "use clawse", "activate this device admin app")
+            val setupPhrases = listOf(
+                "allow clawse", "use clawse", "activate this device admin app",
+                "display over other apps", "appear on top", "allow display over other apps",
+                "permit drawing over other apps", "all clawse notifications"
+            )
 
             for (phrase in setupPhrases) {
 
@@ -2348,9 +2352,7 @@ class KittyAccessibilityService : AccessibilityService() {
 
         if (dataManager.isMaintenanceModeActive()) return
 
-        // Anti-tamper/uninstall protection is strictly gated by Guardian Lock.
-        // If Guardian Lock is NOT active, user is fully permitted to modify settings or uninstall normally.
-        if (!dataManager.isGuardianLockEnabled) return
+        if (!dataManager.isInitialSetupDone) return
 
 
 
@@ -2428,54 +2430,35 @@ class KittyAccessibilityService : AccessibilityService() {
 
             } else if (isSettings) {
 
-                // In Settings: only intercept when a destructive confirmation dialog is actually showing!
-
-                // Viewing App Info or managing permissions/notifications must NEVER be blocked.
-
-                val cancelButtons = rootNode.findAccessibilityNodeInfosByViewId("android:id/button2")
-
-                    .plus(rootNode.findAccessibilityNodeInfosByViewId("android:id/cancel"))
-
-                    .plus(rootNode.findAccessibilityNodeInfosByText("Cancel"))
-
-                    .plus(rootNode.findAccessibilityNodeInfosByText("cancel"))
-
-                    .plus(rootNode.findAccessibilityNodeInfosByText("CANCEL"))
-
-                    .plus(rootNode.findAccessibilityNodeInfosByText("Cancelar"))
-
-                    .plus(rootNode.findAccessibilityNodeInfosByText("Annuler"))
-
-                    .plus(rootNode.findAccessibilityNodeInfosByText("Abbrechen"))
-
-                    .plus(rootNode.findAccessibilityNodeInfosByText("रद्द करें"))
-
-
-
-                val hasConfirmationDialog = cancelButtons.isNotEmpty()
-
-                val hasDestructivePrompt = screenTexts.any { text ->
-
-                    UNINSTALL_PROMPTS.any { prompt -> text.contains(prompt) } ||
-
-                    text.contains("misbehave") ||
-
-                    text.contains("delete app data") ||
-
-                    text.contains("permanently delete") ||
-
-                    text.contains("deactivate this device admin") ||
-
-                    text.contains("deactivate and uninstall")
-
+                // In Settings: detect if user opened App Info or Storage for Clawse!
+                val hasForceStopOrClear = screenTexts.any { text ->
+                    text.contains("force stop") || text.contains("forzar detención") ||
+                    text.contains("arrêt forcé") || text.contains("beenden erzwingen") ||
+                    text.contains("clear storage") || text.contains("clear data") ||
+                    text.contains("delete data") || text.contains("clear cache") ||
+                    text.contains("borrar datos") || text.contains("effacer les données") ||
+                    text.contains("speicherinhalt löschen")
                 }
 
+                val hasAppAction = screenTexts.any { text ->
+                    text.contains("uninstall") || text.contains("desinstalar") ||
+                    text.contains("disable") || text.contains("inhabilitar") ||
+                    text.contains("storage & cache") || text.contains("almacenamiento")
+                }
 
+                val hasDestructivePrompt = screenTexts.any { text ->
+                    UNINSTALL_PROMPTS.any { prompt -> text.contains(prompt) } ||
+                    text.contains("misbehave") ||
+                    text.contains("delete app data") ||
+                    text.contains("permanently delete") ||
+                    text.contains("deactivate this device admin") ||
+                    text.contains("deactivate and uninstall") ||
+                    text.contains("stop clawse") ||
+                    text.contains("turn off clawse")
+                }
 
-                if (hasConfirmationDialog && (hasDestructivePrompt || hasAppReference || isRecentClawseTarget)) {
-
+                if (hasAppReference && (hasForceStopOrClear || hasAppAction || hasDestructivePrompt)) {
                     isTamperingTarget = true
-
                 }
 
             } else if (isPlayStore) {
@@ -2573,25 +2556,27 @@ class KittyAccessibilityService : AccessibilityService() {
 
 
             mainHandler.postDelayed({
-
-                Toast.makeText(
-
-                    applicationContext,
-
-                    "🛡️ Protected by Guardian PIN! Parent / partner must enter PIN to modify or delete.",
-
-                    Toast.LENGTH_LONG
-
-                ).show()
-
-                val intent = Intent(applicationContext, GuardianUnlockActivity::class.java).apply {
-
-                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_CLEAR_TASK)
-
+                if (dataManager.isGuardianLockEnabled) {
+                    Toast.makeText(
+                        applicationContext,
+                        "🛡️ Protected by Guardian PIN! Parent / partner must enter PIN to modify or delete.",
+                        Toast.LENGTH_LONG
+                    ).show()
+                    val intent = Intent(applicationContext, GuardianUnlockActivity::class.java).apply {
+                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+                    }
+                    startActivity(intent)
+                } else {
+                    Toast.makeText(
+                        applicationContext,
+                        "⏳ 60-second cooldown active. Take a breath before modifying settings.",
+                        Toast.LENGTH_LONG
+                    ).show()
+                    val intent = Intent(applicationContext, BreathingFrictionActivity::class.java).apply {
+                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+                    }
+                    startActivity(intent)
                 }
-
-                startActivity(intent)
-
             }, 100L)
 
         } catch (e: Exception) {
