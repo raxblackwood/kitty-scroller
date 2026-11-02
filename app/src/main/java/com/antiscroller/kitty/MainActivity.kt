@@ -29,6 +29,7 @@ import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
+import android.view.inputmethod.InputMethodManager
 import android.view.accessibility.AccessibilityManager
 import android.widget.EditText
 import android.widget.ImageView
@@ -641,6 +642,23 @@ class MainActivity : AppCompatActivity() {
             binding.btnDeviceOwnerAdb.isEnabled = true
             binding.btnDeviceOwnerAdb.alpha = 1.0f
         }
+
+        val bDark = bindingDark
+        if (bDark != null) {
+            if (isDeviceOwner) {
+                bDark.tvDeviceOwnerStatus.text = "Active (OS-Level Uninstall Blocked)"
+                bDark.tvDeviceOwnerStatus.setTextColor(getColor(R.color.pixel_dark_accent_mint))
+                bDark.btnDeviceOwnerAdb.text = "Active ✅"
+                bDark.btnDeviceOwnerAdb.isEnabled = false
+                bDark.btnDeviceOwnerAdb.alpha = 0.7f
+            } else {
+                bDark.tvDeviceOwnerStatus.text = "Blocks uninstalling, even through ADB."
+                bDark.tvDeviceOwnerStatus.setTextColor(getColor(R.color.pixel_dark_ink_muted))
+                bDark.btnDeviceOwnerAdb.text = "Set up"
+                bDark.btnDeviceOwnerAdb.isEnabled = true
+                bDark.btnDeviceOwnerAdb.alpha = 1.0f
+            }
+        }
     }
 
 
@@ -681,10 +699,6 @@ class MainActivity : AppCompatActivity() {
                 .show(supportFragmentManager, ProgressHistoryBottomSheetDialog.TAG)
         }
 
-        b.btnChangeLimit.setOnClickListener {
-            showChangeLimitDialog()
-        }
-
         b.btnUnlockBreeds.setOnClickListener {
             showPaywallDialog(BillingManager.PRODUCT_COSMETIC_PACK)
         }
@@ -715,7 +729,82 @@ class MainActivity : AppCompatActivity() {
             sway.start()
         }
 
+        // Setup 3 Protection panels (PIN Security & Daily Limit, Guardian Alerts, Device Owner)
+        b.etCustomLimit.setText(dataManager.maxDailyScrolls.toString())
+        b.tvCurrentLimitLabel.text = "Active Cap: ${dataManager.maxDailyScrolls} Reels / day"
+
+        b.btnSetCustomLimit.setOnClickListener {
+            val text = b.etCustomLimit.text.toString().trim()
+            val newLimit = text.toIntOrNull()
+            if (newLimit != null && newLimit in 5..1000) {
+                dataManager.maxDailyScrolls = newLimit
+                b.tvCurrentLimitLabel.text = "Active Cap: $newLimit Reels / day"
+                updateDashboard()
+                Toast.makeText(this, "Daily limit set to $newLimit reels.", Toast.LENGTH_SHORT).show()
+                val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+                imm.hideSoftInputFromWindow(b.etCustomLimit.windowToken, 0)
+                b.etCustomLimit.clearFocus()
+            } else {
+                Toast.makeText(this, "Please enter a valid limit between 5 and 1000.", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        b.btnGuardianResetToday.setOnClickListener {
+            dataManager.resetDailyCount()
+            updateDashboard()
+            Toast.makeText(this, "Today's scroll counter reset by Guardian.", Toast.LENGTH_SHORT).show()
+        }
+
+        b.btnSetGuardianPin.setOnClickListener {
+            if (!dataManager.isGuardianLockEnabled) {
+                showSetPinDialog()
+            } else if (dataManager.isMaintenanceModeActive()) {
+                dataManager.lockMaintenanceNow()
+                updateGuardianUI()
+                Toast.makeText(this, "Settings locked now.", Toast.LENGTH_SHORT).show()
+            } else {
+                showUnlockPinDialog()
+            }
+        }
+
+        b.btnUnlockGuardian.setOnClickListener {
+            if (dataManager.isMaintenanceModeActive()) {
+                dataManager.lockMaintenanceNow()
+                updateGuardianUI()
+                Toast.makeText(this, "Settings locked now.", Toast.LENGTH_SHORT).show()
+            } else {
+                showUnlockPinDialog()
+            }
+        }
+
+        b.btnConfigGuardianEndpoint.setOnClickListener {
+            showConfigureGuardianEndpointDialog()
+        }
+
+        b.btnDeviceOwnerAdb.setOnClickListener {
+            val adbCmd = "adb shell dpm set-device-owner " + packageName + "/com.antiscroller.kitty.admin.KittyAdminReceiver"
+            val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+            val clip = ClipData.newPlainText("Clawse ADB Command", adbCmd)
+            clipboard.setPrimaryClip(clip)
+            Toast.makeText(this, "ADB command copied to clipboard!", Toast.LENGTH_SHORT).show()
+
+            MaterialAlertDialogBuilder(this)
+                .setTitle("Hardcore Un-uninstallable Mode")
+                .setMessage(
+                    "Command copied to clipboard!\n\n" +
+                    "To activate OS-level uninstallation block via ADB:\n\n" +
+                    "1. Connect phone to PC with USB Debugging enabled.\n" +
+                    "2. Run in terminal:\n" + adbCmd + "\n\n" +
+                    "Note: Ensure no other secondary work profiles exist before running."
+                )
+                .setPositiveButton("Got It", null)
+                .show()
+        }
+
         setupDarkAppSwitches()
+        updateDarkGuardianUI()
+        updateDeviceOwnerUI()
+        updateGuardianChildModeUI()
     }
 
     private fun setupDarkAppSwitches() {
@@ -925,6 +1014,7 @@ class MainActivity : AppCompatActivity() {
 
         val pctInt = (pct * 100).toInt()
         b.tvPercentDown.text = "$pctInt% down"
+        b.tvCurrentLimitLabel.text = "Active Cap: $max Reels / day"
         b.segmentedProgressBar.setProgress(pct)
         b.segmentedProgressBar.filledColor = getColor(R.color.pixel_dark_awning_yellow)
         b.segmentedProgressBar.emptyColor = getColor(R.color.pixel_dark_tally_empty)
@@ -988,14 +1078,42 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun updateDarkGuardianUI() {
-        setDarkSettingsLocked(dataManager.isGuardianLockEnabled && !dataManager.isMaintenanceModeActive())
+        val b = bindingDark ?: return
+        val isUnlocked = dataManager.isMaintenanceModeActive()
+        b.llGuardianProtectedSettings.visibility = if (isUnlocked) View.VISIBLE else View.GONE
+
+        if (!dataManager.isGuardianLockEnabled) {
+            b.tvGuardianStatus.text = "Locks your settings behind a PIN."
+            b.tvGuardianStatus.setTextColor(getColor(R.color.pixel_dark_ink_muted))
+            b.btnSetGuardianPin.text = "Set PIN"
+            b.btnUnlockGuardian.visibility = View.GONE
+            setDarkSettingsLocked(false)
+        } else {
+            if (isUnlocked) {
+                val mins = (dataManager.getRemainingMaintenanceSeconds() / 60) + 1
+                b.tvGuardianStatus.text = "🔓 Unlocked by Guardian (${mins}m remaining)"
+                b.tvGuardianStatus.setTextColor(getColor(R.color.pixel_dark_accent_mint))
+                b.btnSetGuardianPin.text = "Change PIN"
+                b.btnUnlockGuardian.visibility = View.VISIBLE
+                b.btnUnlockGuardian.text = "Lock Now"
+                setDarkSettingsLocked(false)
+            } else {
+                b.tvGuardianStatus.text = "🔒 Locked by Guardian PIN"
+                b.tvGuardianStatus.setTextColor(getColor(R.color.pixel_dark_awning_yellow))
+                b.btnSetGuardianPin.text = "Change PIN"
+                b.btnUnlockGuardian.visibility = View.VISIBLE
+                b.btnUnlockGuardian.text = "Unlock (5m)"
+                setDarkSettingsLocked(true)
+            }
+        }
     }
 
     private fun setDarkSettingsLocked(locked: Boolean) {
         val b = bindingDark ?: return
         val alpha = if (locked) 0.55f else 1.0f
-        b.btnChangeLimit.alpha = alpha
-        b.btnChangeLimit.isEnabled = !locked
+        b.etCustomLimit.alpha = alpha
+        b.btnSetCustomLimit.alpha = alpha
+        b.btnSetCustomLimit.isEnabled = !locked
         b.switchInstagram.alpha = alpha
         b.switchYouTube.alpha = alpha
         b.switchSnapchat.alpha = alpha
@@ -1655,12 +1773,21 @@ class MainActivity : AppCompatActivity() {
 
         val ep = dataManager.guardianAlertEndpoint
         val code = dataManager.guardianLinkCode
-        binding.tvGuardianEndpointSummary.text = when {
-            code.isNotEmpty() -> statusLine(true, "Linked to the guardian's phone · code ${GuardianLinkManager.formatCode(code)}")
+        val summary = when {
+            code.isNotEmpty() -> statusLine(true, "Linked to guardian's phone · code ${GuardianLinkManager.formatCode(code)}")
             ep.isNotEmpty() -> statusLine(true, "Sending alerts to $ep")
-            else -> "Not linked to a guardian's phone yet"
+            else -> "A parent or partner gets a ping if Clawse is removed."
         }
-        binding.btnConfigGuardianEndpoint.text = if (hasGuardianAlertTarget()) "Change Code" else "Enter Code"
+        val btnText = if (hasGuardianAlertTarget()) "Change Code" else "Link"
+
+        binding.tvGuardianEndpointSummary.text = summary
+        binding.btnConfigGuardianEndpoint.text = btnText
+
+        val bDark = bindingDark
+        if (bDark != null) {
+            bDark.tvGuardianEndpointSummary.text = summary
+            bDark.btnConfigGuardianEndpoint.text = btnText
+        }
     }
 
     /** One status line with a colored dot: green when healthy, red when attention is needed. */

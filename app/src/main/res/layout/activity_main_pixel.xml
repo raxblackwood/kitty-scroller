@@ -656,273 +656,393 @@
                 </LinearLayout>
             </LinearLayout>
 
-            <!-- 6. Quick Daily Limit & Settings Controls -->
+            <!-- 6. Protection Section (3 Consistent Panels in 8-Bit Arcade Dark) -->
+            <TextView
+                android:id="@+id/tvProtectionHeader"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="28dp"
+                android:layout_marginBottom="12dp"
+                android:text="PROTECTION"
+                android:textColor="@color/pixel_dark_ink_bright"
+                android:textSize="18sp"
+                android:fontFamily="@font/silkscreen_bold" />
+
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="20dp"
-                android:background="@drawable/bg_pixel_dark_hero_card"
-                android:orientation="vertical"
-                android:padding="16dp">
+                android:orientation="vertical">
 
+                <!-- Panel 1: PIN Security & Daily Limit -->
                 <LinearLayout
+                    android:id="@+id/cardPinSecurity"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal">
+                    android:background="@drawable/bg_pixel_dark_hero_card"
+                    android:orientation="vertical"
+                    android:padding="16dp">
 
-                    <TextView
-                        android:layout_width="0dp"
+                    <!-- Header Row: Lock Icon + Title/Status + Action Buttons -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="DAILY LIMIT"
-                        android:textColor="@color/pixel_dark_ink_bright"
-                        android:textSize="13sp"
-                        android:fontFamily="@font/silkscreen_bold" />
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
 
-                    <TextView
-                        android:id="@+id/btnChangeLimit"
-                        android:layout_width="wrap_content"
+                        <FrameLayout
+                            android:layout_width="44dp"
+                            android:layout_height="44dp"
+                            android:background="@drawable/bg_pixel_dark_input_box">
+
+                            <ImageView
+                                android:layout_width="22dp"
+                                android:layout_height="22dp"
+                                android:layout_gravity="center"
+                                android:src="@drawable/ic_sec_lock"
+                                app:tint="@color/pixel_dark_awning_yellow" />
+                        </FrameLayout>
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="12dp"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="PIN SECURITY"
+                                android:textColor="@color/pixel_dark_ink_bright"
+                                android:textSize="14sp"
+                                android:fontFamily="@font/silkscreen_bold" />
+
+                            <TextView
+                                android:id="@+id/tvGuardianStatus"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="3dp"
+                                android:text="Locks your settings behind a PIN."
+                                android:textColor="@color/pixel_dark_ink_muted"
+                                android:textSize="12.5sp"
+                                android:fontFamily="@font/bricolage_grotesque" />
+                        </LinearLayout>
+
+                        <TextView
+                            android:id="@+id/btnSetGuardianPin"
+                            android:layout_width="wrap_content"
+                            android:layout_height="38dp"
+                            android:paddingStart="14dp"
+                            android:paddingEnd="14dp"
+                            android:gravity="center"
+                            android:text="Set PIN"
+                            android:textColor="@color/pixel_dark_bg"
+                            android:textSize="11.5sp"
+                            android:background="@drawable/bg_pixel_dark_btn_action"
+                            android:fontFamily="@font/silkscreen_bold"
+                            android:clickable="true"
+                            android:focusable="true" />
+
+                        <TextView
+                            android:id="@+id/btnUnlockGuardian"
+                            android:layout_width="wrap_content"
+                            android:layout_height="38dp"
+                            android:layout_marginStart="8dp"
+                            android:paddingStart="14dp"
+                            android:paddingEnd="14dp"
+                            android:gravity="center"
+                            android:text="Unlock"
+                            android:textColor="@color/pixel_dark_ink_bright"
+                            android:textSize="11.5sp"
+                            android:background="@drawable/bg_pixel_dark_btn_secondary"
+                            android:fontFamily="@font/silkscreen_bold"
+                            android:visibility="gone"
+                            android:clickable="true"
+                            android:focusable="true" />
+                    </LinearLayout>
+
+                    <!-- Hidden Guardian-Only Controls Container (unlocked with PIN / active maintenance) -->
+                    <LinearLayout
+                        android:id="@+id/llGuardianProtectedSettings"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="Change"
-                        android:textColor="@color/pixel_dark_awning_yellow"
-                        android:textSize="13sp"
-                        android:textStyle="bold"
-                        android:fontFamily="@font/bricolage_grotesque"
-                        android:clickable="true"
-                        android:focusable="true" />
+                        android:layout_marginTop="14dp"
+                        android:orientation="vertical"
+                        android:visibility="gone">
+
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="1dp"
+                            android:layout_marginBottom="12dp"
+                            android:background="@color/pixel_dark_stroke" />
+
+                        <!-- Guardian Reel Limit -->
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="DAILY REEL LIMIT"
+                            android:textColor="@color/pixel_dark_ink_bright"
+                            android:textSize="11.5sp"
+                            android:fontFamily="@font/silkscreen_bold" />
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="6dp"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
+
+                            <EditText
+                                android:id="@+id/etCustomLimit"
+                                android:layout_width="0dp"
+                                android:layout_height="42dp"
+                                android:layout_weight="1"
+                                android:layout_marginEnd="8dp"
+                                android:background="@drawable/bg_pixel_dark_input_box"
+                                android:hint="Daily reel limit"
+                                android:textColorHint="@color/pixel_dark_ink_muted"
+                                android:paddingStart="12dp"
+                                android:paddingEnd="12dp"
+                                android:inputType="number"
+                                android:maxLength="4"
+                                android:textColor="@color/pixel_dark_ink_bright"
+                                android:fontFamily="@font/bricolage_grotesque" />
+
+                            <TextView
+                                android:id="@+id/btnSetCustomLimit"
+                                android:layout_width="wrap_content"
+                                android:layout_height="42dp"
+                                android:paddingStart="14dp"
+                                android:paddingEnd="14dp"
+                                android:gravity="center"
+                                android:text="Set Cap"
+                                android:textColor="@color/pixel_dark_bg"
+                                android:background="@drawable/bg_pixel_dark_btn_action"
+                                android:textSize="11.5sp"
+                                android:fontFamily="@font/silkscreen_bold"
+                                android:clickable="true"
+                                android:focusable="true" />
+                        </LinearLayout>
+
+                        <TextView
+                            android:id="@+id/tvCurrentLimitLabel"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="6dp"
+                            android:text="Active Cap: 25 Reels / day"
+                            android:textColor="@color/pixel_dark_awning_yellow"
+                            android:textSize="12.5sp"
+                            android:textStyle="bold"
+                            android:fontFamily="@font/bricolage_grotesque" />
+
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="1dp"
+                            android:layout_marginTop="12dp"
+                            android:layout_marginBottom="12dp"
+                            android:background="@color/pixel_dark_stroke" />
+
+                        <!-- Monitored Apps -->
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="MONITORED APPS"
+                            android:textColor="@color/pixel_dark_ink_bright"
+                            android:textSize="11.5sp"
+                            android:fontFamily="@font/silkscreen_bold" />
+
+                        <com.google.android.material.materialswitch.MaterialSwitch
+                            android:id="@+id/switchInstagram"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="6dp"
+                            android:checked="true"
+                            android:text="Instagram (Reels &amp; Feed)"
+                            android:textColor="@color/pixel_dark_ink_bright" />
+
+                        <com.google.android.material.materialswitch.MaterialSwitch
+                            android:id="@+id/switchYouTube"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:checked="true"
+                            android:text="YouTube (Shorts)"
+                            android:textColor="@color/pixel_dark_ink_bright" />
+
+                        <com.google.android.material.materialswitch.MaterialSwitch
+                            android:id="@+id/switchSnapchat"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:checked="true"
+                            android:text="Snapchat (Spotlight)"
+                            android:textColor="@color/pixel_dark_ink_bright" />
+
+                        <com.google.android.material.materialswitch.MaterialSwitch
+                            android:id="@+id/switchFacebook"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:checked="true"
+                            android:text="Facebook (Reels)"
+                            android:textColor="@color/pixel_dark_ink_bright" />
+
+                        <TextView
+                            android:id="@+id/btnGuardianResetToday"
+                            android:layout_width="match_parent"
+                            android:layout_height="40dp"
+                            android:layout_marginTop="10dp"
+                            android:gravity="center"
+                            android:text="🔄 Reset Today's Scrolls"
+                            android:textColor="@color/pixel_dark_ink_bright"
+                            android:background="@drawable/bg_pixel_dark_btn_secondary"
+                            android:textSize="11.5sp"
+                            android:fontFamily="@font/silkscreen_bold"
+                            android:clickable="true"
+                            android:focusable="true" />
+                    </LinearLayout>
                 </LinearLayout>
 
-                <TextView
-                    android:id="@+id/tvCurrentLimitLabel"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
-                    android:text="Active Cap: 25 Reels / day"
-                    android:textColor="@color/pixel_dark_ink_muted"
-                    android:textSize="13sp"
-                    android:fontFamily="@font/bricolage_grotesque" />
-
-                <View
+                <!-- Panel 2: Guardian Alerts -->
+                <LinearLayout
+                    android:id="@+id/cardGuardianProtection"
                     android:layout_width="match_parent"
-                    android:layout_height="1dp"
+                    android:layout_height="wrap_content"
                     android:layout_marginTop="14dp"
-                    android:layout_marginBottom="14dp"
-                    android:background="@color/pixel_dark_stroke" />
+                    android:background="@drawable/bg_pixel_dark_hero_card"
+                    android:orientation="vertical"
+                    android:padding="16dp">
 
-                <!-- Monitored Feeds -->
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="MONITORED FEEDS"
-                    android:textColor="@color/pixel_dark_ink_bright"
-                    android:textSize="11.5sp"
-                    android:fontFamily="@font/silkscreen_bold" />
-
-                <!-- Instagram -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="10dp"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal">
-
-                    <TextView
-                        android:layout_width="0dp"
+                    <LinearLayout
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="Instagram (Reels &amp; Home)"
-                        android:textColor="@color/pixel_dark_ink_bright"
-                        android:textSize="13.5sp"
-                        android:fontFamily="@font/bricolage_grotesque" />
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
 
-                    <com.google.android.material.materialswitch.MaterialSwitch
-                        android:id="@+id/switchInstagram"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:checked="true" />
+                        <FrameLayout
+                            android:layout_width="44dp"
+                            android:layout_height="44dp"
+                            android:background="@drawable/bg_pixel_dark_input_box">
+
+                            <ImageView
+                                android:layout_width="22dp"
+                                android:layout_height="22dp"
+                                android:layout_gravity="center"
+                                android:src="@drawable/ic_sec_bell"
+                                app:tint="@color/pixel_dark_awning_yellow" />
+                        </FrameLayout>
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="12dp"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="GUARDIAN ALERTS"
+                                android:textColor="@color/pixel_dark_ink_bright"
+                                android:textSize="14sp"
+                                android:fontFamily="@font/silkscreen_bold" />
+
+                            <TextView
+                                android:id="@+id/tvGuardianEndpointSummary"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="3dp"
+                                android:text="A parent or partner gets a ping if Clawse is removed."
+                                android:textColor="@color/pixel_dark_ink_muted"
+                                android:textSize="12.5sp"
+                                android:fontFamily="@font/bricolage_grotesque" />
+                        </LinearLayout>
+
+                        <TextView
+                            android:id="@+id/btnConfigGuardianEndpoint"
+                            android:layout_width="wrap_content"
+                            android:layout_height="38dp"
+                            android:paddingStart="14dp"
+                            android:paddingEnd="14dp"
+                            android:gravity="center"
+                            android:text="Link"
+                            android:textColor="@color/pixel_dark_bg"
+                            android:textSize="11.5sp"
+                            android:background="@drawable/bg_pixel_dark_btn_action"
+                            android:fontFamily="@font/silkscreen_bold"
+                            android:clickable="true"
+                            android:focusable="true" />
+                    </LinearLayout>
                 </LinearLayout>
 
-                <!-- YouTube Shorts -->
+                <!-- Panel 3: Device Owner Protection -->
                 <LinearLayout
+                    android:id="@+id/cardDeviceOwner"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal">
+                    android:layout_marginTop="14dp"
+                    android:background="@drawable/bg_pixel_dark_hero_card"
+                    android:orientation="vertical"
+                    android:padding="16dp">
 
-                    <TextView
-                        android:layout_width="0dp"
+                    <LinearLayout
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="YouTube Shorts"
-                        android:textColor="@color/pixel_dark_ink_bright"
-                        android:textSize="13.5sp"
-                        android:fontFamily="@font/bricolage_grotesque" />
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
 
-                    <com.google.android.material.materialswitch.MaterialSwitch
-                        android:id="@+id/switchYouTube"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:checked="true" />
+                        <FrameLayout
+                            android:layout_width="44dp"
+                            android:layout_height="44dp"
+                            android:background="@drawable/bg_pixel_dark_input_box">
+
+                            <ImageView
+                                android:layout_width="22dp"
+                                android:layout_height="22dp"
+                                android:layout_gravity="center"
+                                android:src="@drawable/ic_sec_shield"
+                                app:tint="@color/pixel_dark_awning_yellow" />
+                        </FrameLayout>
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="12dp"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="DEVICE OWNER"
+                                android:textColor="@color/pixel_dark_ink_bright"
+                                android:textSize="14sp"
+                                android:fontFamily="@font/silkscreen_bold" />
+
+                            <TextView
+                                android:id="@+id/tvDeviceOwnerStatus"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="3dp"
+                                android:text="Blocks uninstalling, even through ADB."
+                                android:textColor="@color/pixel_dark_ink_muted"
+                                android:textSize="12.5sp"
+                                android:fontFamily="@font/bricolage_grotesque" />
+                        </LinearLayout>
+
+                        <TextView
+                            android:id="@+id/btnDeviceOwnerAdb"
+                            android:layout_width="wrap_content"
+                            android:layout_height="38dp"
+                            android:paddingStart="14dp"
+                            android:paddingEnd="14dp"
+                            android:gravity="center"
+                            android:text="Set up"
+                            android:textColor="@color/pixel_dark_bg"
+                            android:textSize="11.5sp"
+                            android:background="@drawable/bg_pixel_dark_btn_action"
+                            android:fontFamily="@font/silkscreen_bold"
+                            android:clickable="true"
+                            android:focusable="true" />
+                    </LinearLayout>
                 </LinearLayout>
-
-                <!-- Snapchat Spotlight -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal">
-
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="Snapchat Spotlight"
-                        android:textColor="@color/pixel_dark_ink_bright"
-                        android:textSize="13.5sp"
-                        android:fontFamily="@font/bricolage_grotesque" />
-
-                    <com.google.android.material.materialswitch.MaterialSwitch
-                        android:id="@+id/switchSnapchat"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:checked="true" />
-                </LinearLayout>
-
-                <!-- Facebook Reels -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal">
-
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="Facebook Reels"
-                        android:textColor="@color/pixel_dark_ink_bright"
-                        android:textSize="13.5sp"
-                        android:fontFamily="@font/bricolage_grotesque" />
-
-                    <com.google.android.material.materialswitch.MaterialSwitch
-                        android:id="@+id/switchFacebook"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:checked="true" />
-                </LinearLayout>
-            </LinearLayout>
-
-            <!-- 7. Guardian Lock -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:background="@drawable/bg_pixel_dark_hero_card"
-                android:orientation="vertical"
-                android:padding="16dp">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="GUARDIAN LOCK"
-                    android:textColor="@color/pixel_dark_ink_bright"
-                    android:textSize="11.5sp"
-                    android:fontFamily="@font/silkscreen_bold" />
-
-                <TextView
-                    android:id="@+id/tvGuardianStatus"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
-                    android:text="Inactive (Tap to set Parent/Partner PIN)"
-                    android:textColor="@color/pixel_dark_ink_muted"
-                    android:textSize="12.5sp"
-                    android:fontFamily="@font/bricolage_grotesque" />
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="12dp"
-                    android:orientation="horizontal">
-
-                    <TextView
-                        android:id="@+id/btnSetGuardianPin"
-                        android:layout_width="0dp"
-                        android:layout_height="40dp"
-                        android:layout_weight="1"
-                        android:gravity="center"
-                        android:text="Set PIN"
-                        android:textColor="@color/pixel_dark_bg"
-                        android:textSize="12sp"
-                        android:background="@drawable/bg_pixel_dark_btn_action"
-                        android:fontFamily="@font/silkscreen_bold"
-                        android:clickable="true"
-                        android:focusable="true" />
-
-                    <Space
-                        android:layout_width="10dp"
-                        android:layout_height="1dp" />
-
-                    <TextView
-                        android:id="@+id/btnUnlockGuardian"
-                        android:layout_width="0dp"
-                        android:layout_height="40dp"
-                        android:layout_weight="1"
-                        android:gravity="center"
-                        android:text="Unlock"
-                        android:textColor="@color/pixel_dark_ink_bright"
-                        android:textSize="12sp"
-                        android:background="@drawable/bg_pixel_dark_btn_secondary"
-                        android:fontFamily="@font/silkscreen_bold"
-                        android:visibility="gone"
-                        android:clickable="true"
-                        android:focusable="true" />
-                </LinearLayout>
-            </LinearLayout>
-
-            <!-- 8. Danger Zone / Uninstall -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:background="@drawable/bg_pixel_dark_hero_card"
-                android:orientation="vertical"
-                android:padding="16dp">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="UNINSTALL"
-                    android:textColor="@color/accent_red"
-                    android:textSize="11.5sp"
-                    android:fontFamily="@font/silkscreen_bold" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
-                    android:text="Anti-impulse 60-second breathing timer protects your commitment."
-                    android:textColor="@color/pixel_dark_ink_muted"
-                    android:textSize="12.5sp"
-                    android:fontFamily="@font/bricolage_grotesque" />
-
-                <TextView
-                    android:id="@+id/btnSelfDestructUninstall"
-                    android:layout_width="match_parent"
-                    android:layout_height="40dp"
-                    android:layout_marginTop="12dp"
-                    android:gravity="center"
-                    android:text="Uninstall Now"
-                    android:textColor="@color/accent_red"
-                    android:textSize="12sp"
-                    android:background="@drawable/bg_pixel_dark_btn_secondary"
-                    android:fontFamily="@font/silkscreen_bold"
-                    android:clickable="true"
-                    android:focusable="true" />
             </LinearLayout>
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>

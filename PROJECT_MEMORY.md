@@ -558,3 +558,13 @@ Anti-doomscrolling Android app dropping an animated kitten curtain over Instagra
   - Bumped release `versionCode` to 42 and `versionName` to "1.0.41" in `app/build.gradle.kts`.
   - Compiled signed release Android App Bundle (`dist/Clawse-v1.0.41-release.aab`) and release APK (`dist/Clawse-v1.0.41-release.apk`).
   - Stream-installed updated debug APK to connected phone (`000693485000641`) via ADB.
+
+- v1.0.42 Release Bundle (versionCode 43): 8-Bit Dark Protection Panels Parity & Bottom Card Cleanup.
+  - Aligned the 8-Bit Arcade Dark theme with Sticker Pop Light by restoring all 3 core protection panels under the "PROTECTION" header.
+  - Panel 1: PIN Security & Daily Limit (`cardPinSecurity`) with PIN status, Set/Unlock PIN actions, collapsible protected settings (`llGuardianProtectedSettings`), daily reel cap numeric input (`etCustomLimit`), and per-app monitored switches.
+  - Panel 2: Guardian Alerts (`cardGuardianProtection`) with bell icon, partner ping summary, and endpoint link configuration button (`btnConfigGuardianEndpoint`).
+  - Panel 3: Device Owner Protection (`cardDeviceOwner`) with shield icon, ADB tamper status, and setup command clipboard copy button (`btnDeviceOwnerAdb`).
+  - Removed unwanted standalone "Uninstall Now" card (`btnSelfDestructUninstall`) from the bottom of `activity_main_pixel.xml`.
+  - Bumped release `versionCode` to 43 and `versionName` to "1.0.42" in `app/build.gradle.kts`.
+  - Compiled signed release Android App Bundle (`dist/Clawse-v1.0.42-release.aab`) and release APK (`dist/Clawse-v1.0.42-release.apk`).
+  - Stream-installed updated debug APK to connected phone (`000693485000641`) via ADB.
