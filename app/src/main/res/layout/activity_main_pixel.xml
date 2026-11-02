@@ -5,7 +5,7 @@
     android:id="@+id/coordinatorLayoutPixel"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/pixel_bg">
+    android:background="@color/pixel_dark_bg">
 
     <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
@@ -35,7 +35,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Clawse"
-                    android:textColor="@color/pixel_ink"
+                    android:textColor="@color/pixel_dark_ink_bright"
                     android:textSize="26sp"
                     android:fontFamily="@font/silkscreen_bold" />
 
@@ -48,7 +48,7 @@
                     android:paddingStart="8dp"
                     android:paddingEnd="8dp"
                     android:gravity="center"
-                    android:background="@drawable/bg_pixel_badge_onguard"
+                    android:background="@drawable/bg_pixel_dark_badge_onguard"
                     android:clickable="true"
                     android:focusable="true"
                     android:orientation="horizontal">
@@ -58,7 +58,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="ON GUARD"
-                        android:textColor="@color/pixel_ink"
+                        android:textColor="@color/pixel_dark_awning_yellow"
                         android:textSize="10.5sp"
                         android:fontFamily="@font/silkscreen_regular" />
                 </LinearLayout>
@@ -74,10 +74,10 @@
                     android:layout_width="42dp"
                     android:layout_height="42dp"
                     android:padding="10dp"
-                    android:background="@drawable/bg_pixel_btn_menu"
+                    android:background="@drawable/bg_pixel_dark_btn_menu"
                     android:contentDescription="Menu"
                     android:src="@drawable/ic_menu_hamburger"
-                    app:tint="@color/pixel_ink" />
+                    app:tint="@color/pixel_dark_ink_bright" />
             </LinearLayout>
 
             <!-- 2. Permission Floater Warning -->
@@ -87,7 +87,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="6dp"
                 android:layout_marginBottom="14dp"
-                android:background="@drawable/bg_pixel_cat_card_selected"
+                android:background="@drawable/bg_pixel_dark_cat_card_selected"
                 android:orientation="vertical"
                 android:padding="14dp"
                 android:visibility="gone">
@@ -96,7 +96,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="PERMISSIONS NEEDED"
-                    android:textColor="@color/pixel_ink"
+                    android:textColor="@color/pixel_dark_awning_yellow"
                     android:textSize="12sp"
                     android:fontFamily="@font/silkscreen_bold" />
 
@@ -105,7 +105,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
                     android:text="Accessibility or Overlay permissions are not granted. Clawse is currently inactive."
-                    android:textColor="@color/pixel_ink_muted"
+                    android:textColor="@color/pixel_dark_ink_muted"
                     android:textSize="13sp"
                     android:fontFamily="@font/bricolage_grotesque" />
 
@@ -116,22 +116,22 @@
                     android:layout_marginTop="10dp"
                     android:gravity="center"
                     android:text="ENABLE PERMISSIONS"
-                    android:textColor="@color/pixel_card_surface"
+                    android:textColor="@color/pixel_dark_bg"
                     android:textSize="11sp"
-                    android:background="@drawable/bg_sticker_pill_dark"
+                    android:background="@drawable/bg_pixel_dark_btn_equip"
                     android:fontFamily="@font/silkscreen_bold"
                     android:clickable="true"
                     android:focusable="true" />
             </LinearLayout>
 
-            <!-- 3. Hero Bento Card (Matching Reference Mockup) -->
+            <!-- 3. Hero Bento Card (8-Bit Arcade Dark) -->
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/cardHeroFocus"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="6dp"
-                app:cardBackgroundColor="@color/pixel_card_bg"
-                app:strokeColor="@color/pixel_ink"
+                app:cardBackgroundColor="@color/pixel_dark_card_bg"
+                app:strokeColor="@color/pixel_dark_stroke"
                 app:strokeWidth="2.5dp"
                 app:cardCornerRadius="18dp"
                 app:cardElevation="0dp">
@@ -141,11 +141,30 @@
                     android:layout_height="wrap_content"
                     android:orientation="vertical">
 
-                    <!-- Scalloped Striped Awning with Peeking Cat -->
-                    <com.antiscroller.kitty.ui.PixelAwningView
-                        android:id="@+id/pixelAwningView"
+                    <!-- Top Canopy + Prominent Peeking Cat Companion Preview -->
+                    <FrameLayout
                         android:layout_width="match_parent"
-                        android:layout_height="148dp" />
+                        android:layout_height="116dp">
+
+                        <!-- Scalloped Striped Awning -->
+                        <com.antiscroller.kitty.ui.PixelAwningView
+                            android:id="@+id/pixelAwningView"
+                            android:layout_width="match_parent"
+                            android:layout_height="64dp"
+                            android:layout_gravity="top" />
+
+                        <!-- Peeking Cat Companion Preview (100% visible, animated) -->
+                        <ImageView
+                            android:id="@+id/ivHeroCatPreview"
+                            android:layout_width="86dp"
+                            android:layout_height="86dp"
+                            android:layout_gravity="end|top"
+                            android:layout_marginTop="24dp"
+                            android:layout_marginEnd="24dp"
+                            android:src="@drawable/kitty_ginger_loaf"
+                            android:contentDescription="Companion Cat Preview"
+                            android:scaleType="fitCenter" />
+                    </FrameLayout>
 
                     <!-- Middle Area: Large Count + Speech Bubble -->
                     <LinearLayout
@@ -155,8 +174,7 @@
                         android:gravity="center_vertical"
                         android:paddingStart="18dp"
                         android:paddingEnd="18dp"
-                        android:paddingTop="14dp"
-                        android:paddingBottom="18dp">
+                        android:paddingBottom="16dp">
 
                         <!-- Counter Column -->
                         <LinearLayout
@@ -170,7 +188,7 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="0"
-                                android:textColor="@color/pixel_ink"
+                                android:textColor="@color/pixel_dark_ink_bright"
                                 android:textSize="48sp"
                                 android:fontFamily="@font/silkscreen_bold" />
 
@@ -181,7 +199,7 @@
                                 android:layout_marginStart="8dp"
                                 android:layout_marginBottom="8dp"
                                 android:text="/ 25 reels"
-                                android:textColor="@color/pixel_ink"
+                                android:textColor="@color/pixel_dark_ink_muted"
                                 android:textSize="15sp"
                                 android:textStyle="bold"
                                 android:fontFamily="@font/bricolage_grotesque" />
@@ -192,12 +210,12 @@
                             android:layout_height="1dp"
                             android:layout_weight="1" />
 
-                        <!-- Speech Bubble (Anchored under peeking cat) -->
+                        <!-- Speech Bubble (Anchored below peeking cat) -->
                         <LinearLayout
                             android:id="@+id/cardSpeechBubble"
                             android:layout_width="168dp"
                             android:layout_height="wrap_content"
-                            android:background="@drawable/bg_pixel_speech_bubble"
+                            android:background="@drawable/bg_pixel_dark_speech_bubble"
                             android:paddingStart="12dp"
                             android:paddingEnd="12dp"
                             android:paddingTop="10dp"
@@ -209,7 +227,7 @@
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
                                 android:text="Clear mind. Go conquer your day."
-                                android:textColor="@color/pixel_ink"
+                                android:textColor="@color/pixel_dark_ink_bright"
                                 android:textSize="12.5sp"
                                 android:lineSpacingExtra="1.5dp"
                                 android:fontFamily="@font/bricolage_grotesque" />
@@ -238,7 +256,7 @@
                             android:layout_height="wrap_content"
                             android:layout_marginStart="12dp"
                             android:text="0% down"
-                            android:textColor="@color/pixel_ink"
+                            android:textColor="@color/pixel_dark_ink_bright"
                             android:textSize="13sp"
                             android:textStyle="bold"
                             android:fontFamily="@font/bricolage_grotesque" />
@@ -252,7 +270,7 @@
                             android:padding="5dp"
                             android:contentDescription="History"
                             android:src="@drawable/ic_chart_progress"
-                            app:tint="@color/pixel_ink"
+                            app:tint="@color/pixel_dark_ink_bright"
                             android:clickable="true"
                             android:focusable="true" />
                     </LinearLayout>
@@ -274,7 +292,7 @@
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:text="Your cat"
-                    android:textColor="@color/pixel_ink"
+                    android:textColor="@color/pixel_dark_ink_bright"
                     android:textSize="20sp"
                     android:fontFamily="@font/silkscreen_bold" />
 
@@ -283,7 +301,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Unlock breeds"
-                    android:textColor="@color/pixel_ink"
+                    android:textColor="@color/pixel_dark_awning_yellow"
                     android:textSize="13sp"
                     android:textStyle="bold"
                     android:fontFamily="@font/bricolage_grotesque"
@@ -299,14 +317,12 @@
                 android:orientation="horizontal">
 
                 <!-- Ginger -->
-                <LinearLayout
+                <RelativeLayout
                     android:id="@+id/cardCatGinger"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:background="@drawable/bg_pixel_cat_card_selected"
-                    android:orientation="vertical"
-                    android:gravity="center"
+                    android:background="@drawable/bg_pixel_dark_cat_card_selected"
                     android:paddingTop="12dp"
                     android:paddingBottom="12dp"
                     android:paddingStart="6dp"
@@ -314,47 +330,64 @@
                     android:clickable="true"
                     android:focusable="true">
 
-                    <ImageView
-                        android:id="@+id/ivCatGinger"
-                        android:layout_width="56dp"
-                        android:layout_height="56dp"
-                        android:src="@drawable/kitty_ginger_loaf"
-                        android:contentDescription="Ginger" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
+                    <LinearLayout
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="6dp"
-                        android:text="Ginger"
-                        android:textColor="@color/pixel_ink"
-                        android:textSize="13sp"
-                        android:textStyle="bold"
-                        android:fontFamily="@font/bricolage_grotesque" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="1dp"
-                        android:text="Always hungry"
-                        android:textColor="@color/pixel_ink_muted"
-                        android:textSize="10.5sp"
                         android:gravity="center"
-                        android:fontFamily="@font/bricolage_grotesque" />
-                </LinearLayout>
+                        android:orientation="vertical">
+
+                        <ImageView
+                            android:id="@+id/ivCatGinger"
+                            android:layout_width="52dp"
+                            android:layout_height="52dp"
+                            android:src="@drawable/kitty_ginger_loaf"
+                            android:contentDescription="Ginger" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="6dp"
+                            android:text="Ginger"
+                            android:textColor="@color/pixel_dark_ink_bright"
+                            android:textSize="13sp"
+                            android:textStyle="bold"
+                            android:fontFamily="@font/bricolage_grotesque" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="1dp"
+                            android:text="Always hungry"
+                            android:textColor="@color/pixel_dark_ink_muted"
+                            android:textSize="10.5sp"
+                            android:gravity="center"
+                            android:fontFamily="@font/bricolage_grotesque" />
+                    </LinearLayout>
+
+                    <ImageView
+                        android:id="@+id/badgeCatGinger"
+                        android:layout_width="22dp"
+                        android:layout_height="22dp"
+                        android:layout_alignParentEnd="true"
+                        android:layout_alignParentTop="true"
+                        android:background="@drawable/bg_pixel_dark_badge_equipped"
+                        android:src="@drawable/ic_check_24"
+                        app:tint="@color/pixel_dark_accent_mint"
+                        android:padding="3dp"
+                        android:visibility="gone" />
+                </RelativeLayout>
 
                 <Space
                     android:layout_width="10dp"
                     android:layout_height="1dp" />
 
                 <!-- Tabby -->
-                <LinearLayout
+                <RelativeLayout
                     android:id="@+id/cardCatTabby"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:background="@drawable/bg_pixel_cat_card_unselected"
-                    android:orientation="vertical"
-                    android:gravity="center"
+                    android:background="@drawable/bg_pixel_dark_cat_card_unselected"
                     android:paddingTop="12dp"
                     android:paddingBottom="12dp"
                     android:paddingStart="6dp"
@@ -362,47 +395,64 @@
                     android:clickable="true"
                     android:focusable="true">
 
-                    <ImageView
-                        android:id="@+id/ivCatTabby"
-                        android:layout_width="56dp"
-                        android:layout_height="56dp"
-                        android:src="@drawable/kitty_tabby_loaf"
-                        android:contentDescription="Tabby" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
+                    <LinearLayout
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="6dp"
-                        android:text="Tabby"
-                        android:textColor="@color/pixel_ink"
-                        android:textSize="13sp"
-                        android:textStyle="bold"
-                        android:fontFamily="@font/bricolage_grotesque" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="1dp"
-                        android:text="Judges silently"
-                        android:textColor="@color/pixel_ink_muted"
-                        android:textSize="10.5sp"
                         android:gravity="center"
-                        android:fontFamily="@font/bricolage_grotesque" />
-                </LinearLayout>
+                        android:orientation="vertical">
+
+                        <ImageView
+                            android:id="@+id/ivCatTabby"
+                            android:layout_width="52dp"
+                            android:layout_height="52dp"
+                            android:src="@drawable/kitty_tabby_loaf"
+                            android:contentDescription="Tabby" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="6dp"
+                            android:text="Tabby"
+                            android:textColor="@color/pixel_dark_ink_bright"
+                            android:textSize="13sp"
+                            android:textStyle="bold"
+                            android:fontFamily="@font/bricolage_grotesque" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="1dp"
+                            android:text="Judges silently"
+                            android:textColor="@color/pixel_dark_ink_muted"
+                            android:textSize="10.5sp"
+                            android:gravity="center"
+                            android:fontFamily="@font/bricolage_grotesque" />
+                    </LinearLayout>
+
+                    <ImageView
+                        android:id="@+id/badgeCatTabby"
+                        android:layout_width="22dp"
+                        android:layout_height="22dp"
+                        android:layout_alignParentEnd="true"
+                        android:layout_alignParentTop="true"
+                        android:background="@drawable/bg_pixel_dark_badge_locked"
+                        android:src="@drawable/ic_sec_lock"
+                        app:tint="@color/pixel_dark_awning_yellow"
+                        android:padding="4dp"
+                        android:visibility="gone" />
+                </RelativeLayout>
 
                 <Space
                     android:layout_width="10dp"
                     android:layout_height="1dp" />
 
                 <!-- Saturn -->
-                <LinearLayout
+                <RelativeLayout
                     android:id="@+id/cardCatSaturn"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:background="@drawable/bg_pixel_cat_card_unselected"
-                    android:orientation="vertical"
-                    android:gravity="center"
+                    android:background="@drawable/bg_pixel_dark_cat_card_unselected"
                     android:paddingTop="12dp"
                     android:paddingBottom="12dp"
                     android:paddingStart="6dp"
@@ -410,33 +460,52 @@
                     android:clickable="true"
                     android:focusable="true">
 
-                    <ImageView
-                        android:id="@+id/ivCatSaturn"
-                        android:layout_width="56dp"
-                        android:layout_height="56dp"
-                        android:src="@drawable/kitty_saturn_loaf"
-                        android:contentDescription="Saturn" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
+                    <LinearLayout
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="6dp"
-                        android:text="Saturn"
-                        android:textColor="@color/pixel_ink"
-                        android:textSize="13sp"
-                        android:textStyle="bold"
-                        android:fontFamily="@font/bricolage_grotesque" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="1dp"
-                        android:text="Sleeps through all"
-                        android:textColor="@color/pixel_ink_muted"
-                        android:textSize="10.5sp"
                         android:gravity="center"
-                        android:fontFamily="@font/bricolage_grotesque" />
-                </LinearLayout>
+                        android:orientation="vertical">
+
+                        <ImageView
+                            android:id="@+id/ivCatSaturn"
+                            android:layout_width="52dp"
+                            android:layout_height="52dp"
+                            android:src="@drawable/kitty_saturn_loaf"
+                            android:contentDescription="Saturn" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="6dp"
+                            android:text="Saturn"
+                            android:textColor="@color/pixel_dark_ink_bright"
+                            android:textSize="13sp"
+                            android:textStyle="bold"
+                            android:fontFamily="@font/bricolage_grotesque" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="1dp"
+                            android:text="Sleeps through"
+                            android:textColor="@color/pixel_dark_ink_muted"
+                            android:textSize="10.5sp"
+                            android:gravity="center"
+                            android:fontFamily="@font/bricolage_grotesque" />
+                    </LinearLayout>
+
+                    <ImageView
+                        android:id="@+id/badgeCatSaturn"
+                        android:layout_width="22dp"
+                        android:layout_height="22dp"
+                        android:layout_alignParentEnd="true"
+                        android:layout_alignParentTop="true"
+                        android:background="@drawable/bg_pixel_dark_badge_locked"
+                        android:src="@drawable/ic_sec_lock"
+                        app:tint="@color/pixel_dark_awning_yellow"
+                        android:padding="4dp"
+                        android:visibility="gone" />
+                </RelativeLayout>
             </LinearLayout>
 
             <!-- Row 2: Rolex, Salmon, Katrina -->
@@ -447,14 +516,12 @@
                 android:orientation="horizontal">
 
                 <!-- Rolex -->
-                <LinearLayout
+                <RelativeLayout
                     android:id="@+id/cardCatRolex"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:background="@drawable/bg_pixel_cat_card_unselected"
-                    android:orientation="vertical"
-                    android:gravity="center"
+                    android:background="@drawable/bg_pixel_dark_cat_card_unselected"
                     android:paddingTop="12dp"
                     android:paddingBottom="12dp"
                     android:paddingStart="6dp"
@@ -462,47 +529,64 @@
                     android:clickable="true"
                     android:focusable="true">
 
-                    <ImageView
-                        android:id="@+id/ivCatRolex"
-                        android:layout_width="56dp"
-                        android:layout_height="56dp"
-                        android:src="@drawable/kitty_rolex_loaf"
-                        android:contentDescription="Rolex" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
+                    <LinearLayout
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="6dp"
-                        android:text="Rolex"
-                        android:textColor="@color/pixel_ink"
-                        android:textSize="13sp"
-                        android:textStyle="bold"
-                        android:fontFamily="@font/bricolage_grotesque" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="1dp"
-                        android:text="Checks the time"
-                        android:textColor="@color/pixel_ink_muted"
-                        android:textSize="10.5sp"
                         android:gravity="center"
-                        android:fontFamily="@font/bricolage_grotesque" />
-                </LinearLayout>
+                        android:orientation="vertical">
+
+                        <ImageView
+                            android:id="@+id/ivCatRolex"
+                            android:layout_width="52dp"
+                            android:layout_height="52dp"
+                            android:src="@drawable/kitty_rolex_loaf"
+                            android:contentDescription="Rolex" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="6dp"
+                            android:text="Rolex"
+                            android:textColor="@color/pixel_dark_ink_bright"
+                            android:textSize="13sp"
+                            android:textStyle="bold"
+                            android:fontFamily="@font/bricolage_grotesque" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="1dp"
+                            android:text="Checks time"
+                            android:textColor="@color/pixel_dark_ink_muted"
+                            android:textSize="10.5sp"
+                            android:gravity="center"
+                            android:fontFamily="@font/bricolage_grotesque" />
+                    </LinearLayout>
+
+                    <ImageView
+                        android:id="@+id/badgeCatRolex"
+                        android:layout_width="22dp"
+                        android:layout_height="22dp"
+                        android:layout_alignParentEnd="true"
+                        android:layout_alignParentTop="true"
+                        android:background="@drawable/bg_pixel_dark_badge_locked"
+                        android:src="@drawable/ic_sec_lock"
+                        app:tint="@color/pixel_dark_awning_yellow"
+                        android:padding="4dp"
+                        android:visibility="gone" />
+                </RelativeLayout>
 
                 <Space
                     android:layout_width="10dp"
                     android:layout_height="1dp" />
 
                 <!-- Salmon -->
-                <LinearLayout
+                <RelativeLayout
                     android:id="@+id/cardCatSalmon"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:background="@drawable/bg_pixel_cat_card_unselected"
-                    android:orientation="vertical"
-                    android:gravity="center"
+                    android:background="@drawable/bg_pixel_dark_cat_card_unselected"
                     android:paddingTop="12dp"
                     android:paddingBottom="12dp"
                     android:paddingStart="6dp"
@@ -510,47 +594,64 @@
                     android:clickable="true"
                     android:focusable="true">
 
-                    <ImageView
-                        android:id="@+id/ivCatSalmon"
-                        android:layout_width="56dp"
-                        android:layout_height="56dp"
-                        android:src="@drawable/kitty_salmon_loaf"
-                        android:contentDescription="Salmon" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
+                    <LinearLayout
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="6dp"
-                        android:text="Salmon"
-                        android:textColor="@color/pixel_ink"
-                        android:textSize="13sp"
-                        android:textStyle="bold"
-                        android:fontFamily="@font/bricolage_grotesque" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="1dp"
-                        android:text="Has a fishy alibi"
-                        android:textColor="@color/pixel_ink_muted"
-                        android:textSize="10.5sp"
                         android:gravity="center"
-                        android:fontFamily="@font/bricolage_grotesque" />
-                </LinearLayout>
+                        android:orientation="vertical">
+
+                        <ImageView
+                            android:id="@+id/ivCatSalmon"
+                            android:layout_width="52dp"
+                            android:layout_height="52dp"
+                            android:src="@drawable/kitty_salmon_loaf"
+                            android:contentDescription="Salmon" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="6dp"
+                            android:text="Salmon"
+                            android:textColor="@color/pixel_dark_ink_bright"
+                            android:textSize="13sp"
+                            android:textStyle="bold"
+                            android:fontFamily="@font/bricolage_grotesque" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="1dp"
+                            android:text="Fishy alibi"
+                            android:textColor="@color/pixel_dark_ink_muted"
+                            android:textSize="10.5sp"
+                            android:gravity="center"
+                            android:fontFamily="@font/bricolage_grotesque" />
+                    </LinearLayout>
+
+                    <ImageView
+                        android:id="@+id/badgeCatSalmon"
+                        android:layout_width="22dp"
+                        android:layout_height="22dp"
+                        android:layout_alignParentEnd="true"
+                        android:layout_alignParentTop="true"
+                        android:background="@drawable/bg_pixel_dark_badge_locked"
+                        android:src="@drawable/ic_sec_lock"
+                        app:tint="@color/pixel_dark_awning_yellow"
+                        android:padding="4dp"
+                        android:visibility="gone" />
+                </RelativeLayout>
 
                 <Space
                     android:layout_width="10dp"
                     android:layout_height="1dp" />
 
                 <!-- Katrina -->
-                <LinearLayout
+                <RelativeLayout
                     android:id="@+id/cardCatKatrina"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:background="@drawable/bg_pixel_cat_card_unselected"
-                    android:orientation="vertical"
-                    android:gravity="center"
+                    android:background="@drawable/bg_pixel_dark_cat_card_unselected"
                     android:paddingTop="12dp"
                     android:paddingBottom="12dp"
                     android:paddingStart="6dp"
@@ -558,50 +659,66 @@
                     android:clickable="true"
                     android:focusable="true">
 
-                    <ImageView
-                        android:id="@+id/ivCatKatrina"
-                        android:layout_width="56dp"
-                        android:layout_height="56dp"
-                        android:src="@drawable/kitty_katrina_loaf"
-                        android:contentDescription="Katrina" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
+                    <LinearLayout
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="6dp"
-                        android:text="Katrina"
-                        android:textColor="@color/pixel_ink"
-                        android:textSize="13sp"
-                        android:textStyle="bold"
-                        android:fontFamily="@font/bricolage_grotesque" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="1dp"
-                        android:text="Knocks off items"
-                        android:textColor="@color/pixel_ink_muted"
-                        android:textSize="10.5sp"
                         android:gravity="center"
-                        android:fontFamily="@font/bricolage_grotesque" />
-                </LinearLayout>
+                        android:orientation="vertical">
+
+                        <ImageView
+                            android:id="@+id/ivCatKatrina"
+                            android:layout_width="52dp"
+                            android:layout_height="52dp"
+                            android:src="@drawable/kitty_katrina_loaf"
+                            android:contentDescription="Katrina" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="6dp"
+                            android:text="Katrina"
+                            android:textColor="@color/pixel_dark_ink_bright"
+                            android:textSize="13sp"
+                            android:textStyle="bold"
+                            android:fontFamily="@font/bricolage_grotesque" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="1dp"
+                            android:text="Knocks items"
+                            android:textColor="@color/pixel_dark_ink_muted"
+                            android:textSize="10.5sp"
+                            android:gravity="center"
+                            android:fontFamily="@font/bricolage_grotesque" />
+                    </LinearLayout>
+
+                    <ImageView
+                        android:id="@+id/badgeCatKatrina"
+                        android:layout_width="22dp"
+                        android:layout_height="22dp"
+                        android:layout_alignParentEnd="true"
+                        android:layout_alignParentTop="true"
+                        android:background="@drawable/bg_pixel_dark_badge_locked"
+                        android:src="@drawable/ic_sec_lock"
+                        app:tint="@color/pixel_dark_awning_yellow"
+                        android:padding="4dp"
+                        android:visibility="gone" />
+                </RelativeLayout>
             </LinearLayout>
 
-            <!-- Row 3: Casper (Featured New Skin) -->
+            <!-- Row 3: Casper (Featured 7th Breed) -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="10dp"
                 android:orientation="horizontal">
 
-                <!-- Casper Card (Featured) -->
-                <LinearLayout
+                <RelativeLayout
                     android:id="@+id/cardCatCasper"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:background="@drawable/bg_pixel_cat_card_unselected"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
+                    android:background="@drawable/bg_pixel_dark_cat_card_unselected"
                     android:paddingTop="10dp"
                     android:paddingBottom="10dp"
                     android:paddingStart="16dp"
@@ -609,68 +726,102 @@
                     android:clickable="true"
                     android:focusable="true">
 
-                    <ImageView
-                        android:id="@+id/ivCatCasper"
-                        android:layout_width="52dp"
-                        android:layout_height="52dp"
-                        android:src="@drawable/kitty_casper_loaf"
-                        android:contentDescription="Casper" />
-
                     <LinearLayout
-                        android:layout_width="0dp"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginStart="14dp"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <ImageView
+                            android:id="@+id/ivCatCasper"
+                            android:layout_width="50dp"
+                            android:layout_height="50dp"
+                            android:src="@drawable/kitty_casper_loaf"
+                            android:contentDescription="Casper" />
 
                         <LinearLayout
-                            android:layout_width="wrap_content"
+                            android:layout_width="0dp"
                             android:layout_height="wrap_content"
-                            android:gravity="center_vertical"
-                            android:orientation="horizontal">
+                            android:layout_marginStart="14dp"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <LinearLayout
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:gravity="center_vertical"
+                                android:orientation="horizontal">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Casper"
+                                    android:textColor="@color/pixel_dark_ink_bright"
+                                    android:textSize="14sp"
+                                    android:textStyle="bold"
+                                    android:fontFamily="@font/bricolage_grotesque" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginStart="8dp"
+                                    android:paddingStart="6dp"
+                                    android:paddingEnd="6dp"
+                                    android:paddingTop="1dp"
+                                    android:paddingBottom="1dp"
+                                    android:background="@drawable/bg_pixel_dark_badge_onguard"
+                                    android:text="NEW SKIN"
+                                    android:textColor="@color/pixel_dark_awning_yellow"
+                                    android:textSize="9sp"
+                                    android:fontFamily="@font/silkscreen_bold" />
+                            </LinearLayout>
 
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="Casper"
-                                android:textColor="@color/pixel_ink"
-                                android:textSize="14sp"
-                                android:textStyle="bold"
+                                android:layout_marginTop="2dp"
+                                android:text="Spooks the doomscroll algorithm 👾"
+                                android:textColor="@color/pixel_dark_ink_muted"
+                                android:textSize="11.5sp"
                                 android:fontFamily="@font/bricolage_grotesque" />
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginStart="8dp"
-                                android:paddingStart="6dp"
-                                android:paddingEnd="6dp"
-                                android:paddingTop="1dp"
-                                android:paddingBottom="1dp"
-                                android:background="@drawable/bg_pixel_badge_onguard"
-                                android:text="NEW SKIN"
-                                android:textColor="@color/pixel_ink"
-                                android:textSize="9sp"
-                                android:fontFamily="@font/silkscreen_bold" />
                         </LinearLayout>
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="2dp"
-                            android:text="Spooks the algorithm. Quietly haunts your doomscroll feed."
-                            android:textColor="@color/pixel_ink_muted"
-                            android:textSize="11.5sp"
-                            android:fontFamily="@font/bricolage_grotesque" />
                     </LinearLayout>
-                </LinearLayout>
+
+                    <ImageView
+                        android:id="@+id/badgeCatCasper"
+                        android:layout_width="22dp"
+                        android:layout_height="22dp"
+                        android:layout_alignParentEnd="true"
+                        android:layout_centerVertical="true"
+                        android:background="@drawable/bg_pixel_dark_badge_equipped"
+                        android:src="@drawable/ic_check_24"
+                        app:tint="@color/pixel_dark_accent_mint"
+                        android:padding="3dp"
+                        android:visibility="gone" />
+                </RelativeLayout>
             </LinearLayout>
+
+            <!-- Big Bottom Action Button: Ginger's on duty / Equip / Unlock -->
+            <TextView
+                android:id="@+id/btnEquipOrUnlock"
+                android:layout_width="match_parent"
+                android:layout_height="50dp"
+                android:layout_marginTop="16dp"
+                android:gravity="center"
+                android:text="✓ Ginger's on duty"
+                android:textColor="@color/pixel_dark_bg"
+                android:textSize="14sp"
+                android:background="@drawable/bg_pixel_dark_btn_equip"
+                android:fontFamily="@font/silkscreen_bold"
+                android:clickable="true"
+                android:focusable="true" />
 
             <!-- 6. Quick Daily Limit & Settings Controls -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="20dp"
-                android:background="@drawable/bg_pixel_hero_card"
+                android:background="@drawable/bg_pixel_dark_hero_card"
                 android:orientation="vertical"
                 android:padding="16dp">
 
@@ -685,7 +836,7 @@
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
                         android:text="DAILY LIMIT"
-                        android:textColor="@color/pixel_ink"
+                        android:textColor="@color/pixel_dark_ink_bright"
                         android:textSize="13sp"
                         android:fontFamily="@font/silkscreen_bold" />
 
@@ -696,9 +847,9 @@
                         android:paddingStart="12dp"
                         android:paddingEnd="12dp"
                         android:gravity="center"
-                        android:background="@drawable/bg_pixel_badge_onguard"
+                        android:background="@drawable/bg_pixel_dark_badge_onguard"
                         android:text="CHANGE"
-                        android:textColor="@color/pixel_ink"
+                        android:textColor="@color/pixel_dark_ink_bright"
                         android:textSize="10.5sp"
                         android:fontFamily="@font/silkscreen_bold"
                         android:clickable="true"
@@ -710,14 +861,14 @@
                     android:layout_height="1.5dp"
                     android:layout_marginTop="12dp"
                     android:layout_marginBottom="12dp"
-                    android:background="#D8D0C2" />
+                    android:background="#2E2A40" />
 
                 <!-- Monitored Apps -->
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="MONITORED FEEDS"
-                    android:textColor="@color/pixel_ink"
+                    android:textColor="@color/pixel_dark_ink_bright"
                     android:textSize="11sp"
                     android:fontFamily="@font/silkscreen_bold" />
 
@@ -734,7 +885,7 @@
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
                         android:text="Instagram (Reels &amp; Home)"
-                        android:textColor="@color/pixel_ink"
+                        android:textColor="@color/pixel_dark_ink_bright"
                         android:textSize="13.5sp"
                         android:fontFamily="@font/bricolage_grotesque" />
 
@@ -758,7 +909,7 @@
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
                         android:text="YouTube Shorts"
-                        android:textColor="@color/pixel_ink"
+                        android:textColor="@color/pixel_dark_ink_bright"
                         android:textSize="13.5sp"
                         android:fontFamily="@font/bricolage_grotesque" />
 
@@ -782,7 +933,7 @@
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
                         android:text="Snapchat Spotlight"
-                        android:textColor="@color/pixel_ink"
+                        android:textColor="@color/pixel_dark_ink_bright"
                         android:textSize="13.5sp"
                         android:fontFamily="@font/bricolage_grotesque" />
 
@@ -806,7 +957,7 @@
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
                         android:text="Facebook Reels"
-                        android:textColor="@color/pixel_ink"
+                        android:textColor="@color/pixel_dark_ink_bright"
                         android:textSize="13.5sp"
                         android:fontFamily="@font/bricolage_grotesque" />
 

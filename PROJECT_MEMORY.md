@@ -1,34 +1,72 @@
-# ClawBack (AntiScroller) - Project Memory
+---
+
+summary: "Anti-doomscrolling Android app dropping an animated kitten curtain over Instagram Reels and YouTube Shorts."
+
+workspace: "E:\CODES\anti scroller"
+
+stack: "Kotlin, Android AccessibilityService, WindowManager Overlay, Firebase (Auth, Firestore, FCM, Functions)"
+
+type: project-hub
+
+---
 
 
+
+# ClawBack
+
+
+
+> [!ABSTRACT] Quick Summary (Token-Saving Preview)
+
+> **Scope**: Anti-doomscrolling Android app dropping an animated kitten curtain over Instagram Reels and YouTube Shorts.
+
+> **Stack**: Kotlin, Android AccessibilityService, WindowManager Overlay
+
+> **Contains**: Milestones, current focus, technical scope, invariants, and backlog.
+
+> **Skip if**: Your task is unrelated to **ClawBack** .
+
+
+
+- **Status**: #project #active
+
+- **Vault Location**: [[02 Projects/ClawBack/|ClawBack]]
+
+- **Sub-Documents**: [[ClawBack - Architecture|Architecture]] | [[ClawBack - Decisions|Decisions]] | [[ClawBack - Identity|Project Identity]]
+
+
+
+---
 
 - **Project ID**: $uuid
 
-- **Workspace**: E:\CODES\anti scroller
+- **Workspace**: $ws
 
-- **Target**: Android Anti-Doomscrolling Application
+- **Status**: Active
 
 
 
 ## 1. Executive Summary
 
-ClawBack is an anti-doomscrolling Android application that drops an animated kitten and fabric curtain from the ceiling of the screen as the user scrolls through Instagram Reels or YouTube Shorts.
-
-It scopes its overlay strictly to video doomscrolling feeds while leaving productive apps (WhatsApp, Chrome, Notion) 100% accessible.
 
 
+Anti-doomscrolling Android app dropping an animated kitten curtain over Instagram Reels and YouTube Shorts.
 
-## 2. Key Components
 
-- Animated Kitty Curtain (KittyCurtainView.kt) with dual-sprite physics.
 
-- Accessibility / overlay service detecting reels/shorts view hierarchies.
+## 2. Technical Scope & Stack
 
-- Token and design system specified in Docs/UI_DESIGN_SPEC.md.
+
+
+- **Stack**: Kotlin, Android AccessibilityService, WindowManager Overlay, Custom Canvas View
+
+- **Directory**: $ws
 
 
 
 ## 3. Milestones & Current Focus
+
+
 
 - Project onboarded to persistent AI memory system.
 
@@ -478,3 +516,15 @@ It scopes its overlay strictly to video doomscrolling feeds while leaving produc
   - If Guardian Lock is active with a PIN, opening Clawse settings routes directly to `GuardianUnlockActivity` for PIN verification.
   - Initial setup permission flows (Accessibility and Overlay granting) are explicitly whitelisted so first-time onboarding is never blocked.
   - Built and installed the updated build directly to the connected phone via ADB.
+
+- v1.0.39 Release Bundle (versionCode 40): 8-Bit Arcade Official Dark Theme & Interactive Cat Preview.
+  - Transformed the 8-Bit Arcade theme into the official Dark theme of Clawse, sunsetting the legacy OLED theme.
+  - Clawse now presents two canonical app themes: "Sticker Pop (Light)" (default) and "8-Bit Arcade (Dark)".
+  - Built a rich dark arcade color palette: deep background (`#12111A`), card surfaces (`#1C1A27`), stroke boundaries (`#37334D`), honey-gold awning stripes (`#F2B723`), and Silkscreen pixel typography.
+  - Resolved hero card cat visibility by separating the canopy awning (`PixelAwningView` 64dp) and companion preview (`ImageView` `ivHeroCatPreview` 86x86dp with gentle idle rotation sway) into an overlapping layout, eliminating canvas stripe clipping.
+  - Resolved cat card click behavior: tapping any cat card in the 3x2 grid or Casper row now immediately previews the cat on the hero card and updates speech bubble quotes without popping open paywall modals prematurely.
+  - Added dynamic action button (`btnEquipOrUnlock`) supporting "✓ [Breed] on duty", "Equip [Breed]", and "✨ Unlock [Breed]" states (paywall is triggered only when tapping the explicit unlock button).
+  - Repointed modal glass blur hardware GPU effect to target the active layout root (`bDark.root` or `bLight.root`) rather than unattached legacy bindings.
+  - Bumped release `versionCode` to 40 and `versionName` to "1.0.39" in `app/build.gradle.kts`.
+  - Compiled signed release Android App Bundle (`dist/Clawse-v1.0.39-release.aab`) and release APK (`dist/Clawse-v1.0.39-release.apk`).
+  - Stream-installed updated debug APK to connected phone (`000693485000641`) via ADB.

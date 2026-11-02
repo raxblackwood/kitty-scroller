@@ -582,7 +582,9 @@ class ScrollDataManager(context: Context) {
 
 
     fun getUiTheme(): String {
-        return prefs.getString(KEY_UI_THEME, UI_THEME_LIGHT) ?: UI_THEME_LIGHT
+        val theme = prefs.getString(KEY_UI_THEME, UI_THEME_LIGHT) ?: UI_THEME_LIGHT
+        if (theme == UI_THEME_PIXEL) return UI_THEME_DARK
+        return theme
     }
 
     fun setUiTheme(theme: String) {

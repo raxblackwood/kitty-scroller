@@ -23,16 +23,30 @@ class SegmentedProgressBar @JvmOverloads constructor(
     private var progressRatio = 0f // 0.0 to 1.0
 
     private val filledPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.parseColor("#1E1C2E")
+        color = Color.parseColor("#F2B723")
         style = Paint.Style.FILL
     }
 
     private val emptyPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.parseColor("#C5BEB3")
+        color = Color.parseColor("#2E2A40")
         style = Paint.Style.FILL
     }
 
     private val blockRect = RectF()
+
+    var filledColor: Int = Color.parseColor("#F2B723")
+        set(value) {
+            field = value
+            filledPaint.color = value
+            invalidate()
+        }
+
+    var emptyColor: Int = Color.parseColor("#2E2A40")
+        set(value) {
+            field = value
+            emptyPaint.color = value
+            invalidate()
+        }
 
     fun setProgress(progress: Float) {
         progressRatio = progress.coerceIn(0f, 1f)

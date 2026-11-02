@@ -72,9 +72,8 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
     private var bindingLight: ActivityMainLightBinding? = null
-    private var bindingPixel: ActivityMainPixelBinding? = null
+    private var bindingDark: ActivityMainPixelBinding? = null
     val isLightMode: Boolean get() = dataManager.getUiTheme() == ScrollDataManager.UI_THEME_LIGHT
-    val isPixelMode: Boolean get() = dataManager.getUiTheme() == ScrollDataManager.UI_THEME_PIXEL
     private var catSwayAnimator: ObjectAnimator? = null
     private lateinit var dataManager: ScrollDataManager
     private lateinit var overlayManager: KittyOverlayManager
@@ -104,30 +103,7 @@ class MainActivity : AppCompatActivity() {
         dataManager = ScrollDataManager.getInstance(this)
         binding = ActivityMainBinding.inflate(layoutInflater)
 
-        if (isPixelMode) {
-            val bPixel = ActivityMainPixelBinding.inflate(layoutInflater)
-            bindingPixel = bPixel
-            setContentView(bPixel.root)
-
-            window.statusBarColor = ContextCompat.getColor(this, R.color.pixel_bg)
-            window.navigationBarColor = ContextCompat.getColor(this, R.color.pixel_bg)
-            val insetsController = WindowCompat.getInsetsController(window, window.decorView)
-            insetsController.isAppearanceLightStatusBars = true
-            insetsController.isAppearanceLightNavigationBars = true
-
-            ViewCompat.setOnApplyWindowInsetsListener(bPixel.root) { view, windowInsets ->
-                val insets = windowInsets.getInsets(
-                    WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout()
-                )
-                view.updatePadding(
-                    left = insets.left,
-                    top = insets.top,
-                    right = insets.right,
-                    bottom = insets.bottom
-                )
-                windowInsets
-            }
-        } else if (isLightMode) {
+        if (isLightMode) {
             val bLight = ActivityMainLightBinding.inflate(layoutInflater)
             bindingLight = bLight
             setContentView(bLight.root)
@@ -151,15 +127,18 @@ class MainActivity : AppCompatActivity() {
                 windowInsets
             }
         } else {
-            setContentView(binding.root)
+            // 8-Bit Arcade (Dark) Theme - Official Dark Mode
+            val bDark = ActivityMainPixelBinding.inflate(layoutInflater)
+            bindingDark = bDark
+            setContentView(bDark.root)
 
-            window.statusBarColor = ContextCompat.getColor(this, R.color.background)
-            window.navigationBarColor = ContextCompat.getColor(this, R.color.background)
+            window.statusBarColor = ContextCompat.getColor(this, R.color.pixel_dark_bg)
+            window.navigationBarColor = ContextCompat.getColor(this, R.color.pixel_dark_bg)
             val insetsController = WindowCompat.getInsetsController(window, window.decorView)
             insetsController.isAppearanceLightStatusBars = false
             insetsController.isAppearanceLightNavigationBars = false
 
-            ViewCompat.setOnApplyWindowInsetsListener(binding.root) { view, windowInsets ->
+            ViewCompat.setOnApplyWindowInsetsListener(bDark.root) { view, windowInsets ->
                 val insets = windowInsets.getInsets(
                     WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout()
                 )
@@ -203,13 +182,10 @@ class MainActivity : AppCompatActivity() {
             Log.w("MainActivity", "Failed to register AppOps watcher", e)
         }
 
-        if (isPixelMode) {
-            setupPixelMode()
-        } else if (isLightMode) {
+        if (isLightMode) {
             setupLightMode()
         } else {
-            setupUI()
-            setupListeners()
+            setupDarkMode()
         }
     }
 
@@ -259,11 +235,7 @@ class MainActivity : AppCompatActivity() {
         }
         catSwayAnimator?.cancel()
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            val root = when {
-                isPixelMode -> bindingPixel?.root
-                isLightMode -> bindingLight?.root
-                else -> binding.root
-            }
+            val root = if (isLightMode) bindingLight?.root else bindingDark?.root
             root?.setRenderEffect(null)
         }
         activeBlurCount = 0
@@ -675,12 +647,12 @@ class MainActivity : AppCompatActivity() {
     // -------------------------------------------------------------------------
 
     // -------------------------------------------------------------------------
-    // 8-BIT ARCADE RETRO PIXEL THEME Implementation
+    // 8-BIT ARCADE (DARK THEME) Implementation
     // -------------------------------------------------------------------------
-    private fun setupPixelMode() {
-        val b = bindingPixel ?: return
+    private fun setupDarkMode() {
+        val b = bindingDark ?: return
         previewedTheme = dataManager.kittyTheme
-        updatePixelModeCatUI()
+        updateDarkModeCatUI()
         updateDashboard()
 
         b.switchInstagram.tag = "PROGRAMMATIC"
@@ -717,20 +689,51 @@ class MainActivity : AppCompatActivity() {
             showPaywallDialog(BillingManager.PRODUCT_COSMETIC_PACK)
         }
 
-        // Cat card selections
-        b.cardCatGinger.setOnClickListener { selectPixelCat(ScrollDataManager.THEME_GINGER) }
-        b.cardCatTabby.setOnClickListener { selectPixelCat(ScrollDataManager.THEME_TABBY) }
-        b.cardCatSaturn.setOnClickListener { selectPixelCat(ScrollDataManager.THEME_SATURN) }
-        b.cardCatRolex.setOnClickListener { selectPixelCat(ScrollDataManager.THEME_ROLEX) }
-        b.cardCatSalmon.setOnClickListener { selectPixelCat(ScrollDataManager.THEME_SALMON) }
-        b.cardCatKatrina.setOnClickListener { selectPixelCat(ScrollDataManager.THEME_KATRINA) }
-        b.cardCatCasper.setOnClickListener { selectPixelCat(ScrollDataManager.THEME_CASPER) }
+        // Cat Card clicks in 3x2 grid + Casper
+        b.cardCatGinger.setOnClickListener { selectDarkCat(ScrollDataManager.THEME_GINGER) }
+        b.cardCatTabby.setOnClickListener { selectDarkCat(ScrollDataManager.THEME_TABBY) }
+        b.cardCatSaturn.setOnClickListener { selectDarkCat(ScrollDataManager.THEME_SATURN) }
+        b.cardCatRolex.setOnClickListener { selectDarkCat(ScrollDataManager.THEME_ROLEX) }
+        b.cardCatSalmon.setOnClickListener { selectDarkCat(ScrollDataManager.THEME_SALMON) }
+        b.cardCatKatrina.setOnClickListener { selectDarkCat(ScrollDataManager.THEME_KATRINA) }
+        b.cardCatCasper.setOnClickListener { selectDarkCat(ScrollDataManager.THEME_CASPER) }
 
-        setupPixelAppSwitches()
+        b.btnEquipOrUnlock.setOnClickListener {
+            val isEquipped = (previewedTheme == dataManager.kittyTheme)
+            val isUnlocked = dataManager.isThemeUnlocked(previewedTheme)
+            val breedName = getBreedDisplayName(previewedTheme)
+            if (isEquipped) {
+                Toast.makeText(this, "$breedName is already on duty! 🐾", Toast.LENGTH_SHORT).show()
+            } else if (isUnlocked) {
+                dataManager.kittyTheme = previewedTheme
+                Toast.makeText(this, "$breedName equipped! 🐾", Toast.LENGTH_SHORT).show()
+                updateDarkModeCatUI()
+                updateDashboard()
+            } else {
+                showPaywallDialog(BillingManager.PRODUCT_COSMETIC_PACK)
+            }
+        }
+
+        // Idle sway animation on the peeking cat companion
+        b.ivHeroCatPreview.post {
+            b.ivHeroCatPreview.pivotX = b.ivHeroCatPreview.width / 2f
+            b.ivHeroCatPreview.pivotY = 0f
+            catSwayAnimator?.cancel()
+            val sway = ObjectAnimator.ofFloat(b.ivHeroCatPreview, View.ROTATION, -3f, 3f).apply {
+                duration = 1800
+                repeatMode = ValueAnimator.REVERSE
+                repeatCount = ValueAnimator.INFINITE
+                interpolator = AccelerateDecelerateInterpolator()
+            }
+            catSwayAnimator = sway
+            sway.start()
+        }
+
+        setupDarkAppSwitches()
     }
 
-    private fun setupPixelAppSwitches() {
-        val b = bindingPixel ?: return
+    private fun setupDarkAppSwitches() {
+        val b = bindingDark ?: return
 
         b.switchInstagram.setOnCheckedChangeListener { _, isChecked ->
             if (b.switchInstagram.tag == "PROGRAMMATIC") return@setOnCheckedChangeListener
@@ -909,80 +912,128 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun selectPixelCat(theme: String) {
-        val isUnlocked = dataManager.isThemeUnlocked(theme)
-        val breedName = getBreedDisplayName(theme)
-        if (!isUnlocked) {
-            showPaywallDialog(BillingManager.PRODUCT_COSMETIC_PACK)
-            return
-        }
-        dataManager.kittyTheme = theme
+    private fun selectDarkCat(theme: String) {
         previewedTheme = theme
-        Toast.makeText(this, "$breedName equipped! 🐾", Toast.LENGTH_SHORT).show()
-        updatePixelModeCatUI()
-        updateDashboard()
+        updateDarkModeCatUI()
     }
 
-    private fun updatePixelDashboard(count: Int, max: Int, pct: Float) {
-        val b = bindingPixel ?: return
+    private fun updateDarkDashboard(count: Int, max: Int, pct: Float) {
+        val b = bindingDark ?: return
         b.tvScrollCount.text = count.toString()
         b.tvScrollLimit.text = "/ $max reels"
 
         val pctInt = (pct * 100).toInt()
         b.tvPercentDown.text = "$pctInt% down"
         b.segmentedProgressBar.setProgress(pct)
-
-        val remaining = (max - count).coerceAtLeast(0)
-        b.tvSpeechBubble.text = when {
-            count == 0 -> "Clear mind. Go conquer your day."
-            count < max / 2 -> "Looking good. Keep it mindful."
-            remaining > 0 -> "Halfway. I'm watching you."
-            else -> "Daily limit reached! Nap o'clock 😴"
-        }
-
-        b.pixelAwningView.setCatBitmapRes(getBreedLoafRes(dataManager.kittyTheme))
+        b.segmentedProgressBar.filledColor = getColor(R.color.pixel_dark_awning_yellow)
+        b.segmentedProgressBar.emptyColor = getColor(R.color.pixel_dark_tally_empty)
     }
 
-    private fun updatePixelPermissions(isAccessibilityEnabled: Boolean, isOverlayEnabled: Boolean) {
-        val b = bindingPixel ?: return
+    private fun updateDarkPermissions(isAccessibilityEnabled: Boolean, isOverlayEnabled: Boolean) {
+        val b = bindingDark ?: return
         if (isOverlayEnabled && isAccessibilityEnabled) {
             b.tvHeaderStatus.text = "ON GUARD"
-            b.badgeHeaderStatus.setBackgroundResource(R.drawable.bg_pixel_badge_onguard)
+            b.tvHeaderStatus.setTextColor(getColor(R.color.pixel_dark_awning_yellow))
+            b.badgeHeaderStatus.setBackgroundResource(R.drawable.bg_pixel_dark_badge_onguard)
             b.cardPermissionFloater.visibility = View.GONE
         } else {
             b.tvHeaderStatus.text = "! SETUP"
-            b.badgeHeaderStatus.setBackgroundResource(R.drawable.bg_pixel_cat_card_selected)
+            b.tvHeaderStatus.setTextColor(getColor(R.color.accent_red))
+            b.badgeHeaderStatus.setBackgroundResource(R.drawable.bg_pixel_dark_cat_card_selected)
             b.cardPermissionFloater.visibility = View.VISIBLE
         }
     }
 
-    private fun updatePixelModeCatUI() {
-        val b = bindingPixel ?: return
-        val equipped = dataManager.kittyTheme
+    private fun updateDarkModeCatUI() {
+        val b = bindingDark ?: return
 
-        b.cardCatGinger.setBackgroundResource(if (equipped == ScrollDataManager.THEME_GINGER) R.drawable.bg_pixel_cat_card_selected else R.drawable.bg_pixel_cat_card_unselected)
-        b.cardCatTabby.setBackgroundResource(if (equipped == ScrollDataManager.THEME_TABBY || equipped == ScrollDataManager.THEME_BLACK) R.drawable.bg_pixel_cat_card_selected else R.drawable.bg_pixel_cat_card_unselected)
-        b.cardCatSaturn.setBackgroundResource(if (equipped == ScrollDataManager.THEME_SATURN) R.drawable.bg_pixel_cat_card_selected else R.drawable.bg_pixel_cat_card_unselected)
-        b.cardCatRolex.setBackgroundResource(if (equipped == ScrollDataManager.THEME_ROLEX) R.drawable.bg_pixel_cat_card_selected else R.drawable.bg_pixel_cat_card_unselected)
-        b.cardCatSalmon.setBackgroundResource(if (equipped == ScrollDataManager.THEME_SALMON) R.drawable.bg_pixel_cat_card_selected else R.drawable.bg_pixel_cat_card_unselected)
-        b.cardCatKatrina.setBackgroundResource(if (equipped == ScrollDataManager.THEME_KATRINA) R.drawable.bg_pixel_cat_card_selected else R.drawable.bg_pixel_cat_card_unselected)
-        b.cardCatCasper.setBackgroundResource(if (equipped == ScrollDataManager.THEME_CASPER) R.drawable.bg_pixel_cat_card_selected else R.drawable.bg_pixel_cat_card_unselected)
+        // 1. Prominently show previewed cat on the hero card
+        b.ivHeroCatPreview.setImageResource(getBreedLoafRes(previewedTheme))
 
-        b.cardCatTabby.alpha = if (dataManager.isThemeUnlocked(ScrollDataManager.THEME_TABBY)) 1.0f else 0.5f
-        b.cardCatSaturn.alpha = if (dataManager.isThemeUnlocked(ScrollDataManager.THEME_SATURN)) 1.0f else 0.5f
-        b.cardCatRolex.alpha = if (dataManager.isThemeUnlocked(ScrollDataManager.THEME_ROLEX)) 1.0f else 0.5f
-        b.cardCatSalmon.alpha = if (dataManager.isThemeUnlocked(ScrollDataManager.THEME_SALMON)) 1.0f else 0.5f
-        b.cardCatKatrina.alpha = if (dataManager.isThemeUnlocked(ScrollDataManager.THEME_KATRINA)) 1.0f else 0.5f
+        // 2. Personality speech bubble
+        b.tvSpeechBubble.text = when (previewedTheme) {
+            ScrollDataManager.THEME_TABBY, ScrollDataManager.THEME_BLACK -> "Tabby judges every scroll."
+            ScrollDataManager.THEME_SATURN -> "Saturn: nap through the noise."
+            ScrollDataManager.THEME_ROLEX -> "Rolex: time is ticking. Put it down."
+            ScrollDataManager.THEME_SALMON -> "Salmon: have a fishy alibi!"
+            ScrollDataManager.THEME_KATRINA -> "Katrina: knock that reel off the shelf!"
+            ScrollDataManager.THEME_CASPER -> "Casper: quietly haunts your feed 👾"
+            else -> when {
+                dataManager.dailyScrollCount == 0 -> "Clear mind. Go conquer your day."
+                dataManager.dailyScrollCount < dataManager.maxDailyScrolls / 2 -> "Looking good. Keep it mindful."
+                !dataManager.isLimitReached() -> "Halfway. I'm watching you."
+                else -> "Daily limit reached! Nap o'clock 😴"
+            }
+        }
 
-        b.pixelAwningView.setCatBitmapRes(getBreedLoafRes(equipped))
+        // 3. Highlight previewed card with glowing gold border
+        b.cardCatGinger.setBackgroundResource(if (previewedTheme == ScrollDataManager.THEME_GINGER) R.drawable.bg_pixel_dark_cat_card_selected else R.drawable.bg_pixel_dark_cat_card_unselected)
+        b.cardCatTabby.setBackgroundResource(if (previewedTheme == ScrollDataManager.THEME_TABBY || previewedTheme == ScrollDataManager.THEME_BLACK) R.drawable.bg_pixel_dark_cat_card_selected else R.drawable.bg_pixel_dark_cat_card_unselected)
+        b.cardCatSaturn.setBackgroundResource(if (previewedTheme == ScrollDataManager.THEME_SATURN) R.drawable.bg_pixel_dark_cat_card_selected else R.drawable.bg_pixel_dark_cat_card_unselected)
+        b.cardCatRolex.setBackgroundResource(if (previewedTheme == ScrollDataManager.THEME_ROLEX) R.drawable.bg_pixel_dark_cat_card_selected else R.drawable.bg_pixel_dark_cat_card_unselected)
+        b.cardCatSalmon.setBackgroundResource(if (previewedTheme == ScrollDataManager.THEME_SALMON) R.drawable.bg_pixel_dark_cat_card_selected else R.drawable.bg_pixel_dark_cat_card_unselected)
+        b.cardCatKatrina.setBackgroundResource(if (previewedTheme == ScrollDataManager.THEME_KATRINA) R.drawable.bg_pixel_dark_cat_card_selected else R.drawable.bg_pixel_dark_cat_card_unselected)
+        b.cardCatCasper.setBackgroundResource(if (previewedTheme == ScrollDataManager.THEME_CASPER) R.drawable.bg_pixel_dark_cat_card_selected else R.drawable.bg_pixel_dark_cat_card_unselected)
+
+        // 4. Update status badges on cards
+        updateDarkCardBadge(b.badgeCatGinger, ScrollDataManager.THEME_GINGER)
+        updateDarkCardBadge(b.badgeCatTabby, ScrollDataManager.THEME_TABBY)
+        updateDarkCardBadge(b.badgeCatSaturn, ScrollDataManager.THEME_SATURN)
+        updateDarkCardBadge(b.badgeCatRolex, ScrollDataManager.THEME_ROLEX)
+        updateDarkCardBadge(b.badgeCatSalmon, ScrollDataManager.THEME_SALMON)
+        updateDarkCardBadge(b.badgeCatKatrina, ScrollDataManager.THEME_KATRINA)
+        updateDarkCardBadge(b.badgeCatCasper, ScrollDataManager.THEME_CASPER)
+
+        // 5. Update main action button
+        val isEquipped = (previewedTheme == dataManager.kittyTheme)
+        val isUnlocked = dataManager.isThemeUnlocked(previewedTheme)
+        val breedName = getBreedDisplayName(previewedTheme)
+        when {
+            isEquipped -> {
+                b.btnEquipOrUnlock.text = "✓ $breedName on duty"
+                b.btnEquipOrUnlock.isEnabled = false
+                b.btnEquipOrUnlock.setBackgroundResource(R.drawable.bg_pixel_dark_btn_equipped)
+                b.btnEquipOrUnlock.setTextColor(getColor(R.color.pixel_dark_ink_muted))
+            }
+            isUnlocked -> {
+                b.btnEquipOrUnlock.text = "Equip $breedName"
+                b.btnEquipOrUnlock.isEnabled = true
+                b.btnEquipOrUnlock.setBackgroundResource(R.drawable.bg_pixel_dark_btn_equip)
+                b.btnEquipOrUnlock.setTextColor(getColor(R.color.pixel_dark_bg))
+            }
+            else -> {
+                b.btnEquipOrUnlock.text = "✨ Unlock $breedName"
+                b.btnEquipOrUnlock.isEnabled = true
+                b.btnEquipOrUnlock.setBackgroundResource(R.drawable.bg_pixel_dark_btn_unlock)
+                b.btnEquipOrUnlock.setTextColor(getColor(R.color.pixel_dark_ink_bright))
+            }
+        }
     }
 
-    private fun updatePixelGuardianUI() {
-        setPixelSettingsLocked(dataManager.isGuardianLockEnabled && !dataManager.isMaintenanceModeActive())
+    private fun updateDarkCardBadge(badgeView: ImageView, breedTheme: String) {
+        val isEquipped = (breedTheme == dataManager.kittyTheme)
+        val isUnlocked = dataManager.isThemeUnlocked(breedTheme)
+        if (isEquipped) {
+            badgeView.visibility = View.VISIBLE
+            badgeView.setBackgroundResource(R.drawable.bg_pixel_dark_badge_equipped)
+            badgeView.setImageResource(R.drawable.ic_check_24)
+            badgeView.imageTintList = ColorStateList.valueOf(getColor(R.color.pixel_dark_accent_mint))
+        } else if (isUnlocked) {
+            badgeView.visibility = View.GONE
+        } else {
+            badgeView.visibility = View.VISIBLE
+            badgeView.setBackgroundResource(R.drawable.bg_pixel_dark_badge_locked)
+            badgeView.setImageResource(R.drawable.ic_sec_lock)
+            badgeView.imageTintList = ColorStateList.valueOf(getColor(R.color.pixel_dark_awning_yellow))
+        }
     }
 
-    private fun setPixelSettingsLocked(locked: Boolean) {
-        val b = bindingPixel ?: return
+    private fun updateDarkGuardianUI() {
+        setDarkSettingsLocked(dataManager.isGuardianLockEnabled && !dataManager.isMaintenanceModeActive())
+    }
+
+    private fun setDarkSettingsLocked(locked: Boolean) {
+        val b = bindingDark ?: return
         val alpha = if (locked) 0.55f else 1.0f
         b.btnChangeLimit.alpha = alpha
         b.btnChangeLimit.isEnabled = !locked
@@ -1470,24 +1521,19 @@ class MainActivity : AppCompatActivity() {
 
     private fun showThemeSelectionDialog() {
         val themes = arrayOf(
-            "8-Bit Arcade (Retro Pixel)",
-            "Sticker Pop (Light)",
-            "Midnight OLED (Dark)"
+            "Sticker Pop (Light - Default)",
+            "8-Bit Arcade (Dark)"
         )
         val currentTheme = dataManager.getUiTheme()
-        val currentIndex = when (currentTheme) {
-            ScrollDataManager.UI_THEME_PIXEL -> 0
-            ScrollDataManager.UI_THEME_LIGHT -> 1
-            else -> 2
-        }
+        val currentIndex = if (currentTheme == ScrollDataManager.UI_THEME_LIGHT) 0 else 1
 
         MaterialAlertDialogBuilder(this)
             .setTitle("Theme & Appearance")
             .setSingleChoiceItems(themes, currentIndex) { dialog, which ->
-                val chosenTheme = when (which) {
-                    0 -> ScrollDataManager.UI_THEME_PIXEL
-                    1 -> ScrollDataManager.UI_THEME_LIGHT
-                    else -> ScrollDataManager.UI_THEME_DARK
+                val chosenTheme = if (which == 0) {
+                    ScrollDataManager.UI_THEME_LIGHT
+                } else {
+                    ScrollDataManager.UI_THEME_DARK
                 }
                 if (chosenTheme != currentTheme) {
                     dataManager.setUiTheme(chosenTheme)
@@ -1579,13 +1625,10 @@ class MainActivity : AppCompatActivity() {
 
     private fun updateThemeChips() {
         val isUnlocked = dataManager.isCosmeticPackUnlocked
-        if (isPixelMode) {
-            updatePixelModeCatUI()
-            return
-        }
         if (isLightMode) {
             updateLightModeCatUI()
-            return
+        } else {
+            updateDarkModeCatUI()
         }
         binding.btnUnlockCosmeticsBanner.visibility = if (isUnlocked) View.GONE else View.VISIBLE
 
@@ -1912,13 +1955,10 @@ class MainActivity : AppCompatActivity() {
 
     private fun updateGuardianUI() {
         val isUnlocked = dataManager.isMaintenanceModeActive()
-        if (isPixelMode) {
-            updatePixelGuardianUI()
-            return
-        }
         if (isLightMode) {
             updateLightGuardianUI()
-            return
+        } else {
+            updateDarkGuardianUI()
         }
         binding.llGuardianProtectedSettings.visibility = if (isUnlocked) View.VISIBLE else View.GONE
 
@@ -1952,27 +1992,10 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setSettingsLocked(locked: Boolean) {
-        val alpha = if (locked) 0.55f else 1.0f
-        if (isPixelMode) {
-            setPixelSettingsLocked(locked)
-        } else if (isLightMode) {
-            bindingLight?.let { b ->
-                b.etCustomLimit.alpha = alpha
-                b.btnSetCustomLimit.alpha = alpha
-                b.btnSetCustomLimit.isEnabled = !locked
-                b.switchInstagram.alpha = alpha
-                b.switchYouTube.alpha = alpha
-        b.switchSnapchat.alpha = alpha
-        b.switchFacebook.alpha = alpha
-            }
+        if (isLightMode) {
+            setLightSettingsLocked(locked)
         } else {
-            binding.tilCustomLimit.alpha = alpha
-            binding.btnSetCustomLimit.alpha = alpha
-            binding.btnSetCustomLimit.isEnabled = !locked
-            binding.switchInstagram.alpha = alpha
-            binding.switchYouTube.alpha = alpha
-            binding.switchSnapchat.alpha = alpha
-            binding.switchFacebook.alpha = alpha
+            setDarkSettingsLocked(locked)
         }
     }
 
@@ -2042,13 +2065,10 @@ class MainActivity : AppCompatActivity() {
         val screenHeight = resources.displayMetrics.heightPixels
         val pct = dataManager.getDropPercentage(screenHeight)
 
-        if (isPixelMode) {
-            updatePixelDashboard(count, max, pct)
-            return
-        }
         if (isLightMode) {
             updateLightDashboard(count, max, pct)
-            return
+        } else {
+            updateDarkDashboard(count, max, pct)
         }
 
         binding.tvScrollCount.text = count.toString()
@@ -2164,7 +2184,7 @@ class MainActivity : AppCompatActivity() {
             )
         )
 
-        val layoutRes = if (isLightMode || isPixelMode) R.layout.dialog_onboarding_light else R.layout.dialog_onboarding
+        val layoutRes = if (isLightMode) R.layout.dialog_onboarding_light else R.layout.dialog_onboarding
         val dialogView = layoutInflater.inflate(layoutRes, null)
         val displayWidth = resources.displayMetrics.widthPixels
         val density = resources.displayMetrics.density
@@ -2298,7 +2318,7 @@ class MainActivity : AppCompatActivity() {
         if (initialSetupDialog?.isShowing == true) return
         if (dataManager.isInitialSetupDone) return
 
-        val layoutRes = if (isLightMode || isPixelMode) R.layout.dialog_initial_setup_light else R.layout.dialog_initial_setup
+        val layoutRes = if (isLightMode) R.layout.dialog_initial_setup_light else R.layout.dialog_initial_setup
         val dialogView = layoutInflater.inflate(layoutRes, null)
         val displayWidth = resources.displayMetrics.widthPixels
         val density = resources.displayMetrics.density
@@ -2371,7 +2391,7 @@ class MainActivity : AppCompatActivity() {
     private fun showPermissionSetupDialog() {
         if (permissionSetupDialog?.isShowing == true) return
 
-        val layoutRes = if (isLightMode || isPixelMode) R.layout.dialog_permission_setup_light else R.layout.dialog_permission_setup
+        val layoutRes = if (isLightMode) R.layout.dialog_permission_setup_light else R.layout.dialog_permission_setup
         val dialogView = layoutInflater.inflate(layoutRes, null)
         val btnClose = dialogView.findViewById<android.widget.ImageView>(R.id.btnClosePermDialog)
         val btnSetupOverlay = dialogView.findViewById<TextView>(R.id.btnSetupOverlay)
@@ -2530,10 +2550,10 @@ class MainActivity : AppCompatActivity() {
         val tvCurrentThemeValue = sheetView.findViewById<TextView>(R.id.tvCurrentThemeValue)
 
         val currentTheme = dataManager.getUiTheme()
-        tvCurrentThemeValue?.text = when (currentTheme) {
-            ScrollDataManager.UI_THEME_PIXEL -> "8-Bit Arcade (Retro Pixel)"
-            ScrollDataManager.UI_THEME_LIGHT -> "Sticker Pop (Light)"
-            else -> "Midnight OLED (Dark)"
+        tvCurrentThemeValue?.text = if (currentTheme == ScrollDataManager.UI_THEME_LIGHT) {
+            "Sticker Pop (Light)"
+        } else {
+            "8-Bit Arcade (Dark)"
         }
 
         itemThemeMode?.setOnClickListener {
@@ -2545,7 +2565,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showChangeLimitDialog() {
-        val layoutRes = if (isLightMode || isPixelMode) R.layout.dialog_change_limit_light else R.layout.dialog_change_limit
+        val layoutRes = if (isLightMode) R.layout.dialog_change_limit_light else R.layout.dialog_change_limit
         val dialogView = layoutInflater.inflate(layoutRes, null)
         val etLimit = dialogView.findViewById<com.google.android.material.textfield.TextInputEditText>(R.id.etChangeLimit)
         val btnSave = dialogView.findViewById<TextView>(R.id.btnSaveChangeLimit)
@@ -2592,7 +2612,8 @@ class MainActivity : AppCompatActivity() {
             activeBlurCount++
             // Real, hardware GPU Gaussian blur directly on the activity dashboard behind the modal
             val blur = RenderEffect.createBlurEffect(50f, 50f, Shader.TileMode.CLAMP)
-            binding.root.setRenderEffect(blur)
+            val root = if (isLightMode) bindingLight?.root else bindingDark?.root
+            root?.setRenderEffect(blur)
         }
 
         dialog.setOnDismissListener {
@@ -2600,11 +2621,7 @@ class MainActivity : AppCompatActivity() {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 activeBlurCount = (activeBlurCount - 1).coerceAtLeast(0)
                 if (activeBlurCount == 0) {
-                    val root = when {
-                        isPixelMode -> bindingPixel?.root
-                        isLightMode -> bindingLight?.root
-                        else -> binding.root
-                    }
+                    val root = if (isLightMode) bindingLight?.root else bindingDark?.root
                     root?.setRenderEffect(null)
                 }
             }
@@ -2615,13 +2632,10 @@ class MainActivity : AppCompatActivity() {
         val isAccessibilityEnabled = isAccessibilityServiceEnabled(KittyAccessibilityService::class.java)
         val isOverlayEnabled = isOverlayPermissionGranted()
 
-        if (isPixelMode) {
-            updatePixelPermissions(isAccessibilityEnabled, isOverlayEnabled)
-            return
-        }
         if (isLightMode) {
             updateLightPermissions(isAccessibilityEnabled, isOverlayEnabled)
-            return
+        } else {
+            updateDarkPermissions(isAccessibilityEnabled, isOverlayEnabled)
         }
 
         // Header active status badge & floating permission notification

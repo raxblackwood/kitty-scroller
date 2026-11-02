@@ -54,4 +54,19 @@
     <color name="pixel_tally_filled">#1E1C2E</color>
     <color name="pixel_tally_empty">#C5BEB3</color>
     <color name="pixel_card_selected">#EAE0D0</color>
+    <!-- 8-Bit Arcade (Dark Theme) Palette -->
+    <color name="pixel_dark_bg">#12111A</color>
+    <color name="pixel_dark_card_bg">#1C1A27</color>
+    <color name="pixel_dark_card_surface">#221F32</color>
+    <color name="pixel_dark_card_selected">#2B253D</color>
+    <color name="pixel_dark_stroke">#37334D</color>
+    <color name="pixel_dark_stroke_selected">#F2B723</color>
+    <color name="pixel_dark_ink_bright">#FAF7F2</color>
+    <color name="pixel_dark_ink_muted">#9E98B0</color>
+    <color name="pixel_dark_awning_yellow">#F2B723</color>
+    <color name="pixel_dark_awning_amber">#DE9C18</color>
+    <color name="pixel_dark_tally_filled">#F2B723</color>
+    <color name="pixel_dark_tally_empty">#2E2A40</color>
+    <color name="pixel_dark_accent_mint">#2CE89B</color>
+    <color name="pixel_dark_accent_purple">#8B5CF6</color>
 </resources>
