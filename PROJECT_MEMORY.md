@@ -568,3 +568,12 @@ Anti-doomscrolling Android app dropping an animated kitten curtain over Instagra
   - Bumped release `versionCode` to 43 and `versionName` to "1.0.42" in `app/build.gradle.kts`.
   - Compiled signed release Android App Bundle (`dist/Clawse-v1.0.42-release.aab`) and release APK (`dist/Clawse-v1.0.42-release.apk`).
   - Stream-installed updated debug APK to connected phone (`000693485000641`) via ADB.
+
+- v1.0.43 Release Bundle (versionCode 44): Strict Settings Timer Reset on Dismiss & Backgrounding Prevention.
+  - Resolved the friction timer background bypass loophole in `BreathingFrictionActivity`.
+  - Closing the popup via Back button, "Keep My Focus" button, outside card tap, Home gesture, or app switcher now immediately terminates the timer and finishes the activity.
+  - Any subsequent attempt to open Clawse settings starts fresh with the full 60-second cooling-off countdown.
+  - Replaced `FLAG_ACTIVITY_SINGLE_TOP` with `FLAG_ACTIVITY_CLEAR_TASK` in `KittyAccessibilityService` for clean task recreation.
+  - Bumped release `versionCode` to 44 and `versionName` to "1.0.43" in `app/build.gradle.kts`.
+  - Compiled signed release Android App Bundle (`dist/Clawse-v1.0.43-release.aab`) and release APK (`dist/Clawse-v1.0.43-release.apk`).
+  - Stream-installed updated debug APK to connected phone (`000693485000641`) via ADB.

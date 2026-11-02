@@ -2563,7 +2563,7 @@ class KittyAccessibilityService : AccessibilityService() {
                         Toast.LENGTH_LONG
                     ).show()
                     val intent = Intent(applicationContext, GuardianUnlockActivity::class.java).apply {
-                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_CLEAR_TASK)
                     }
                     startActivity(intent)
                 } else {
@@ -2573,7 +2573,7 @@ class KittyAccessibilityService : AccessibilityService() {
                         Toast.LENGTH_LONG
                     ).show()
                     val intent = Intent(applicationContext, BreathingFrictionActivity::class.java).apply {
-                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_CLEAR_TASK)
                     }
                     startActivity(intent)
                 }
