@@ -548,3 +548,13 @@ Anti-doomscrolling Android app dropping an animated kitten curtain over Instagra
   - Bumped release `versionCode` to 41 and `versionName` to "1.0.40" in `app/build.gradle.kts`.
   - Compiled signed release Android App Bundle (`dist/Clawse-v1.0.40-release.aab`) and release APK (`dist/Clawse-v1.0.40-release.apk`).
   - Stream-installed updated debug APK to connected phone (`000693485000641`) via ADB.
+
+- v1.0.41 Release Bundle (versionCode 42): Play Store Blue Launcher Icon & Natural Pendulum Curtain Cat Swing.
+  - Upgraded app launcher icon across all Android densities (`mdpi`, `hdpi`, `xhdpi`, `xxhdpi`, `xxxhdpi`, `anydpi-v26`, `drawable-nodpi`) and Play Store 512x512 asset from `Cats/playstore_icon7.png`.
+  - Replaced legacy black launcher background with brand teal/blue (`#2E9FA2`), centering the Clawse pixel cat in the 66% adaptive icon safe zone.
+  - Replaced curtain overlay tail-wagging mesh deformation with smooth pendulum swinging anchored at the paws on the wooden pole (`stickTop` pivot).
+  - Synchronized curtain swing physics with the hero companion card (1800ms period, +/-3.2 degree arc, `AccelerateDecelerateInterpolator`).
+  - Added view lifecycle management in `KittyCurtainView` (`onAttachedToWindow`, `onDetachedFromWindow`) to pause and resume animators without memory leaks.
+  - Bumped release `versionCode` to 42 and `versionName` to "1.0.41" in `app/build.gradle.kts`.
+  - Compiled signed release Android App Bundle (`dist/Clawse-v1.0.41-release.aab`) and release APK (`dist/Clawse-v1.0.41-release.apk`).
+  - Stream-installed updated debug APK to connected phone (`000693485000641`) via ADB.

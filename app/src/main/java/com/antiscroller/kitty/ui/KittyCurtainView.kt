@@ -188,16 +188,9 @@ class KittyCurtainView @JvmOverloads constructor(
     private var animatedProgress: Float = 0f
     private var animator: ValueAnimator? = null
 
-    // Tail wagging animation for Ginger & Tabby
-    private var tailAngle: Float = 0f
-    private var tailAnimator: ValueAnimator? = null
-
-    // Body swaying animation for Ginger & Tabby (gradient starting midway down the hands)
-    private var bodySwayOffset: Float = 0f
+    // Natural pendulum swinging for all hanging breeds, matching companion cat in app menu
+    private var swayAngle: Float = 0f
     private var swayAnimator: ValueAnimator? = null
-    private val meshCols = 4
-    private val meshRows = 12
-    private val bodyMeshVerts = FloatArray((meshCols + 1) * (meshRows + 1) * 2)
 
     // Animated sprite animation loops for Saturn (pull-up cat)
     private var spriteFrameIndex: Int = 0
@@ -365,39 +358,21 @@ class KittyCurtainView @JvmOverloads constructor(
     }
 
     private fun startAnimations() {
-        // 1. Lively tail wagging for all hanging breeds (Saturn uses pull-up sprite loop)
-        tailAnimator?.cancel()
-        tailAnimator = ValueAnimator.ofFloat(-12f, 12f).apply {
-            duration = 850
-            repeatMode = ValueAnimator.REVERSE
-            repeatCount = ValueAnimator.INFINITE
-            interpolator = AccelerateDecelerateInterpolator()
-            addUpdateListener {
-                tailAngle = it.animatedValue as Float
-                if (currentBreed != CatBreed.SATURN) {
-                    invalidate()
-                }
-            }
-            start()
-        }
-
-        // 2. Slow, gentle body swaying/blowing in the breeze for all hanging breeds (except Saturn)
+        // Natural pendulum swinging for all hanging breeds, matching the companion cat in the app menu
         swayAnimator?.cancel()
-        swayAnimator = ValueAnimator.ofFloat(-9f, 9f).apply {
-            duration = 2400
+        swayAnimator = ValueAnimator.ofFloat(-3.2f, 3.2f).apply {
+            duration = 1800
             repeatMode = ValueAnimator.REVERSE
             repeatCount = ValueAnimator.INFINITE
             interpolator = AccelerateDecelerateInterpolator()
             addUpdateListener {
-                bodySwayOffset = it.animatedValue as Float
-                if (currentBreed != CatBreed.SATURN) {
-                    invalidate()
-                }
+                swayAngle = it.animatedValue as Float
+                invalidate()
             }
             start()
         }
 
-        // 3. Fluid pull-up cartoon animation loop for Saturn (~180ms per frame)
+        // Fluid pull-up cartoon animation loop for Saturn (~180ms per frame)
         spriteAnimator?.cancel()
         spriteAnimator = ValueAnimator.ofInt(0, 7).apply {
             duration = 1440
@@ -442,6 +417,18 @@ class KittyCurtainView @JvmOverloads constructor(
             }
             start()
         }
+    }
+
+    override fun onAttachedToWindow() {
+        super.onAttachedToWindow()
+        startAnimations()
+    }
+
+    override fun onDetachedFromWindow() {
+        super.onDetachedFromWindow()
+        swayAnimator?.cancel()
+        spriteAnimator?.cancel()
+        animator?.cancel()
     }
 
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
@@ -528,9 +515,9 @@ class KittyCurtainView @JvmOverloads constructor(
             drawExtendedStick(canvas, totalW, stickTop, stickBottom)
         }
 
-        // 3. Draw Hanging Cat sprite (stick stays rock-solid, animated paws/body/tail)
+        // 3. Draw Hanging Cat sprite (stick stays rock-solid, cat sways like a pendulum)
         val catTop = stickTop - (catH * stickTopRatio)
-        drawHangingSpriteCat(canvas, centerX, catTop, catW, catH)
+        drawHangingSpriteCat(canvas, centerX, catTop, catW, catH, stickTop, stickBottom)
 
         canvas.restore()
     }
@@ -567,9 +554,23 @@ class KittyCurtainView @JvmOverloads constructor(
         canvas.drawRect(0f, stickBottom - borderThick, w, stickBottom, poleOutlinePaint)
     }
 
-    private fun drawHangingSpriteCat(canvas: Canvas, centerX: Float, catTop: Float, catW: Float, catH: Float) {
+    private fun drawHangingSpriteCat(
+        canvas: Canvas,
+        centerX: Float,
+        catTop: Float,
+        catW: Float,
+        catH: Float,
+        stickTop: Float,
+        stickBottom: Float
+    ) {
         val catLeft = centerX - (catW / 2f)
         catRect.set(catLeft, catTop, catLeft + catW, catTop + catH)
+
+        // The paws grip the horizontal pole; the cat sways like a natural pendulum from that grip anchor point
+        val pivotY = stickTop + (stickBottom - stickTop) * 0.5f
+
+        canvas.save()
+        canvas.rotate(swayAngle, centerX, pivotY)
 
         if (currentBreed == CatBreed.SATURN) {
             val frame = if (saturnBitmaps.isNotEmpty()) {
@@ -579,6 +580,7 @@ class KittyCurtainView @JvmOverloads constructor(
             if (frame != null) {
                 canvas.drawBitmap(frame, null, catRect, catPaint)
             }
+            canvas.restore()
             return
         }
 
@@ -586,23 +588,7 @@ class KittyCurtainView @JvmOverloads constructor(
         if (currentBreed == CatBreed.GINGER || currentBreed == CatBreed.TABBY) {
             val tailBmp = tailBitmap
             if (tailBmp != null) {
-                val isTabby = currentBreed == CatBreed.TABBY
-                val tailPivotXRatio = if (isTabby) 0.5207f else 0.5334f
-                val tailPivotYRatio = 0.6885f
-
-                // Hip displacement at y = 0.6885f (follows body sway gradient)
-                val hipSwayFactor = Math.pow(((tailPivotYRatio - 0.086f) / (1f - 0.086f)).coerceIn(0f, 1f).toDouble(), 1.2).toFloat()
-                val hipDx = bodySwayOffset * hipSwayFactor
-
-                canvas.save()
-                val tailPivotX = catRect.left + catW * tailPivotXRatio + hipDx
-                val tailPivotY = catRect.top + catH * tailPivotYRatio
-                canvas.rotate(tailAngle, tailPivotX, tailPivotY)
-
-                catRect.offset(hipDx, 0f)
                 canvas.drawBitmap(tailBmp, null, catRect, catPaint)
-                catRect.offset(-hipDx, 0f)
-                canvas.restore()
             }
         }
 
@@ -612,40 +598,13 @@ class KittyCurtainView @JvmOverloads constructor(
             CatBreed.KATRINA -> katrinaBitmap
             CatBreed.CASPER -> casperBitmap
             else -> bodyBitmap
-        } ?: return
-
-        val isFullArtBreed = (currentBreed == CatBreed.ROLEX || currentBreed == CatBreed.SALMON || currentBreed == CatBreed.KATRINA || currentBreed == CatBreed.CASPER)
-
-        // Body gentle sway & tail wagging:
-        // Paws stay 100% rock-solid and stationary at the wooden pole (swayFactor = 0 for yRatio <= 0.086f).
-        // Body swings smoothly with bodySwayOffset.
-        // For Rolex, Salmon & Katrina, the curled tail at bottom-right wiggles playfully with tailAngle!
-        var vertIdx = 0
-        for (r in 0..meshRows) {
-            val yRatio = r.toFloat() / meshRows
-            val origY = catRect.top + catH * yRatio
-            val swayFactor = if (yRatio <= 0.086f) {
-                0f
-            } else {
-                Math.pow(((yRatio - 0.086f) / (1f - 0.086f)).toDouble(), 1.2).toFloat()
-            }
-            val baseDx = bodySwayOffset * swayFactor
-
-            for (c in 0..meshCols) {
-                val xRatio = c.toFloat() / meshCols
-                val origX = catRect.left + catW * xRatio
-
-                val tailWagDx = if (isFullArtBreed && r >= meshRows * 0.65f && c >= meshCols / 2) {
-                    val rFactor = (r - meshRows * 0.65f) / (meshRows * 0.35f)
-                    val cFactor = (c - meshCols / 2f) / (meshCols / 2f)
-                    (tailAngle * 0.65f) * (rFactor * cFactor)
-                } else 0f
-
-                bodyMeshVerts[vertIdx++] = origX + baseDx + tailWagDx
-                bodyMeshVerts[vertIdx++] = origY
-            }
         }
-        canvas.drawBitmapMesh(bodyBmp, meshCols, meshRows, bodyMeshVerts, 0, null, 0, catPaint)
+
+        if (bodyBmp != null) {
+            canvas.drawBitmap(bodyBmp, null, catRect, catPaint)
+        }
+
+        canvas.restore()
     }
 
     private fun drawFullSleepyCat(canvas: Canvas, totalH: Float, centerX: Float, totalW: Float) {
