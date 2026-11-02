@@ -577,3 +577,14 @@ Anti-doomscrolling Android app dropping an animated kitten curtain over Instagra
   - Bumped release `versionCode` to 44 and `versionName` to "1.0.43" in `app/build.gradle.kts`.
   - Compiled signed release Android App Bundle (`dist/Clawse-v1.0.43-release.aab`) and release APK (`dist/Clawse-v1.0.43-release.apk`).
   - Stream-installed updated debug APK to connected phone (`000693485000641`) via ADB.
+- v1.0.44 Release Bundle (versionCode 45): Staged Cat Purr & Growl Audio Feedback with Settings Toggle.
+  - Implemented authentic acoustic cat audio feedback in two distinct stages as the curtain descends.
+  - Stage 1 (50% drop / halfway down): Gentle soothing cat purr (3.5s 44.1kHz stereo PCM WAV `cat_purr_normal.wav`).
+  - Stage 2 (75% drop): Agitated angry cat purr / low guttural growl and hiss (3.0s 44.1kHz stereo PCM WAV `cat_purr_angry.wav`).
+  - Built `CatPurrSoundManager.kt` using Android `SoundPool` with `USAGE_ASSISTANCE_SONIFICATION` for zero-lag in-memory sound effect playback.
+  - Connected `KittyOverlayManager.showOrUpdateOverlay` to trigger stage sounds when crossing 50% and 75% thresholds.
+  - Added debounce logic: stages reset if curtain retracts below 40% or when daily scrolls reset, and audio immediately halts on overlay dismissal.
+  - Added "CAT PURR AUDIO" configuration card (`cardPurrSound`) with enable/disable switch (`switchPurrSound`) and preview test buttons (`btnTestNormalPurr`, `btnTestAngryPurr`) to both 8-Bit Arcade Dark (`activity_main_pixel.xml`) and Sticker Pop Light (`activity_main_light.xml`) themes.
+  - Stored user audio preference in `ScrollDataManager.isPurrSoundEnabled` (default `true`).
+  - Bumped release `versionCode` to 45 and `versionName` to "1.0.44" in `app/build.gradle.kts`.
+  - Compiled signed release Android App Bundle (`dist/Clawse-v1.0.44-release.aab`) and release APK (`dist/Clawse-v1.0.44-release.apk`).

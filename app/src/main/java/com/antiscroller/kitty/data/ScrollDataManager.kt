@@ -1,6 +1,7 @@
 package com.antiscroller.kitty.data
 
 import android.content.Context
+import com.antiscroller.kitty.audio.CatPurrSoundManager
 import android.content.SharedPreferences
 import android.os.Handler
 import android.os.Looper
@@ -15,7 +16,7 @@ import java.util.Calendar
  * Manages daily scroll distance, limits, target apps, kitty themes,
  * automatic midnight resets, and Parent / Accountability Partner Security PIN control.
  */
-class ScrollDataManager(context: Context) {
+class ScrollDataManager(private val context: Context) {
 
     private val prefs: SharedPreferences =
         context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
@@ -57,6 +58,8 @@ class ScrollDataManager(context: Context) {
         private const val KEY_MAINTENANCE_EXPIRES = "maintenance_expires_ts"
         private const val KEY_INITIAL_SETUP_DONE = "initial_setup_done"
         private const val KEY_DAILY_HISTORY = "daily_history_records"
+        private const val KEY_PURR_SOUND_ENABLED = "cat_purr_sound_enabled"
+
 
         // Anti-Impulse Cooling-Off Keys
         private const val KEY_PENDING_MAX_SCROLLS = "pending_max_scrolls"
@@ -240,6 +243,12 @@ class ScrollDataManager(context: Context) {
         get() = prefs.getBoolean(KEY_TARGET_FACEBOOK, true)
         set(value) {
             prefs.edit().putBoolean(KEY_TARGET_FACEBOOK, value).apply()
+        }
+
+    var isPurrSoundEnabled: Boolean
+        get() = prefs.getBoolean(KEY_PURR_SOUND_ENABLED, true)
+        set(value) {
+            prefs.edit().putBoolean(KEY_PURR_SOUND_ENABLED, value).apply()
         }
 
     var pendingMaxDailyScrolls: Int
@@ -492,6 +501,9 @@ class ScrollDataManager(context: Context) {
             .putInt(KEY_SCROLL_COUNT, 0)
             .putFloat(KEY_ACCUMULATED_PX, 0f)
             .apply()
+        try {
+            CatPurrSoundManager.getInstance(context).resetStages()
+        } catch (_: Exception) {}
     }
 
     fun isPackageMonitored(packageName: String): Boolean {

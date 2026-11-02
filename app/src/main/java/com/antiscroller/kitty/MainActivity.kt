@@ -51,6 +51,7 @@ import com.antiscroller.kitty.databinding.ActivityMainBinding
 import com.antiscroller.kitty.guardian.GuardianAlertManager
 import com.antiscroller.kitty.guardian.GuardianLinkManager
 import com.antiscroller.kitty.overlay.KittyOverlayManager
+import com.antiscroller.kitty.audio.CatPurrSoundManager
 import com.antiscroller.kitty.service.KittyAccessibilityService
 import com.antiscroller.kitty.ui.PaywallBottomSheetDialog
 import com.antiscroller.kitty.ui.ProgressHistoryBottomSheetDialog
@@ -78,6 +79,7 @@ class MainActivity : AppCompatActivity() {
     private var catSwayAnimator: ObjectAnimator? = null
     private lateinit var dataManager: ScrollDataManager
     private lateinit var overlayManager: KittyOverlayManager
+    private lateinit var purrSoundManager: CatPurrSoundManager
     private lateinit var devicePolicyManager: DevicePolicyManager
     private lateinit var adminComponent: ComponentName
     private lateinit var billingManager: BillingManager
@@ -153,6 +155,7 @@ class MainActivity : AppCompatActivity() {
             }
         }
         overlayManager = KittyOverlayManager.getInstance(this)
+        purrSoundManager = CatPurrSoundManager.getInstance(this)
         devicePolicyManager = getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
         adminComponent = ComponentName(this, KittyAdminReceiver::class.java)
 
@@ -801,6 +804,25 @@ class MainActivity : AppCompatActivity() {
                 .show()
         }
 
+        // Cat Purr Audio Settings
+        b.switchPurrSound.isChecked = dataManager.isPurrSoundEnabled
+        b.switchPurrSound.setOnCheckedChangeListener { _, isChecked ->
+            dataManager.isPurrSoundEnabled = isChecked
+            Toast.makeText(
+                this,
+                if (isChecked) "Cat purr audio enabled" else "Cat purr audio disabled",
+                Toast.LENGTH_SHORT
+            ).show()
+        }
+        b.btnTestNormalPurr.setOnClickListener {
+            purrSoundManager.playNormalPurr()
+            Toast.makeText(this, "Playing 50% gentle purr preview", Toast.LENGTH_SHORT).show()
+        }
+        b.btnTestAngryPurr.setOnClickListener {
+            purrSoundManager.playAngryPurr()
+            Toast.makeText(this, "Playing 75% angry growl preview", Toast.LENGTH_SHORT).show()
+        }
+
         setupDarkAppSwitches()
         updateDarkGuardianUI()
         updateDeviceOwnerUI()
@@ -1402,6 +1424,25 @@ class MainActivity : AppCompatActivity() {
                 )
                 .setPositiveButton("Got It", null)
                 .show()
+        }
+
+        // Cat Purr Audio Settings
+        b.switchPurrSound.isChecked = dataManager.isPurrSoundEnabled
+        b.switchPurrSound.setOnCheckedChangeListener { _, isChecked ->
+            dataManager.isPurrSoundEnabled = isChecked
+            Toast.makeText(
+                this,
+                if (isChecked) "Cat purr audio enabled" else "Cat purr audio disabled",
+                Toast.LENGTH_SHORT
+            ).show()
+        }
+        b.btnTestNormalPurr.setOnClickListener {
+            purrSoundManager.playNormalPurr()
+            Toast.makeText(this, "Playing 50% gentle purr preview", Toast.LENGTH_SHORT).show()
+        }
+        b.btnTestAngryPurr.setOnClickListener {
+            purrSoundManager.playAngryPurr()
+            Toast.makeText(this, "Playing 75% angry growl preview", Toast.LENGTH_SHORT).show()
         }
 
         b.btnUnlockCosmeticsBanner.setOnClickListener {

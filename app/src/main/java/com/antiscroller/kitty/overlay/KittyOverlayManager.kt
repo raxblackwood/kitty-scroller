@@ -9,6 +9,7 @@ import android.util.Log
 import android.view.Gravity
 import android.view.View
 import android.view.WindowManager
+import com.antiscroller.kitty.audio.CatPurrSoundManager
 import com.antiscroller.kitty.data.ScrollDataManager
 import com.antiscroller.kitty.ui.KittyCurtainView
 
@@ -33,6 +34,7 @@ class KittyOverlayManager(private val context: Context) {
     }
 
     private val windowManager = context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
+    private val purrSoundManager = CatPurrSoundManager.getInstance(context)
     private val mainHandler = Handler(Looper.getMainLooper())
     private var overlayView: View? = null
     private var kittyCurtainView: KittyCurtainView? = null
@@ -90,6 +92,7 @@ class KittyOverlayManager(private val context: Context) {
             val shouldAnimate = animate && wasAttached
             kittyCurtainView?.setDropPercentage(currentDropPercentage, animate = shouldAnimate)
             updateTouchFlags(isFullScreenCovered = currentDropPercentage >= 0.98f)
+            purrSoundManager.onDropPercentageChanged(currentDropPercentage)
         }
     }
 
@@ -110,6 +113,7 @@ class KittyOverlayManager(private val context: Context) {
                 kittyCurtainView = null
                 lastAppliedTheme = ""
                 lastFullScreenCovered = null
+                purrSoundManager.stopCurrentSound()
             }
         }
     }
