@@ -8,6 +8,7 @@ import android.content.Intent
 
 import android.content.pm.PackageManager
 
+import android.os.Build
 import android.os.Handler
 
 import android.os.Looper
@@ -178,27 +179,11 @@ class KittyAccessibilityService : AccessibilityService() {
 
 
 
-    private var pendingDropPercentage: Float? = null
-
-    private val overlayUpdateRunnable = Runnable {
-
-        val pct = pendingDropPercentage ?: return@Runnable
-
-        pendingDropPercentage = null
-
-        overlayManager.showOrUpdateOverlay(pct, animate = true)
-
-    }
-
-
-
     private fun scheduleOverlayUpdate(dropPercentage: Float) {
 
-        pendingDropPercentage = dropPercentage
-
-        mainHandler.removeCallbacks(overlayUpdateRunnable)
-
-        mainHandler.post(overlayUpdateRunnable)
+        // Hand straight to the overlay thread. Re-posting through this (event-saturated) main thread
+        // starved the update for the whole fling (600-800ms measured).
+        overlayManager.showOrUpdateOverlay(dropPercentage)
 
     }
 
@@ -307,7 +292,17 @@ class KittyAccessibilityService : AccessibilityService() {
 
         if (isSettingsOrInstaller(eventPkg)) {
 
-            checkAndApplyUninstallProtection(eventPkg)
+            // Each check is ~10 cross-process node queries; coalesce content-change storms (scrolling Settings)
+            // into one trailing check per 150ms, but evaluate window changes (dialogs opening) immediately
+            pendingProtectionPkg = eventPkg
+
+            if (event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
+                mainHandler.removeCallbacks(protectionCheckRunnable)
+                protectionCheckRunnable.run()
+            } else if (!isProtectionCheckScheduled) {
+                isProtectionCheckScheduled = true
+                mainHandler.postDelayed(protectionCheckRunnable, 150L)
+            }
 
         }
 
@@ -325,7 +320,7 @@ class KittyAccessibilityService : AccessibilityService() {
 
                 currentForegroundPackage = eventPkg
 
-                mainHandler.post { overlayManager.hideOverlay() }
+                overlayManager.hideOverlay()
 
                 return
 
@@ -359,7 +354,7 @@ class KittyAccessibilityService : AccessibilityService() {
 
             currentForegroundPackage = eventPkg
 
-            mainHandler.post { overlayManager.hideOverlay() }
+            overlayManager.hideOverlay()
 
         }
 
@@ -1539,7 +1534,7 @@ class KittyAccessibilityService : AccessibilityService() {
 
             if (dropPercentage <= 0.0001f) {
 
-                mainHandler.post { overlayManager.hideOverlay() }
+                overlayManager.hideOverlay()
 
             } else {
 
@@ -1551,31 +1546,19 @@ class KittyAccessibilityService : AccessibilityService() {
 
                     if (isSpotlight) {
 
-                        mainHandler.post {
-
-                            overlayManager.showOrUpdateOverlay(dropPercentage, animate = false)
-
-                        }
+                        overlayManager.showOrUpdateOverlay(dropPercentage)
 
                     } else {
 
-                        mainHandler.post {
-
-                            overlayManager.hideOverlay()
-
-                        }
+                        overlayManager.hideOverlay()
 
                     }
 
                 } else {
 
-                    mainHandler.post {
+                    // Position statically on resume/window switch; never animate down from 0
 
-                        // Position statically on resume/window switch; never animate down from 0
-
-                        overlayManager.showOrUpdateOverlay(dropPercentage, animate = false)
-
-                    }
+                        overlayManager.showOrUpdateOverlay(dropPercentage)
 
                 }
 
@@ -1593,11 +1576,7 @@ class KittyAccessibilityService : AccessibilityService() {
 
             currentForegroundPackage = packageName
 
-            mainHandler.post {
-
-                overlayManager.hideOverlay()
-
-            }
+            overlayManager.hideOverlay()
 
             return
 
@@ -1611,11 +1590,7 @@ class KittyAccessibilityService : AccessibilityService() {
 
             checkAndApplyUninstallProtection(packageName)
 
-            mainHandler.post {
-
-                overlayManager.hideOverlay()
-
-            }
+            overlayManager.hideOverlay()
 
             return
 
@@ -1653,11 +1628,7 @@ class KittyAccessibilityService : AccessibilityService() {
 
             if (dropPercentage > 0.0001f) {
 
-                mainHandler.post {
-
-                    overlayManager.showOrUpdateOverlay(dropPercentage, animate = false)
-
-                }
+                overlayManager.showOrUpdateOverlay(dropPercentage)
 
                 return
 
@@ -1669,11 +1640,7 @@ class KittyAccessibilityService : AccessibilityService() {
 
         // Outside monitored apps: hide overlay
 
-        mainHandler.post {
-
-            overlayManager.hideOverlay()
-
-        }
+        overlayManager.hideOverlay()
 
     }
 
@@ -1737,7 +1704,7 @@ class KittyAccessibilityService : AccessibilityService() {
 
                     // For Snapchat: if scrolling on a non-spotlight screen (Chat, Stories list, Camera), ensure overlay is hidden
 
-                    mainHandler.post { overlayManager.hideOverlay() }
+                    overlayManager.hideOverlay()
 
                 }
 
@@ -1749,9 +1716,13 @@ class KittyAccessibilityService : AccessibilityService() {
 
 
 
-            val deltaX = event.scrollDeltaX
+            // Scroll deltas are API 28+; on Android 8 they would throw NoSuchMethodError and kill the service.
+            // Pagers still advance via fromIndex there.
+            val hasDeltas = Build.VERSION.SDK_INT >= Build.VERSION_CODES.P
 
-            val deltaY = event.scrollDeltaY
+            val deltaX = if (hasDeltas) event.scrollDeltaX else 0
+
+            val deltaY = if (hasDeltas) event.scrollDeltaY else 0
 
 
 
@@ -1773,7 +1744,7 @@ class KittyAccessibilityService : AccessibilityService() {
 
                         if (isSpotlight && drop > 0.0001f) {
 
-                            overlayManager.showOrUpdateOverlay(drop, animate = false)
+                            overlayManager.showOrUpdateOverlay(drop)
 
                         } else {
 
@@ -1908,9 +1879,9 @@ class KittyAccessibilityService : AccessibilityService() {
                         return
                     }
                     if (fromIndex > lastIndex) {
-                        val diff = (fromIndex - lastIndex).coerceAtMost(3)
+                        // Index can jump (e.g. profile reel opened at grid position N); never charge more than one reel per event
                         updatePkgIndex(fromIndex)
-                        pixelsToAdd = screenHeight * diff * 0.85f
+                        pixelsToAdd = screenHeight * 0.85f
                         Log.i(TAG, "Reel page advanced: $lastIndex -> $fromIndex (+$pixelsToAdd px)")
                     } else {
                         updatePkgIndex(fromIndex)
@@ -2004,21 +1975,13 @@ class KittyAccessibilityService : AccessibilityService() {
 
                 if (dropPercentage > 0.0001f) {
 
-                    mainHandler.post {
-
-                        overlayManager.showOrUpdateOverlay(dropPercentage, animate = false)
-
-                    }
+                    overlayManager.showOrUpdateOverlay(dropPercentage)
 
                 }
 
             } else if (isOtherSnapchatTab) {
 
-                mainHandler.post {
-
-                    overlayManager.hideOverlay()
-
-                }
+                overlayManager.hideOverlay()
 
             }
 
@@ -2086,11 +2049,7 @@ class KittyAccessibilityService : AccessibilityService() {
 
 
 
-                mainHandler.post {
-
-                    overlayManager.showOrUpdateOverlay(newDropPercentage)
-
-                }
+                overlayManager.showOrUpdateOverlay(newDropPercentage)
 
             }
 
@@ -2241,6 +2200,15 @@ class KittyAccessibilityService : AccessibilityService() {
 
 
     private var lastProtectionTriggerTs = 0L
+
+    private var pendingProtectionPkg: String? = null
+
+    private var isProtectionCheckScheduled = false
+
+    private val protectionCheckRunnable = Runnable {
+        isProtectionCheckScheduled = false
+        pendingProtectionPkg?.let { checkAndApplyUninstallProtection(it) }
+    }
 
 
 

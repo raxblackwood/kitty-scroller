@@ -227,6 +227,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onDestroy() {
+        // The delayed permission re-checks posted in onResume must not run against a destroyed activity
+        handler.removeCallbacksAndMessages(null)
         pairingListener?.remove()
         pairingListener = null
         appOpsListener?.let {
@@ -2132,7 +2134,7 @@ class MainActivity : AppCompatActivity() {
                 if (dataManager.verifyPin(currentPin)) {
                     showNewPinPromptDialog()
                 } else {
-                    Toast.makeText(this, "Incorrect current PIN!", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this, wrongPinMessage("Incorrect current PIN!"), Toast.LENGTH_SHORT).show()
                 }
             }
         } else {
@@ -2160,9 +2162,14 @@ class MainActivity : AppCompatActivity() {
                 updateGuardianUI()
                 Toast.makeText(this, "🔓 Settings unlocked for 5 minutes.", Toast.LENGTH_SHORT).show()
             } else {
-                Toast.makeText(this, "Incorrect PIN!", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, wrongPinMessage("Incorrect PIN!"), Toast.LENGTH_SHORT).show()
             }
         }
+    }
+
+    private fun wrongPinMessage(incorrect: String): String {
+        val lockedSeconds = dataManager.getPinLockoutRemainingSeconds()
+        return if (lockedSeconds > 0) "Too many wrong PINs. Try again in ${lockedSeconds}s." else incorrect
     }
 
     private fun showPromptDialog(title: String, isPassword: Boolean, onConfirmed: (String) -> Unit) {

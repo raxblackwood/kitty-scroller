@@ -3,6 +3,7 @@ package com.antiscroller.kitty.worker
 import android.content.Context
 import android.util.Log
 import androidx.work.*
+import com.antiscroller.kitty.audio.CatPurrSoundManager
 import com.antiscroller.kitty.data.ScrollDataManager
 import java.util.Calendar
 import java.util.concurrent.TimeUnit
@@ -53,8 +54,11 @@ class DailyResetWorker(
 
     override fun doWork(): Result {
         Log.i(TAG, "Executing midnight reset of Kitty Curtain...")
-        val dataManager = ScrollDataManager.getInstance(applicationContext)
-        dataManager.resetDailyCount()
+        // Date-based and idempotent: the 15 min flex window can fire this before midnight, and a blind
+        // resetDailyCount() then wiped the day's count early and recorded it as 0 in history
+        if (ScrollDataManager.getInstance(applicationContext).checkAndPerformMidnightReset()) {
+            CatPurrSoundManager.getInstance(applicationContext).resetStages()
+        }
         return Result.success()
     }
 }

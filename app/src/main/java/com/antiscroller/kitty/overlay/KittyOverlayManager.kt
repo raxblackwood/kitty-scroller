@@ -3,7 +3,7 @@ package com.antiscroller.kitty.overlay
 import android.content.Context
 import android.graphics.PixelFormat
 import android.os.Handler
-import android.os.Looper
+import android.os.HandlerThread
 import android.provider.Settings
 import android.util.Log
 import android.view.Gravity
@@ -35,9 +35,13 @@ class KittyOverlayManager(private val context: Context) {
 
     private val windowManager = context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
     private val purrSoundManager = CatPurrSoundManager.getInstance(context)
-    private val mainHandler = Handler(Looper.getMainLooper())
+    // The overlay lives on its own looper thread: the service's main thread is saturated by accessibility
+    // events during a fling (each Instagram check blocks on cross-process node queries), which froze the
+    // curtain's animation for 600-800ms at a time. All view work below runs on this thread.
+    private val overlayHandler = Handler(HandlerThread("ClawseOverlay").apply { start() }.looper)
     private var overlayView: View? = null
     private var kittyCurtainView: KittyCurtainView? = null
+    @Volatile
     private var isOverlayAttached = false
     private var currentDropPercentage: Float = 0f
     private var lastAppliedTheme: String = ""
@@ -70,7 +74,7 @@ class KittyOverlayManager(private val context: Context) {
      * Shows or updates the Kitty Curtain overlay with the user's selected kitty breed.
      */
     @Synchronized
-    fun showOrUpdateOverlay(dropPercentage: Float, animate: Boolean = true) {
+    fun showOrUpdateOverlay(dropPercentage: Float) {
         if (!canDrawOverlay()) {
             Log.w(TAG, "Cannot draw overlay: permission not granted.")
             return
@@ -79,7 +83,7 @@ class KittyOverlayManager(private val context: Context) {
         val theme = ScrollDataManager.getInstance(context).kittyTheme
         currentDropPercentage = dropPercentage.coerceIn(0f, 1f)
 
-        mainHandler.post {
+        overlayHandler.post {
             val wasAttached = isOverlayAttached && overlayView != null
             if (!wasAttached) {
                 attachOverlay()
@@ -88,9 +92,9 @@ class KittyOverlayManager(private val context: Context) {
                 lastAppliedTheme = theme
                 kittyCurtainView?.applyTheme(theme)
             }
-            // If freshly attached, never animate down from 0; position statically
-            val shouldAnimate = animate && wasAttached
-            kittyCurtainView?.setDropPercentage(currentDropPercentage, animate = shouldAnimate)
+            // Freshly attached: position statically, never animate down from 0. Already attached: always spring,
+            // because Instagram fires same-package window changes mid-fling and snapping there made the curtain jump.
+            kittyCurtainView?.setDropPercentage(currentDropPercentage, animate = wasAttached)
             updateTouchFlags(isFullScreenCovered = currentDropPercentage >= 0.98f)
             purrSoundManager.onDropPercentageChanged(currentDropPercentage)
         }
@@ -101,7 +105,7 @@ class KittyOverlayManager(private val context: Context) {
      */
     @Synchronized
     fun hideOverlay() {
-        mainHandler.post {
+        overlayHandler.post {
             if (isOverlayAttached && overlayView != null) {
                 try {
                     windowManager.removeView(overlayView)

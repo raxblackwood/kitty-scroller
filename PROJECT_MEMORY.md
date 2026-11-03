@@ -588,3 +588,36 @@ Anti-doomscrolling Android app dropping an animated kitten curtain over Instagra
   - Stored user audio preference in `ScrollDataManager.isPurrSoundEnabled` (default `true`).
   - Bumped release `versionCode` to 45 and `versionName` to "1.0.44" in `app/build.gradle.kts`.
   - Compiled signed release Android App Bundle (`dist/Clawse-v1.0.44-release.aab`) and release APK (`dist/Clawse-v1.0.44-release.apk`).
+- Unreleased fix: Profile reels over-dropped the curtain.
+  - Opening a reel from a profile grid jumps the pager index; `KittyAccessibilityService` charged up to 3 reels (`coerceAtMost(3)`) for that one jump.
+  - Discrete pagers now charge exactly one reel (`screenHeight * 0.85f`) per forward page advance.
+  - Not yet built or device-tested. Open: add a minimal visual cue to the curtain drop (scope to confirm with user).
+- Unreleased: Curtain drop cue and device install.
+  - `KittyCurtainView` draws a faint 3-step shadow under the stick only while the drop animator runs (`dropShadowPaint`).
+  - Debug APK installed on phone `000693485000641`; the old release-signed `com.clawse.app` was uninstalled first (signature mismatch, local data wiped).
+  - Accessibility service, overlay, and notification permissions re-enabled via ADB.
+  - Handshake responses answered in `Schema/Handshake/Handshake - ClawBack Device Check.md`.
+- Unreleased: Debug builds now signed with the release key (`app/build.gradle.kts` `debug { signingConfig = release }`), so `adb install -r` keeps PIN and data. Debug APK cert SHA-256 matches `keystore/release.jks`.
+- v1.0.45 (versionCode 46): Smooth curtain on hard flings, bounded history writes, release log stripping.
+  - Root cause (reproduced on device): Instagram coalesces a hard fling into a few ~2500px scroll events 40-500ms apart, and each event restarted a 320ms ease-out that stopped dead, so the curtain moved in a staircase. Rendering itself was clean (0 janky frames, no slow UI thread).
+  - `KittyCurtainView` now follows the target with a critically damped spring (`TimeAnimator` + `springStep`, omega 12 rad/s) that retargets without losing velocity and snaps instead of overshooting.
+  - Sway and Saturn sprite animators only invalidate while the hanging cat is visible (`isSwinging()`); a fully locked or hidden curtain no longer redraws the full-screen overlay every frame (540 frames per 5s down to 3).
+  - `ScrollDataManager.recordHistoryEntry` prunes entries older than 60 days, since the whole JSON is rewritten every 500ms while scrolling.
+  - `proguard-rules.pro` strips `Log.v/d/i` from release (the service logged every scroll event).
+  - New `CurtainSpringTest` replays a captured hard-fling event pattern: monotonic, no overshoot, no stall between bursts, converges.
+  - Built `dist/Clawse-v1.0.45-release.aab` and `.apk` (release key). The phone runs the same APK re-signed with the machine debug key, because the 19:34 install is debug-key signed and the active device admin blocks uninstall.
+  - Not device-verified visually: E2E flings hit today's limit (curtain fully locked), so motion is proven by the unit test only.
+  - The build currently on the phone is still debug-key signed. The next install needs one more uninstall, then updates are in-place.
+  - Antigravity re-enabled accessibility, overlay and notifications via ADB. The PIN must be set in the app. Awaiting on-device confirmation of the profile-reels fix and the drop shadow cue.
+- v1.0.46 (versionCode 47): Full-app recheck, curtain moved to its own render thread, 9 gap fixes.
+  - Root cause of the remaining hard-fling stall (measured with logs on device): the service main thread is saturated by accessibility events during a fling, and the overlay drew on that same thread, so updates landed 600-800ms late. `KittyOverlayManager` now owns a `ClawseOverlay` `HandlerThread`; all overlay view work runs there and the service calls it directly (no main-thread hop), keeping show/hide ordering.
+  - Already-attached overlays always spring to new targets; same-package window changes used to snap the curtain mid-fling.
+  - `KittyCurtainView` no longer starts infinite animators in its constructor (the never-attached preview inflated by `MainActivity` leaked them forever).
+  - `DailyResetWorker` calls the date-based `checkAndPerformMidnightReset()` instead of `resetDailyCount()`; the 15 min flex window could fire before midnight and wipe the day.
+  - `BillingManager.queryActivePurchases` mirrors Play both ways, so refunds and lapsed subscriptions revoke access.
+  - `verifyPin` locks out for 60s after 5 wrong tries (all PIN entry points), with the remaining time shown.
+  - Settings tamper checks are coalesced to one trailing check per 150ms, immediate on window changes (verified: App Info still opens the 60s friction screen).
+  - Android 8 crash fixed: `scrollDeltaX/Y` are API 28+, now guarded (pagers still count via `fromIndex`).
+  - Lint errors 5 to 0: removed redundant `onBackPressed` override, unused malformed string, `compileSdk` 36. `MainActivity` clears its handler on destroy.
+  - E2E on phone (clean uninstall + reinstall, permissions and device admin re-granted via adb): two hard flings now drop the curtain in one continuous motion (138 to 399px over ~600ms, no stalls), 1 janky frame of 1279.
+  - Built `dist/Clawse-v1.0.46-release.aab/.apk`; phone runs the release-key APK with today's count reset to 0.

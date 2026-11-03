@@ -97,6 +97,11 @@ class ScrollDataManager(private val context: Context) {
         const val THEME_BLACK = "black"
 
         const val DEFAULT_MAX_SCROLLS = 25
+        private const val HISTORY_RETENTION_DAYS = 60
+        private const val KEY_PIN_FAIL_COUNT = "guardian_pin_fail_count"
+        private const val KEY_PIN_LOCKED_UNTIL = "guardian_pin_locked_until"
+        private const val PIN_MAX_ATTEMPTS = 5
+        private const val PIN_LOCKOUT_MS = 60_000L
         const val PKG_INSTAGRAM = "com.instagram.android"
         const val PKG_YOUTUBE = "com.google.android.youtube"
         const val PKG_SNAPCHAT = "com.snapchat.android"
@@ -400,7 +405,27 @@ class ScrollDataManager(private val context: Context) {
     fun verifyPin(inputPin: String): Boolean {
         val stored = getGuardianPin()
         if (stored.isEmpty()) return true
-        return stored == inputPin.trim()
+        // A 4-digit PIN falls to unlimited guessing: lock out for a minute after 5 wrong tries
+        if (getPinLockoutRemainingSeconds() > 0) return false
+        if (stored == inputPin.trim()) {
+            prefs.edit().remove(KEY_PIN_FAIL_COUNT).apply()
+            return true
+        }
+        val fails = prefs.getInt(KEY_PIN_FAIL_COUNT, 0) + 1
+        if (fails >= PIN_MAX_ATTEMPTS) {
+            prefs.edit()
+                .remove(KEY_PIN_FAIL_COUNT)
+                .putLong(KEY_PIN_LOCKED_UNTIL, System.currentTimeMillis() + PIN_LOCKOUT_MS)
+                .apply()
+        } else {
+            prefs.edit().putInt(KEY_PIN_FAIL_COUNT, fails).apply()
+        }
+        return false
+    }
+
+    fun getPinLockoutRemainingSeconds(): Long {
+        val remainingMs = prefs.getLong(KEY_PIN_LOCKED_UNTIL, 0L) - System.currentTimeMillis()
+        return if (remainingMs > 0) (remainingMs + 999) / 1000 else 0L
     }
 
     /**
@@ -534,6 +559,9 @@ class ScrollDataManager(private val context: Context) {
                 put("limit", limit)
             }
             jsonObj.put(date, entryObj)
+            // Rewritten every 500ms while scrolling, so keep it bounded (UI shows at most 14 days)
+            val cutoff = dateFormat.format(Date(System.currentTimeMillis() - HISTORY_RETENTION_DAYS * 86_400_000L))
+            jsonObj.keys().asSequence().filter { it < cutoff }.toList().forEach { jsonObj.remove(it) }
             prefs.edit().putString(KEY_DAILY_HISTORY, jsonObj.toString()).apply()
         } catch (e: Exception) {
             Log.e("ScrollDataManager", "Error saving daily history: ${e.message}")

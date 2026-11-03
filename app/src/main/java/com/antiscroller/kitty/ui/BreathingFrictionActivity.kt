@@ -186,12 +186,6 @@ class BreathingFrictionActivity : AppCompatActivity() {
         finish()
     }
 
-    @Deprecated("Deprecated in Java")
-    override fun onBackPressed() {
-        // Prevent bypassing the friction screen via Back button to reach settings
-        returnToHome()
-    }
-
     override fun onDestroy() {
         super.onDestroy()
         countdownTimer?.cancel()

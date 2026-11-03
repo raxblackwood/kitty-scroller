@@ -6,14 +6,14 @@ plugins {
 
 android {
     namespace = "com.antiscroller.kitty"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.clawse.app"
         minSdk = 26
         targetSdk = 36
-        versionCode = 45
-        versionName = "1.0.44"
+        versionCode = 47
+        versionName = "1.0.46"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
@@ -34,6 +34,10 @@ android {
     }
 
     buildTypes {
+        debug {
+            // Same key as release so adb install -r keeps PIN and data across iterations
+            signingConfig = signingConfigs.getByName("release")
+        }
         release {
             isMinifyEnabled = true
             isShrinkResources = true

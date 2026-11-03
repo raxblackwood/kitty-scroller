@@ -1,12 +1,12 @@
 package com.antiscroller.kitty.ui
 
+import android.animation.TimeAnimator
 import android.animation.ValueAnimator
 import android.content.Context
 import android.graphics.*
 import android.util.AttributeSet
 import android.view.View
 import android.view.animation.AccelerateDecelerateInterpolator
-import android.view.animation.DecelerateInterpolator
 import android.view.animation.LinearInterpolator
 import com.antiscroller.kitty.R
 
@@ -28,6 +28,24 @@ class KittyCurtainView @JvmOverloads constructor(
     attrs: AttributeSet? = null,
     defStyleAttr: Int = 0
 ) : View(context, attrs, defStyleAttr) {
+
+    companion object {
+        // omega = 12 rad/s: ~88% of a jump covered in 300ms, critically damped (damping = 2 * omega)
+        private const val SPRING_K = 144f
+        private const val SPRING_DAMPING = 24f
+
+        /** One semi-implicit Euler step; snaps to the target once settled or crossed (no overshoot bounce). */
+        fun springStep(progress: Float, velocity: Float, target: Float, dt: Float): Pair<Float, Float> {
+            val errorBefore = target - progress
+            val v = velocity + (SPRING_K * errorBefore - SPRING_DAMPING * velocity) * dt
+            val p = progress + v * dt
+            val errorAfter = target - p
+            if (errorBefore * errorAfter <= 0f || (Math.abs(errorAfter) < 0.0005f && Math.abs(v) < 0.002f)) {
+                return target to 0f
+            }
+            return p to v
+        }
+    }
 
     enum class CatBreed(
         val key: String,
@@ -186,7 +204,19 @@ class KittyCurtainView @JvmOverloads constructor(
     private var currentBreed: CatBreed = CatBreed.GINGER
     private var dropPercentage: Float = 0f
     private var animatedProgress: Float = 0f
-    private var animator: ValueAnimator? = null
+    private var progressVelocity: Float = 0f
+
+    // Critically damped spring: retargets mid-flight without losing velocity, so bursty coalesced
+    // scroll events (Instagram sends ~2500px jumps 100-500ms apart on a hard fling) read as one continuous drop
+    private val springAnimator = TimeAnimator().apply {
+        setTimeListener { anim, _, deltaMs ->
+            val (p, v) = springStep(animatedProgress, progressVelocity, dropPercentage, deltaMs.coerceAtMost(34L) / 1000f)
+            animatedProgress = p
+            progressVelocity = v
+            if (p == dropPercentage) anim.end()
+            invalidate()
+        }
+    }
 
     // Natural pendulum swinging for all hanging breeds, matching companion cat in app menu
     private var swayAngle: Float = 0f
@@ -236,6 +266,7 @@ class KittyCurtainView @JvmOverloads constructor(
         typeface = Typeface.DEFAULT_BOLD
         textAlign = Paint.Align.CENTER
     }
+    private val purrPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE; strokeCap = Paint.Cap.ROUND; color = Color.WHITE }
     private val curtainBodyPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
     private val stripePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         strokeWidth = 6f
@@ -259,8 +290,8 @@ class KittyCurtainView @JvmOverloads constructor(
     private val pointerPath = Path()
 
     init {
+        // Infinite animators start in onAttachedToWindow only: a never-attached instance would run them forever and leak
         applyTheme("ginger")
-        startAnimations()
     }
 
     fun applyTheme(themeName: String) {
@@ -367,7 +398,7 @@ class KittyCurtainView @JvmOverloads constructor(
             interpolator = AccelerateDecelerateInterpolator()
             addUpdateListener {
                 swayAngle = it.animatedValue as Float
-                invalidate()
+                if (isSwinging()) invalidate()
             }
             start()
         }
@@ -383,7 +414,7 @@ class KittyCurtainView @JvmOverloads constructor(
                 val newIndex = it.animatedValue as Int
                 if (newIndex != spriteFrameIndex) {
                     spriteFrameIndex = newIndex
-                    if (currentBreed == CatBreed.SATURN) {
+                    if (currentBreed == CatBreed.SATURN && isSwinging()) {
                         invalidate()
                     }
                 }
@@ -392,31 +423,22 @@ class KittyCurtainView @JvmOverloads constructor(
         }
     }
 
+    // The hanging cat is only drawn between hidden and full lock; skip full-screen redraws outside that range
+    private fun isSwinging() = animatedProgress > 0.0001f && animatedProgress < 0.96f
+
     fun setDropPercentage(target: Float, animate: Boolean = true) {
         val clamped = target.coerceIn(0f, 1f)
         dropPercentage = clamped
 
         if (!animate || height == 0) {
-            animator?.cancel()
+            springAnimator.end()
             animatedProgress = clamped
+            progressVelocity = 0f
             invalidate()
             return
         }
 
-        if (Math.abs(clamped - animatedProgress) < 0.002f) {
-            return
-        }
-
-        animator?.cancel()
-        animator = ValueAnimator.ofFloat(animatedProgress, clamped).apply {
-            duration = 320
-            interpolator = DecelerateInterpolator(1.2f)
-            addUpdateListener {
-                animatedProgress = it.animatedValue as Float
-                invalidate()
-            }
-            start()
-        }
+        if (!springAnimator.isStarted && clamped != animatedProgress) springAnimator.start()
     }
 
     override fun onAttachedToWindow() {
@@ -428,7 +450,7 @@ class KittyCurtainView @JvmOverloads constructor(
         super.onDetachedFromWindow()
         swayAnimator?.cancel()
         spriteAnimator?.cancel()
-        animator?.cancel()
+        springAnimator.end()
     }
 
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
@@ -519,7 +541,26 @@ class KittyCurtainView @JvmOverloads constructor(
         val catTop = stickTop - (catH * stickTopRatio)
         drawHangingSpriteCat(canvas, centerX, catTop, catW, catH, stickTop, stickBottom)
 
+        drawPurrCue(canvas, centerX, catTop + catH * 0.55f, catW, progress)
+
         canvas.restore()
+    }
+
+    // Minimal purr cue: faint pulsing vibration arcs beside the cat, matching the 50% purr and 75% growl audio stages
+    private fun drawPurrCue(canvas: Canvas, cx: Float, cy: Float, catW: Float, progress: Float) {
+        if (progress < 0.5f) return
+        val angry = progress >= 0.75f
+        val pulse = Math.abs(Math.sin(System.currentTimeMillis() / (if (angry) 90.0 else 220.0))).toFloat()
+        purrPaint.strokeWidth = if (angry) 5f else 3.5f
+        val arcs = if (angry) 3 else 2
+        for (i in 1..arcs) {
+            val r = catW * 0.08f * i + pulse * 6f
+            purrPaint.alpha = (110 - i * 25 + pulse * 40).toInt()
+            val lx = cx - catW * 0.55f
+            val rx = cx + catW * 0.55f
+            canvas.drawArc(lx - r, cy - r, lx + r, cy + r, 135f, 90f, false, purrPaint)
+            canvas.drawArc(rx - r, cy - r, rx + r, cy + r, -45f, 90f, false, purrPaint)
+        }
     }
 
     private fun drawCurtainBody(canvas: Canvas, w: Float, bottomY: Float) {
@@ -619,13 +660,13 @@ class KittyCurtainView @JvmOverloads constructor(
         if (bmp != null) {
             val bmpW = (totalW * 0.46f).coerceIn(240f, 360f)
             val bmpH = bmpW * (bmp.height.toFloat() / bmp.width.toFloat())
-            val dstRect = RectF(
+            catRect.set(
                 centerX - (bmpW / 2f),
                 (totalH * 0.45f) - (bmpH / 2f),
                 centerX + (bmpW / 2f),
                 (totalH * 0.45f) + (bmpH / 2f)
             )
-            canvas.drawBitmap(bmp, null, dstRect, catPaint)
+            canvas.drawBitmap(bmp, null, catRect, catPaint)
             return
         }
     }

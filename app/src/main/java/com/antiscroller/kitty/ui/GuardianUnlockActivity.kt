@@ -55,6 +55,8 @@ class GuardianUnlockActivity : AppCompatActivity() {
                 setResult(Activity.RESULT_OK)
                 finish()
             } else {
+                val lockedSeconds = dataManager.getPinLockoutRemainingSeconds()
+                binding.tvPinError.text = if (lockedSeconds > 0) "Too many wrong PINs. Try again in ${lockedSeconds}s." else "Incorrect PIN. Please try again."
                 binding.tvPinError.visibility = View.VISIBLE
                 binding.etPin.text?.clear()
             }

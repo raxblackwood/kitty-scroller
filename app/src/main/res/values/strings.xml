@@ -12,5 +12,4 @@
     <string name="perm_overlay_desc">Allows the cute Kitty Curtain to slide down from the top.</string>
 
     <string name="perm_admin_title">Smart Uninstall Friction</string>
-    <string name="perm_admin_desc">Prevents impulsive deletion while giving 100% full access to productive apps.</string>
 </resources>

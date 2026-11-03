@@ -9,6 +9,13 @@
 -keep class com.antiscroller.kitty.guardian.** { *; }
 -keep class com.antiscroller.kitty.data.** { *; }
 
+# Strip per-event verbose logging from release (the accessibility service logs every scroll event)
+-assumenosideeffects class android.util.Log {
+    public static int v(...);
+    public static int d(...);
+    public static int i(...);
+}
+
 # WorkManager Workers
 -keep class * extends androidx.work.ListenableWorker {
     <init>(android.content.Context, androidx.work.WorkerParameters);

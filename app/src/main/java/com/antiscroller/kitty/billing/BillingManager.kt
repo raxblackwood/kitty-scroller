@@ -315,12 +315,11 @@ class BillingManager(
             .setProductType(BillingClient.ProductType.INAPP)
             .build()
 
+        // Mirror Play's owned set both ways, so refunds and lapsed subscriptions revoke access (only on a successful query)
         billingClient.queryPurchasesAsync(inAppParams) { res, purchases ->
             if (res.responseCode == BillingClient.BillingResponseCode.OK) {
-                for (p in purchases) {
-                    if (p.purchaseState == Purchase.PurchaseState.PURCHASED && p.products.contains(PRODUCT_COSMETIC_PACK)) {
-                        dataManager.isCosmeticPackUnlocked = true
-                    }
+                dataManager.isCosmeticPackUnlocked = purchases.any {
+                    it.purchaseState == Purchase.PurchaseState.PURCHASED && it.products.contains(PRODUCT_COSMETIC_PACK)
                 }
             }
         }
@@ -331,10 +330,8 @@ class BillingManager(
 
         billingClient.queryPurchasesAsync(subsParams) { res, purchases ->
             if (res.responseCode == BillingClient.BillingResponseCode.OK) {
-                for (p in purchases) {
-                    if (p.purchaseState == Purchase.PurchaseState.PURCHASED && p.products.contains(PRODUCT_PARENTAL_MONTHLY)) {
-                        dataManager.isParentalSubscribed = true
-                    }
+                dataManager.isParentalSubscribed = purchases.any {
+                    it.purchaseState == Purchase.PurchaseState.PURCHASED && it.products.contains(PRODUCT_PARENTAL_MONTHLY)
                 }
             }
         }
